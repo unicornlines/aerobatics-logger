@@ -57,10 +57,9 @@ POWER = dict(file="power.kicad_sch", title="Power: USB-C, Li-ion charger, hold-u
          nets={"1": "CHG_SW", "2": "VSYS"}),
     C("C104", "10u 10V", "VSYS", "GND", fp=C0805), C("C105", "10u 10V", "VSYS", "GND", fp=C0805),
     C("C106", "10u 10V", "VBAT", "GND", fp=C0805),
-    # TS: 5.23k/30.1k divider with a 10k B3380 NTC next to the cell -> JEITA corners at about 0/10/45/60 C.
+    # TS: 5.23k/30.1k divider with the pack's own 10k B3380 NTC (J2 pin 2) -> JEITA corners at about 0/10/45/60 C.
+    # No NTC (open TS) reads as below 0 C, so a pack without a thermistor is never charged.
     R("R100", "5.23k 1%", "CHG_REGN", "CHG_TS"), R("R101", "30.1k 1%", "CHG_TS", "GND"),
-    dict(ref="RT1", lib="Device:Thermistor_NTC", value="10k B3380", mpn="NCP15XH103F03RC", fp=R0402,
-         nets={"1": "CHG_TS", "2": "GND"}),
     R("R102", "100k", "CHG_REGN", "CHG_PSEL"),                         # PSEL high: 500 mA input until firmware says otherwise
     R("R103", "10k", "CHG_INT_N", "+3V3"),
     R("R104", "1k", "VSYS", "CHG_LED_A"),
@@ -69,10 +68,26 @@ POWER = dict(file="power.kicad_sch", title="Power: USB-C, Li-ion charger, hold-u
     # Power button on QON: 1 s press leaves ship mode (on), 8 s press without USB power-cycles the system.
     dict(ref="SW4", lib="Switch:SW_Push", value="PWR", fp="Button_Switch_SMD:SW_Push_1P1T_NO_CK_KMR2",
          nets={"1": "PWR_BTN_N", "2": "GND"}),
-    # Battery: JST PH 2-pin, reverse-polarity PMOS (conducts both ways once its body diode lets the gate see -VBAT).
-    dict(ref="J2", lib="Connector_Generic:Conn_01x02", value="BATTERY 1S",
-         fp="Connector_JST:JST_PH_S2B-PH-SM4-TB_1x02-1MP_P2.00mm_Horizontal", mpn="S2B-PH-SM4-TB(LF)(SN)",
-         nets={"1": "GND", "2": "BAT_CONN"}),
+    # Battery: JST PH 3-pin (1 cell -, 2 NTC, 3 cell +), fuse, reverse-polarity PMOS (conducts both ways once its
+    # body diode lets the gate see -VBAT).
+    dict(ref="J2", lib="Connector_Generic:Conn_01x03", value="BATTERY 1S",
+         fp="Connector_JST:JST_PH_S3B-PH-SM4-TB_1x03-1MP_P2.00mm_Horizontal", mpn="S3B-PH-SM4-TB(LF)(SN)",
+         nets={"1": "BAT_NEG", "2": "CHG_TS", "3": "BAT_CELL"}),
+    dict(ref="F2", lib="Device:Fuse", value="3A fast", mpn="0466003.NR", fp="Fuse:Fuse_1206_3216Metric",
+         nets={"1": "BAT_CELL", "2": "BAT_CONN"}),
+    # Cell protection on the board (TI BQ29700, SLUSBU9I fig. 9-1): OVP 4.275 V, UVP 2.8 V, OCC -100 mV, OCD 100 mV,
+    # SCD 0.5 V across the two low-side FETs (2 x AO3400A, about 50-60 mohm together: charge/discharge trip about
+    # 1.7-2 A at room temperature). Independent of the charger and the firmware.
+    dict(ref="U15", lib="Battery_Management:BQ297xy", value="BQ29700", mpn="BQ29700DSER",
+         fp="Package_SON:WSON-6_1.5x1.5mm_P0.5mm",
+         nets={"1": "NC", "2": "PROT_COUT", "3": "PROT_DOUT", "4": "BAT_NEG", "5": "PROT_VDD", "6": "PROT_VM"}),
+    R("R110", "330R", "BAT_CONN", "PROT_VDD"), C("C109", "100n", "PROT_VDD", "BAT_NEG"),
+    R("R111", "2.2k", "PROT_VM", "GND"),
+    R("R112", "5.1M", "PROT_DOUT", "BAT_NEG"), R("R113", "5.1M", "PROT_COUT", "GND"),
+    dict(ref="Q3", lib="Device:Q_NMOS_GSD", value="AO3400A", mpn="AO3400A", fp="Package_TO_SOT_SMD:SOT-23",
+         nets={"1": "PROT_DOUT", "2": "BAT_NEG", "3": "PROT_MID"}),     # discharge FET
+    dict(ref="Q4", lib="Device:Q_NMOS_GSD", value="AO3400A", mpn="AO3400A", fp="Package_TO_SOT_SMD:SOT-23",
+         nets={"1": "PROT_COUT", "2": "GND", "3": "PROT_MID"}),         # charge FET
     dict(ref="Q1", lib="Device:Q_PMOS_GSD", value="AO3401A", mpn="AO3401A", fp="Package_TO_SOT_SMD:SOT-23",
          nets={"1": "BAT_GATE", "2": "VBAT", "3": "BAT_CONN"}),
     R("R105", "100k", "BAT_GATE", "GND"),
@@ -84,7 +99,7 @@ POWER = dict(file="power.kicad_sch", title="Power: USB-C, Li-ion charger, hold-u
     R("R108", "100k", "USB_CC1", "CC_SENSE"), R("R109", "100k", "USB_CC2", "CC_SENSE"), C("C108", "100n", "CC_SENSE", "GND"),
     # Hold-up: 2 x 1 F / 2.7 V in series = 0.5 F, charged through R4, discharged through D2.
     R("R4", "10R 0.5W", "VSYS", "HOLD_TOP", fp="Resistor_SMD:R_1206_3216Metric"),
-    dict(ref="D2", lib="Device:D_Schottky", value="SS14", fp="Diode_SMD:D_SMA",
+    dict(ref="D2", lib="Device:D_Schottky", value="B5819W", mpn="B5819W", fp="Diode_SMD:D_SOD-123",
          nets={"2": "HOLD_TOP", "1": "VSYS"}),
     dict(ref="C3", lib="Device:C_Polarized", value="1F 2.7V", fp="Capacitor_THT:CP_Radial_D8.0mm_P3.50mm",
          nets={"1": "HOLD_TOP", "2": "HOLD_MID"}),
@@ -123,10 +138,11 @@ POWER = dict(file="power.kicad_sch", title="Power: USB-C, Li-ion charger, hold-u
     C("C12", "100n", "+3V3", "GND"),
     C("C13", "100n", "VREF_1V2", "GND"),
     FLAG("#FLG01", "VBUS"), FLAG("#FLG02", "VSYS"), FLAG("#FLG03", "+3V3"),
-    FLAG("#FLG04", "GND"), FLAG("#FLG05", "+3V3A"), FLAG("#FLG06", "VBAT"),
+    FLAG("#FLG04", "GND"), FLAG("#FLG05", "+3V3A"), FLAG("#FLG06", "VBAT"), FLAG("#FLG07", "BAT_NEG"),
 ], notes=[
-    "Battery optional: 1S Li-ion/LiPo with its own protection circuit, at least 2000 mAh so the charger's firmware-free default (2.04 A) stays at or below 1C.",
-    "Charger I2C address 0x6B on I2C1 (shared with the BMM350 at 0x14). Firmware: SYS_MIN 3.7 V, ICHG to the cell, IINDPM from the CC level, watchdog on.",
+    "Battery optional: one bare 1S Li-ion/LiPo cell, at least 2000 mAh, with a 10k B3380 NTC on the cell (3-wire JST PH: 1 -, 2 NTC, 3 +).",
+    "Three independent layers: charger (VREG, ICHG, JEITA from the pack NTC, safety timer), BQ29700 + 2 FETs (OV 4.275 V, UV 2.8 V, OC about 2 A, short), 3 A fuse.",
+    "Charger I2C address 0x6B on I2C1 (shared with the BMM350 at 0x14). Firmware: SYS_MIN 3.7 V, ICHG at most 1 A (0.5C), IINDPM from the CC level, watchdog on.",
     "Hold-up with no cell: VSYS of 3.9 to 4.2 V down to 3.0 V gives the 0.5 F about 1.5 to 2 J, about 1.5 s at 1.2 W with the radio off.",
     "PWR_FAIL_N goes low when VBUS falls below about 4.3 V. With a cell fitted the firmware keeps logging and watches VBAT_SENSE instead.",
     "Off: firmware sets BATFET_DIS (ship mode). On: PWR held 1 s, or USB plugged in.",

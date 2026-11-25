@@ -21,7 +21,9 @@ STANDINS = {
     "J63": [(6.0, 4.4, 2.9, "#ece6d4", "", 0.0, 0.3, 0.0)],       # JST-SH 4-pin side entry (Qwiic)
     "U13": (4.0, 4.0, 0.8, "#1b1b1d", "BQ25601"),                 # charger, WQFN-24 4x4
     "L2": (4.0, 4.0, 3.0, "#2a2a2c", "1R0"),                      # charger inductor, SWPA4030S
-    "J2": [(7.9, 6.0, 4.8, "#ece6d4", "", 0.0, 1.4, 0.0)],        # JST-PH 2-pin side entry (battery)
+    "J2": [(9.9, 6.0, 4.8, "#ece6d4", "", 0.0, 1.4, 0.0)],        # JST-PH 3-pin side entry (battery)
+    "U15": (1.5, 1.5, 0.75, "#1b1b1d", ""),                       # cell protector, WSON-6 1.5x1.5
+    "F2": (3.2, 1.6, 0.6, "#ece6d4", "3A"),                       # battery fuse, 1206
     # radio module: its own 0.8 mm PCB (antenna end bare, over the board edge) with the shield can on it.
     # Several boxes per part: (w, l, h, colour, label, dx, dy, dz) relative to the footprint origin.
     "U11": [(13.2, 16.6, 0.8, "#1b1b1d", "", 0.0, 0.0, 0.0),

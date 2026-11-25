@@ -104,15 +104,22 @@ row(["R106", "R107", "C107"], 67.8, 42.8, 1.6, 0, 90)              # VBAT/2 divi
 at("SW4", 85.4, 22.5, 90)                                        # PWR button next to the USB-C
 at("R104", 83.0, 25.0, 90); at("D22", 83.4, 26.9, 0)              # charge LED
 # battery corner: JST PH (cable out of the right edge), reverse-polarity FET, NTC next to the cell
-at("J2", 82.6, 48.5, 90)
-at("Q1", 73.5, 43.6, 0); at("R105", 76.4, 43.0, 90); at("RT1", 79.0, 54.6, 0)
+at("J2", 82.8, 48.85, 90)
+at("Q1", 73.5, 43.6, 0); at("R105", 76.4, 43.0, 90)
+# Cell protection: fuse next to the cell's + pin, BQ29700 with its filter and gate resistors, the two low-side FETs
+# below the connector (cell - comes out of J2 pin 1 at the bottom).
+at("F2", 76.55, 47.9, 270)
+at("Q3", 73.2, 47.2, 0); at("Q4", 73.2, 50.6, 0)                         # discharge FET over charge FET, drains on the right
+at("U15", 78.3, 56.5, 0); at("C109", 80.0, 56.75, 270)                   # protector in the pocket between C4 and H4
+at("R111", 79.9, 54.95, 0)                                               # V- resistor right at pin 6
+row(["R112", "R113", "R110"], 77.5, 58.8, 1.0, 0, 90)
 at("U3", 77.0, 13.0, 0); at("L1", 77.0, 7.5, 0)
 row(["C5", "C6"], 82.5, 11.0, 0, 3.6, 90)
 row(["C8", "C9"], 71.5, 5.0, 0, 2.5, 0)
 row(["C7", "R7", "R8", "R9"], 72.5, 12.9, 0, 1.6, 0)
 # hold-up: supercaps in the bottom-right corner
-at("C3", 62.0, 55.5, 0); at("C4", 72.0, 55.5, 0)
-at("R4", 64.0, 48.0, 0); at("D2", 70.5, 48.0, 0); row(["R5", "R6"], 76.0, 47.2, 0, 1.6, 0)
+at("C3", 61.0, 57.0, 0); at("C4", 71.0, 57.0, 0)
+at("R4", 63.4, 48.0, 0); at("D2", 68.1, 48.0, 0); row(["R5", "R6"], 66.0, 50.2, 2.0, 0, 0)
 # power-fail comparator
 at("U4", 66.0, 36.0, 0); row(["R10", "R11", "R12"], 66.0, 40.0, 0, 1.6, 0); row(["C12", "C13"], 62.5, 34.5, 0, 2.0, 90)
 
@@ -133,6 +140,8 @@ FANOUT = [("U9", "C3", 0.55, 0.55), ("C30", "GND", 0.0, -0.95), ("C31", "GND", 0
           ("U7", "9", 0.75, 0.0),           # baro GND (right side, middle pad), straight out to a via
           ("U11", "51", 0.6, 0.75),
           ("J1", "A12", -1.0, -0.6),        # USB-C GND pair A12/B1, boxed in by VBUS and the shield tab
+          ("J1", "A1", -1.0, 0.2),          # and A1/B12, between the VBUS via and the TVS run
+          ("J63", "1", 0.0, -1.3),          # Qwiic GND, before the 3V3_EXP run can wall it in
           ("J60", "11#2", -1.1, 0.0),       # microSD shell tab nearest the MCU
           # charger: VBUS and VBAT get their own 0.6/0.3 mm via out of the crowded corner, for the long runs
           ("C2", "1", -0.57, -1.3, 0.4, 0.6, 0.3), ("C106", "1", -0.8, -0.95, 0.4, 0.6, 0.3),
@@ -171,7 +180,9 @@ PREROUTE_PATH = [("J50", "1", [(2.95, 48.26), (2.95, 50.5), (7.0, 54.55), (8.35,
                  ("U13", "1", [(72.3, 23.75)], "C2", "1", "F", 0.25),
                  ("U13", "14", [(77.55, 25.75), (77.55, 26.25), (77.55, 28.45)], "C106", "1", "F", 0.3),
                  ("U13", "13", [(77.55, 26.25)], None, None, "F", 0.25),
-                 ("D1", "1", [(79.62, 35.4)], None, None, "F", 0.4),           # TVS straight onto the USB-C VBUS via
+                 ("D1", "1", [(78.9, 38.88), (78.9, 36.12), (79.62, 35.4)], None, None, "F", 0.4),   # TVS onto the VBUS via, clear of A1/B12
+                 ("U13", "23", [(74.25, 22.03), (72.6, 22.03)], "C100", "1", "F", 0.25),
+                 ("U15", "6", [(79.42, 55.45)], "R111", "1", "F", 0.15),   # PMID cap, under C102, over the VBUS run           # TVS straight onto the USB-C VBUS via
                  ("R106", "1", [(67.8, 44.55), (71.3, 44.55)], None, None, "F", 0.3)]
 
 HOLES = [(4.0, 4.0), (W - 4.0, 4.0), (4.0, H - 4.0), (W - 4.0, H - 4.0)]
@@ -237,13 +248,13 @@ def zone(board, net, layer, inset=0.3):
 
 SILK_REF_PREFIXES = ("U", "J")          # ICs and connectors keep their reference on the silkscreen
 LABELLED = {"J2", "J20", "J50", "J60", "J61", "J62", "J63"}   # ...unless a function label replaces it (see LABELS)
-REF_POS = {"U5": (42.0, 29.1), "U13": (66.9, 26.4)}            # reference centred in the MCU outline
+REF_POS = {"U5": (42.0, 29.1), "U13": (66.9, 26.4), "U15": (78.5, 60.6)}            # reference centred in the MCU outline
 
 # Silkscreen labels: (text, x, y, rotation, size_mm, layer)
 LABELS = [
     ("UP", 7.2, 22.0, 0, 1.0, "F"), ("OK", 7.2, 29.0, 0, 1.0, "F"), ("DN", 7.2, 36.0, 0, 1.0, "F"),
     ("SWD", 59.5, 42.3, 0, 0.9, "F"), ("PWR", 85.4, 18.9, 0, 0.8, "F"), ("CHG", 86.9, 26.9, 90, 0.8, "F"),
-    ("BAT", 82.6, 43.0, 0, 0.8, "F"), ("+", 77.15, 47.5, 0, 0.8, "F"), ("\u2212", 77.15, 49.5, 0, 0.8, "F"), ("CAM", 40.0, 61.1, 0, 0.8, "F"), ("MRK", 45.08, 61.1, 0, 0.8, "F"), ("I2C", 24.8, 61.2, 0, 0.8, "F"),
+    ("BAT", 82.6, 42.7, 0, 0.8, "F"), ("+", 77.75, 45.6, 0, 0.8, "F"), ("\u2212", 77.75, 52.1, 0, 0.8, "F"), ("CAM", 40.0, 61.1, 0, 0.8, "F"), ("MRK", 45.08, 61.1, 0, 0.8, "F"), ("I2C", 24.8, 61.2, 0, 0.8, "F"),
     ("ANT", 4.0, 49.6, 0, 0.9, "F"), ("microSD", 60.0, 21.2, 0, 0.9, "F"), ("E-PAPER", 29.2, 2.2, 0, 0.9, "F"), ("D-", 50.5, 2.8, 0, 0.8, "F"), ("D+", 50.5, 8.6, 0, 0.8, "F"),
     ("UNICORNLINES\u00ae", 17.0, 35.6, 0, 1.2, "F"), ("Never Stop Dreaming", 17.0, 37.6, 0, 0.9, "F", True),
     ("AEROBATICS LOGGER", 44.0, 27.0, 0, 2.0, "B"), ("rev A  2026-11", 44.0, 30.5, 0, 1.2, "B"),

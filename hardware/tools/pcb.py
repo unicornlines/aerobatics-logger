@@ -28,32 +28,33 @@ def row(refs, x, y, dx, dy, rot=0, side="F"):
     for i, r in enumerate(refs):
         at(r, x + i * dx, y + i * dy, rot, side)
 
-# --- MCU block (centre) -------------------------------------------------------
-at("U5", 42, 27)
-row(["C20", "C21"], 31.5, 19.5, 0, 2.0, 0)           # left side decoupling
-row(["C22", "C23"], 52.5, 32.0, 0, 2.0, 0)           # right side decoupling
-row(["C24", "C25"], 46.0, 37.5, 2.5, 0, 90)          # bottom
-row(["C26", "C27"], 31.5, 34.0, 0, 2.0, 0)           # VCAP, near pins 48/73
-at("C28", 38.0, 16.5, 90); at("C29", 35.5, 16.5, 90); at("R20", 47.5, 16.5, 90)
-at("Y1", 28.0, 27.0, 90); at("C30", 28.0, 24.0, 0); at("C31", 28.0, 30.0, 0)
-at("Y2", 28.0, 20.5, 90); at("C32", 26.0, 19.0, 90); at("C33", 26.0, 22.0, 90)
-at("FB1", 40.5, 16.5, 0); at("C10", 43.0, 16.5, 90); at("C11", 45.0, 16.5, 90)
+# --- MCU block (centre). Sits 2.1 mm lower than first drawn, to make room for the radio flush with the top edge.
+at("U5", 42, 29.1)
+row(["C20", "C21"], 31.5, 21.6, 0, 2.0, 0)           # left side decoupling
+row(["C22", "C23"], 52.5, 34.1, 0, 2.0, 0)           # right side decoupling
+row(["C24", "C25"], 46.0, 39.6, 2.5, 0, 90)          # bottom
+row(["C26", "C27"], 31.5, 36.1, 0, 2.0, 0)           # VCAP, near pins 48/73
+at("C28", 38.0, 18.6, 90); at("C29", 35.5, 18.6, 90); at("R20", 48.0, 18.6, 90)
+at("Y1", 28.0, 29.1, 90); at("C30", 28.0, 26.2, 0); at("C31", 28.0, 32.0, 0)
+at("Y2", 28.0, 22.0, 90); at("C32", 28.0, 19.8, 0); at("C33", 28.0, 24.2, 0)   # one column with the HSE crystal
+at("FB1", 40.5, 18.6, 0); at("C10", 43.0, 18.6, 90); at("C11", 45.5, 18.6, 90)   # top row on a 2.5 mm pitch
 # backup supercap and charger
-at("C34", 53.5, 40.5, 0); row(["D20", "R21"], 47.5, 41.0, 0, 2.0, 0)
+at("C34", 53.5, 43.5, 0); at("D20", 47.0, 43.5, 0); at("R21", 43.5, 43.5, 0)   # one row: R21 - D20 - C34
 
-# --- Radio (top edge, centred over the MCU; antenna overhangs the edge by 2.1 mm, Espressif's preferred placement)
-at("U11", 42.0, 6.2, 0)
-at("C80", 31.0, 6.5, 90); at("C81", 33.3, 6.0, 0)              # next to 3V3 (pin 3)
-at("R80", 33.3, 10.6, 0); at("C82", 33.3, 12.2, 0)             # EN: pulled low, RC
-row(["R81", "R82", "R83"], 50.5, 9.0, 0, 1.6, 0)                # strapping pull-ups (IO9, IO8, IO15)
-at("TP80", 51.0, 3.6, 0); at("TP81", 51.0, 5.6, 0)              # USB-Serial-JTAG pads
+# --- Radio (top edge, centred over the MCU). Module flush with the edge; the antenna sits over the footprint's
+# copper keepout (all layers), the second of the two placements Espressif allows (the first overhangs the edge).
+at("U11", 42.0, 8.3, 0)
+row(["C80", "C81"], 33.0, 8.0, 0, 2.0, 0)                       # 3V3 bulk + HF, next to pin 3
+row(["R80", "C82"], 33.0, 12.0, 0, 1.6, 0)                       # EN: pulled low, RC
+row(["R81", "R82", "R83"], 50.5, 11.5, 0, 1.6, 0)                # strapping pull-ups (IO9, IO8, IO15)
+at("TP80", 50.5, 5.4, 0); at("TP81", 50.5, 7.6, 0)              # USB-Serial-JTAG pads
 
 # --- Display (top-left) and buttons (left edge) -------------------------------
 at("J61", 17.0, 5.5, 180)
 row(["C63", "C64", "C65", "C66", "C67", "C68", "C69"], 8.5, 10.5, 2.0, 0, 90)
 at("C62", 23.0, 10.5, 90); at("C70", 25.0, 10.5, 90)
-at("L60", 9.5, 14.5, 0); at("Q60", 13.5, 14.5, 0); at("R67", 16.5, 14.5, 90)
-row(["D60", "D61", "D62"], 20.5, 14.5, 0, 2.5, 0); at("C71", 25.0, 14.5, 90)
+at("L60", 9.5, 14.3, 0); at("Q60", 13.5, 14.3, 0); at("R67", 16.5, 14.3, 90); at("C71", 18.5, 14.3, 90)
+row(["D60", "D61", "D62"], 10.5, 18.2, 5.0, 0, 0)                 # booster diodes side by side
 row(["SW1", "SW2", "SW3"], 3.6, 22.0, 0, 7.0, 90)
 
 # --- GNSS (bottom-left) ---------------------------------------------------------
@@ -104,7 +105,8 @@ at("J62", 40.0, 58.5, 90); at("R66", 40.0, 55.0, 0)
 FANOUT = [("U9", "C3", 0.55, 0.55), ("C30", "GND", 0.0, -0.95), ("C31", "GND", 0.0, 0.95),
           ("U6", "10", 0.95, 0.0),          # IMU OCSB tie-high, between two escapes
           ("U6", "7", 0.0, 0.9),            # IMU GND pair 6/7 (joined by the pour)
-          ("U7", "3", -0.6, 0.7)]           # baro GND corner pin, fenced in by its own +3V3 feed
+          ("U7", "3", -0.6, 0.7),           # baro GND corner pin, fenced in by its own +3V3 feed
+          ("U11", "51", 0.6, 0.75)]         # radio GND corner pad, between the strap resistors and the MCU decoupling row
 # GND pins of these packages get a locked stub inwards to a via under the body before autorouting.
 FANOUT_INWARD = ["U5"]
 # Single pins the router tends to box in: (ref, pad, +1 outwards / -1 inwards under the body)
@@ -167,13 +169,13 @@ def zone(board, net, layer, inset=0.3):
 
 SILK_REF_PREFIXES = ("U", "J")          # ICs and connectors keep their reference on the silkscreen
 LABELLED = {"J20", "J50", "J60", "J61", "J62"}   # ...unless a function label replaces it (see LABELS)
-REF_POS = {"U5": (42.0, 27.0)}            # reference centred in the MCU outline
+REF_POS = {"U5": (42.0, 29.1)}            # reference centred in the MCU outline
 
 # Silkscreen labels: (text, x, y, rotation, size_mm, layer)
 LABELS = [
     ("UP", 7.2, 22.0, 0, 1.0, "F"), ("OK", 7.2, 29.0, 0, 1.0, "F"), ("DN", 7.2, 36.0, 0, 1.0, "F"),
     ("SWD", 59.5, 42.3, 0, 0.9, "F"), ("CAM", 36.6, 58.5, 0, 0.9, "F"),
-    ("ANT", 4.0, 49.6, 0, 0.9, "F"), ("microSD", 60.0, 21.2, 0, 0.9, "F"), ("E-PAPER", 29.2, 2.2, 0, 0.9, "F"), ("D-", 51.0, 1.6, 0, 0.8, "F"), ("D+", 51.0, 7.55, 0, 0.8, "F"),
+    ("ANT", 4.0, 49.6, 0, 0.9, "F"), ("microSD", 60.0, 21.2, 0, 0.9, "F"), ("E-PAPER", 29.2, 2.2, 0, 0.9, "F"), ("D-", 50.5, 3.6, 0, 0.8, "F"), ("D+", 50.5, 9.4, 0, 0.8, "F"),
     ("UNICORNLINES\u00ae", 17.0, 35.6, 0, 1.2, "F"), ("Never Stop Dreaming", 17.0, 37.6, 0, 0.9, "F", True),
     ("AEROBATICS LOGGER", 44.0, 27.0, 0, 2.0, "B"), ("rev A  2026-11", 44.0, 30.5, 0, 1.2, "B"),
     ("PER PERFECTIONEM AD FELICITATEM", 44.0, 34.5, 0, 1.1, "B", True),

@@ -275,7 +275,7 @@ RADIO = dict(file="radio.kicad_sch", title="Radio: ESP32-C6 (Wi-Fi 6, BLE 5)", p
          nets={"1": "RADIO_USB_DP"}),
 ], notes=[
     "ESP32-C6-MINI-1 pin table: Espressif datasheet v1.5, table 3-1. Footprint from Espressif's KiCad library.",
-    "EN is pulled low: the radio stays off until the MCU turns it on, and firmware keeps it off while logging.",
+    "EN is pulled low: the radio stays off until the MCU turns it on.",
     "Strapping: IO9 high = boot from flash; the MCU pulls RADIO_BOOT low with EN to enter the UART bootloader.",
     "IO8 must be high for download mode; IO15 must not float. Data: SPI slave on SPI4 (up to 40 MHz).",
     "Peak TX current about 0.38 A from +3V3. Antenna over the board edge, no copper under it; case wall there must be plastic.",

@@ -1834,7 +1834,7 @@
         (size 1.27 1.27))
       (justify left))
     (uuid "0da89ea1-c72e-0b15-993f-daf4f29ef1db"))
-  (text "EN is pulled low: the radio stays off until the MCU turns it on, and firmware keeps it off while logging."
+  (text "EN is pulled low: the radio stays off until the MCU turns it on."
     (at 20 262 0)
     (effects
       (font

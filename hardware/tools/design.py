@@ -109,8 +109,8 @@ MCU_NETS = {
     "24": "GNSS_RXD", "25": "GNSS_TXD", "15": "GNSS_RESET_N",
     # microSD on SDMMC1
     "65": "SD_D0", "66": "SD_D1", "78": "SD_D2", "79": "SD_D3", "80": "SD_CLK", "83": "SD_CMD", "84": "SD_DET",
-    # display on SPI4
-    "1": "LCD_SCK", "5": "LCD_SI", "3": "LCD_SCS", "2": "LCD_DISP", "4": "LCD_EXTCOMIN",
+    # e-paper display on SPI4
+    "1": "EPD_SCK", "5": "EPD_MOSI", "3": "EPD_CS", "2": "EPD_DC", "4": "EPD_BUSY", "41": "EPD_RST",
     # buttons, power fail, camera sync, LED
     "37": "BTN_1", "38": "BTN_2", "39": "BTN_3", "34": "PWR_FAIL_N", "35": "CAM_SYNC", "40": "LED_STATUS",
     # USB and debug
@@ -203,19 +203,40 @@ GNSS = dict(file="gnss.kicad_sch", title="GNSS: NEO-F10N", parts=[
 ])
 
 # ---------------------------------------------------------------- IO
-IO = dict(file="io.kicad_sch", title="IO: microSD, display, buttons, camera sync", parts=[
+IO = dict(file="io.kicad_sch", title="IO: microSD, e-paper display, buttons, camera sync", parts=[
     dict(ref="J60", lib="Connector:Micro_SD_Card_Det1", value="microSD", fp="Connector_Card:microSD_HC_Hirose_DM3AT-SF-PEJM5",
          nets={"1": "SD_D2", "2": "SD_D3", "3": "SD_CMD", "4": "+3V3", "5": "SD_CLK", "6": "GND",
                "7": "SD_D0", "8": "SD_D1", "9": "SD_DET", "10": "GND"}),
     R("R60", "47k", "SD_CMD", "+3V3"), R("R61", "47k", "SD_D0", "+3V3"), R("R62", "47k", "SD_D1", "+3V3"),
     R("R63", "47k", "SD_D2", "+3V3"), R("R64", "47k", "SD_D3", "+3V3"), R("R65", "100k", "SD_DET", "+3V3"),
     C("C60", "10u", "+3V3", "GND", fp=C0805), C("C61", "100n", "+3V3", "GND"),
-    # Sharp LS027B7DH01 on a 10-pin 0.5 mm FPC. Supply assumed 5 V from VSYS (to verify).
-    dict(ref="J61", lib="Connector_Generic:Conn_01x10", value="LS027B7DH01",
-         fp="Connector_FFC-FPC:Hirose_FH12-10S-0.5SH_1x10-1MP_P0.50mm_Horizontal",
-         nets={"1": "LCD_SCK", "2": "LCD_SI", "3": "LCD_SCS", "4": "LCD_EXTCOMIN", "5": "LCD_DISP",
-               "6": "VSYS", "7": "VSYS", "8": "VSYS", "9": "GND", "10": "GND"}),
-    C("C62", "1u", "VSYS", "GND"), C("C63", "100n", "VSYS", "GND"),
+    # Good Display GDEY0213B74 2.13" e-paper (SSD1680) on a 24-pin 0.5 mm FPC, 4-wire SPI (BS1 low).
+    # Booster per the Good Display reference circuit (datasheet section 12): values to verify.
+    dict(ref="J61", lib="Connector_Generic:Conn_01x24", value="GDEY0213B74",
+         fp="Connector_FFC-FPC:Hirose_FH12-24S-0.5SH_1x24-1MP_P0.50mm_Horizontal",
+         nets={"1": "NC", "2": "EPD_GDR", "3": "EPD_RESE", "4": "NC", "5": "EPD_VSH2", "6": "NC", "7": "NC",
+               "8": "GND", "9": "EPD_BUSY", "10": "EPD_RST", "11": "EPD_DC", "12": "EPD_CS",
+               "13": "EPD_SCK", "14": "EPD_MOSI", "15": "+3V3", "16": "+3V3", "17": "GND",
+               "18": "EPD_VDD", "19": "NC", "20": "EPD_VSH1", "21": "EPD_VGH", "22": "EPD_VSL",
+               "23": "EPD_VGL", "24": "EPD_VCOM"}),
+    C("C62", "1u", "+3V3", "GND"),
+    C("C63", "1u 25V", "EPD_VDD", "GND", fp=C0603), C("C64", "1u 25V", "EPD_VSH1", "GND", fp=C0603),
+    C("C65", "1u 25V", "EPD_VSH2", "GND", fp=C0603), C("C66", "1u 25V", "EPD_VGH", "GND", fp=C0603),
+    C("C67", "1u 25V", "EPD_VSL", "GND", fp=C0603), C("C68", "1u 25V", "EPD_VGL", "GND", fp=C0603),
+    C("C69", "1u 25V", "EPD_VCOM", "GND", fp=C0603),
+    dict(ref="L60", lib="Device:L", value="10u", fp="Inductor_SMD:L_0805_2012Metric",
+         nets={"1": "+3V3", "2": "EPD_SW"}),
+    C("C70", "4.7u", "+3V3", "GND", fp=C0603),
+    dict(ref="Q60", lib="Device:Q_NMOS_GSD", value="Si2302", fp="Package_TO_SOT_SMD:SOT-23",
+         nets={"1": "EPD_GDR", "2": "EPD_RESE", "3": "EPD_SW"}),
+    R("R67", "2.2R", "EPD_RESE", "GND"),
+    dict(ref="D60", lib="Device:D_Schottky", value="MBR0530", fp="Diode_SMD:D_SOD-123",
+         nets={"2": "EPD_SW", "1": "EPD_VGH"}),
+    C("C71", "1u 25V", "EPD_SW", "EPD_PUMP", fp=C0603),
+    dict(ref="D61", lib="Device:D_Schottky", value="MBR0530", fp="Diode_SMD:D_SOD-123",
+         nets={"2": "EPD_PUMP", "1": "GND"}),
+    dict(ref="D62", lib="Device:D_Schottky", value="MBR0530", fp="Diode_SMD:D_SOD-123",
+         nets={"2": "EPD_VGL", "1": "EPD_PUMP"}),
     dict(ref="SW1", lib="Switch:SW_Push", value="BTN_1", fp="Button_Switch_SMD:SW_SPST_PTS645",
          nets={"1": "BTN_1", "2": "GND"}),
     dict(ref="SW2", lib="Switch:SW_Push", value="BTN_2", fp="Button_Switch_SMD:SW_SPST_PTS645",
@@ -227,7 +248,8 @@ IO = dict(file="io.kicad_sch", title="IO: microSD, display, buttons, camera sync
          fp="Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
          nets={"1": "CAM_SYNC_OUT", "2": "GND", "3": "NC"}),
 ], notes=[
-    "Display FPC pins per Sharp spec table 4-1: 6 VDDA, 7 VDD, 8 EXTMODE (high = EXTCOMIN), 9 VSS, 10 VSSA.",
+    "E-paper pin table from the GDEY0213B74 datasheet, section 5. Booster values follow the usual Good Display reference; check against section 12.",
+    "Panel operating range is 0 to 50 C: firmware skips refreshes outside it (BMP390 temperature).",
     "Buttons use the MCU's internal pull-ups; debounce in firmware.",
 ])
 

@@ -25,14 +25,14 @@ kicad-cli sch export pdf ../kicad/logger.kicad_sch -o ../kicad/logger.pdf
 | MCU | STM32H723VGT6, decoupling, 25 MHz and 32.768 kHz crystals, RTC/GNSS backup supercap, SWD header, status LED |
 | Sensors | BMI563 IMU (SPI1), BMP390 barometer (SPI2), BMM350 magnetometer (I2C1) with its 1.8 V LDO |
 | GNSS | NEO-F10N, active antenna feed, SMA |
-| IO | microSD (SDMMC1), Sharp LS027B7DH01 FPC, 3 buttons, camera-sync header |
+| IO | microSD (SDMMC1), GDEY0213B74 2.13-inch e-paper with its booster, 3 buttons, camera-sync header |
 
 ## Open items before layout
 
 - [ ] BMI563 pinout is from Bosch's preliminary flyer; confirm against the full datasheet when released.
 - [ ] Add the ICM-45686 alternate footprint once its pin table is checked (DS-000577, section 4.1).
 - [ ] BMP390 and BMM350 pin tables: check against the datasheet figures.
-- [ ] Sharp LS027B7DH01 supply voltage: drawn as 5 V from VSYS; confirm in the Sharp spec. EXTMODE (pin 8) is tied to VDD so EXTCOMIN drives COM inversion.
+- [ ] E-paper booster values (MOSFET, 10 uH, 2.2 ohm sense, MBR0530 diodes, 1 uF caps): check against the GDEY0213B74 reference circuit, datasheet section 12.
 - [ ] NEO-F10N: confirm the active-antenna feed against the integration manual, and pin compatibility with NEO-F9P.
 - [ ] Custom footprints (`logger:` library) still to draw: Bosch LGA-14, LGA-10, WLCSP-9.
 - [ ] Run full ERC in KiCad 8 or later on a desktop.

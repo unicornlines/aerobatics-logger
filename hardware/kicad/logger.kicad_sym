@@ -195,6 +195,145 @@
           (effects
             (font
               (size 1.27 1.27)))))))
+  (symbol "W25N04KV"
+    (in_bom yes)
+    (on_board yes)
+    (property "Reference" "U"
+      (at -10.16 8.89 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (justify left)))
+    (property "Value" "W25N04KV"
+      (at 10.16 8.89 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (justify right)))
+    (property "Footprint" "Package_SON:WSON-8-1EP_8x6mm_P1.27mm_EP3.4x4.3mm"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide))
+    (property "Datasheet" ""
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide))
+    (property "Description" "4 Gbit SPI NAND flash, quad I/O"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide))
+    (symbol "W25N04KV_0_1"
+      (rectangle
+        (start -10.16 7.62)
+        (end 10.16 -7.62)
+        (stroke
+          (width 0.254)
+          (type default))
+        (fill
+          (type background))))
+    (symbol "W25N04KV_1_1"
+      (pin power_in line
+        (at -12.7 5.08 0)
+        (length 2.54)
+        (name "VCC"
+          (effects
+            (font
+              (size 1.27 1.27))))
+        (number "8"
+          (effects
+            (font
+              (size 1.27 1.27)))))
+      (pin input line
+        (at -12.7 2.54 0)
+        (length 2.54)
+        (name "~{CS}"
+          (effects
+            (font
+              (size 1.27 1.27))))
+        (number "1"
+          (effects
+            (font
+              (size 1.27 1.27)))))
+      (pin input line
+        (at -12.7 0 0)
+        (length 2.54)
+        (name "CLK"
+          (effects
+            (font
+              (size 1.27 1.27))))
+        (number "6"
+          (effects
+            (font
+              (size 1.27 1.27)))))
+      (pin power_in line
+        (at -12.7 -2.54 0)
+        (length 2.54)
+        (name "GND"
+          (effects
+            (font
+              (size 1.27 1.27))))
+        (number "4"
+          (effects
+            (font
+              (size 1.27 1.27)))))
+      (pin passive line
+        (at -12.7 -5.08 0)
+        (length 2.54)
+        (name "EP"
+          (effects
+            (font
+              (size 1.27 1.27))))
+        (number "9"
+          (effects
+            (font
+              (size 1.27 1.27)))))
+      (pin bidirectional line
+        (at 12.7 5.08 180)
+        (length 2.54)
+        (name "DI/IO0"
+          (effects
+            (font
+              (size 1.27 1.27))))
+        (number "5"
+          (effects
+            (font
+              (size 1.27 1.27)))))
+      (pin bidirectional line
+        (at 12.7 2.54 180)
+        (length 2.54)
+        (name "DO/IO1"
+          (effects
+            (font
+              (size 1.27 1.27))))
+        (number "2"
+          (effects
+            (font
+              (size 1.27 1.27)))))
+      (pin bidirectional line
+        (at 12.7 0 180)
+        (length 2.54)
+        (name "~{WP}/IO2"
+          (effects
+            (font
+              (size 1.27 1.27))))
+        (number "3"
+          (effects
+            (font
+              (size 1.27 1.27)))))
+      (pin bidirectional line
+        (at 12.7 -2.54 180)
+        (length 2.54)
+        (name "~{HOLD}/IO3"
+          (effects
+            (font
+              (size 1.27 1.27))))
+        (number "7"
+          (effects
+            (font
+              (size 1.27 1.27)))))))
   (symbol "BMP390"
     (in_bom yes)
     (on_board yes)

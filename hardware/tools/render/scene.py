@@ -16,6 +16,7 @@ STANDINS = {
     "U7": (2.0, 2.0, 0.75, "#d7d9dc", "BMP390"),               # metal lid with vent hole
     "U9": (1.28, 1.28, 0.6, "#1b1b1d", "BMM350"),
     "Y2": (2.0, 1.2, 0.6, "#cfd2d6", "32.768 kHz"),
+    "U12": (8.0, 6.0, 0.75, "#1b1b1d", "W25N04KV"),                # log flash, WSON-8 8x6
     # radio module: its own 0.8 mm PCB (antenna end bare, over the board edge) with the shield can on it.
     # Several boxes per part: (w, l, h, colour, label, dx, dy, dz) relative to the footprint origin.
     "U11": [(13.2, 16.6, 0.8, "#1b1b1d", "", 0.0, 0.0, 0.0),

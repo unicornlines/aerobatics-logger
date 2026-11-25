@@ -123,7 +123,7 @@
     (fill
       (color 0 0 0 0))
     (uuid "afd7b760-5d89-7cb6-fd34-3eeb70b42450")
-    (property "Sheetname" "IO: microSD, e-paper display, buttons, camera sync"
+    (property "Sheetname" "IO: log flash, microSD, e-paper display, buttons, camera sync"
       (at 150 119.3 0)
       (effects
         (font

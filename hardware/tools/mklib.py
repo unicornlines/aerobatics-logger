@@ -20,6 +20,12 @@ PARTS = {
         ("4", "INT1", "output", "R"), ("9", "INT2/FSYNC/CLKIN", "bidirectional", "R"),
         ("2", "RESV/AUX1_SDIO", "passive", "R"), ("3", "RESV/AUX1_SCLK", "passive", "R"), ("7", "RESV", "passive", "R"),
         ("10", "RESV/AUX1_CS", "passive", "R"), ("11", "RESV/AUX1_SDO", "passive", "R")]),
+    # SOURCE: Winbond W25N04KV datasheet, WSON-8 8x6 mm pin-out (standard Winbond serial flash pin order). EP to GND.
+    "W25N04KV": dict(ref="U", fp="Package_SON:WSON-8-1EP_8x6mm_P1.27mm_EP3.4x4.3mm", desc="4 Gbit SPI NAND flash, quad I/O", pins=[
+        ("8", "VCC", "power_in", "L"), ("1", "~{CS}", "input", "L"), ("6", "CLK", "input", "L"),
+        ("4", "GND", "power_in", "L"), ("9", "EP", "passive", "L"),
+        ("5", "DI/IO0", "bidirectional", "R"), ("2", "DO/IO1", "bidirectional", "R"),
+        ("3", "~{WP}/IO2", "bidirectional", "R"), ("7", "~{HOLD}/IO3", "bidirectional", "R")]),
     # SOURCE: Bosch BMP390 datasheet BST-BMP390-DS002, table 52 (verify against fig. pp.47-49).
     "BMP390": dict(ref="U", fp="logger:Bosch_LGA-10_2.0x2.0mm", desc="Barometric pressure sensor", pins=[
         ("10", "VDD", "power_in", "L"), ("1", "VDDIO", "power_in", "L"),

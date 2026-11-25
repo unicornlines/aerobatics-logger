@@ -110,10 +110,12 @@ MCU_NETS = {
     # microSD on SDMMC1
     "65": "SD_D0", "66": "SD_D1", "78": "SD_D2", "79": "SD_D3", "80": "SD_CLK", "83": "SD_CMD", "84": "SD_DET",
     # SPI4: e-paper display and the radio share SCK/MOSI, each with its own CS; MISO (PE13) is the radio's only
-    "1": "SPI4_SCK", "5": "SPI4_MOSI", "3": "EPD_CS", "2": "EPD_DC", "4": "EPD_BUSY", "41": "EPD_RST",
-    "43": "RADIO_MISO", "42": "RADIO_CS", "44": "RADIO_IRQ",
+    "42": "SPI4_SCK", "5": "SPI4_MOSI", "3": "EPD_CS", "2": "EPD_DC", "4": "EPD_BUSY", "57": "EPD_RST",
+    "43": "RADIO_MISO", "62": "RADIO_CS", "44": "RADIO_IRQ",
+    # log flash on OCTOSPI1 in quad mode: CLK PB2, NCS PE11, IO0 PD11, IO1 PD12, IO2 PE2, IO3 PD13
+    "36": "FLASH_CLK", "41": "FLASH_CS", "58": "FLASH_IO0", "59": "FLASH_IO1", "1": "FLASH_IO2", "60": "FLASH_IO3",
     # radio control and its UART0 (USART3: bootloader, console); names from the module's side
-    "45": "RADIO_EN", "60": "RADIO_BOOT", "55": "RADIO_RXD", "56": "RADIO_TXD",
+    "45": "RADIO_EN", "61": "RADIO_BOOT", "55": "RADIO_RXD", "56": "RADIO_TXD",
     # buttons, power fail, camera sync, LED
     "37": "BTN_1", "38": "BTN_2", "39": "BTN_3", "34": "PWR_FAIL_N", "35": "CAM_SYNC", "40": "LED_STATUS",
     # USB and debug
@@ -206,7 +208,14 @@ GNSS = dict(file="gnss.kicad_sch", title="GNSS: NEO-F10N", parts=[
 ])
 
 # ---------------------------------------------------------------- IO
-IO = dict(file="io.kicad_sch", title="IO: microSD, e-paper display, buttons, camera sync", parts=[
+IO = dict(file="io.kicad_sch", title="IO: log flash, microSD, e-paper display, buttons, camera sync", parts=[
+    # Main flight log: 4 Gbit SPI NAND on OCTOSPI1 (quad). The microSD is the backup copy, update and export path.
+    dict(ref="U12", lib="logger:W25N04KV", value="W25N04KVZEIR", fp="Package_SON:WSON-8-1EP_8x6mm_P1.27mm_EP3.4x4.3mm",
+         nets={"1": "FLASH_CS", "2": "FLASH_IO1", "3": "FLASH_IO2", "4": "GND", "5": "FLASH_IO0", "6": "FLASH_CLK",
+               "7": "FLASH_IO3", "8": "+3V3", "9": "GND"}),
+    C("C90", "100n", "+3V3", "GND"), C("C91", "1u", "+3V3", "GND"),
+    # CS high and WP/HOLD inactive while the MCU is in reset or before OCTOSPI takes the pins
+    R("R90", "10k", "FLASH_CS", "+3V3"), R("R91", "10k", "FLASH_IO2", "+3V3"), R("R92", "10k", "FLASH_IO3", "+3V3"),
     dict(ref="J60", lib="Connector:Micro_SD_Card_Det1", value="microSD", fp="Connector_Card:microSD_HC_Hirose_DM3AT-SF-PEJM5",
          nets={"1": "SD_D2", "2": "SD_D3", "3": "SD_CMD", "4": "+3V3", "5": "SD_CLK", "6": "GND",
                "7": "SD_D0", "8": "SD_D1", "9": "SD_DET", "10": "GND"}),

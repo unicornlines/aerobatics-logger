@@ -362,9 +362,12 @@ def isolated_pads(board, net="GND"):
                 if (via or p.IsOnLayer(t.GetLayer())) and p.HitTest(pt): join(k, kp)
             for k2, t2 in trs:
                 if k2 != k and (via or t2.GetClass() == "PCB_VIA" or t2.GetLayer() == t.GetLayer()) and t2.HitTest(pt, 0): join(k, k2)
-    for kp, p in pads:                     # thermal spokes: the fill reaches to within the gap of the pad edge
+    for kp, p in pads:                     # a pad joins a fill piece only where the copper really overlaps (spokes)
         for kf, L, one in frags:
-            if p.IsOnLayer(L) and one.Collide(p.GetPosition(), max(p.GetSize().x, p.GetSize().y) // 2 + MM(0.6)): join(kp, kf)
+            if p.IsOnLayer(L):
+                pp = pcbnew.SHAPE_POLY_SET(); p.TransformShapeToPolygon(pp, L, 0, 5000)
+                pp.BooleanIntersection(one, pcbnew.SHAPE_POLY_SET.PM_FAST)
+                if pp.OutlineCount(): join(kp, kf)
     groups = {}
     for k in par: groups.setdefault(root(k), []).append(k)
     main = max(groups.values(), key=len)

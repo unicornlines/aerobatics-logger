@@ -41,6 +41,10 @@ at("FB1", 40.5, 18.6, 0); at("C10", 43.0, 18.6, 90); at("C11", 45.5, 18.6, 90)  
 # backup supercap and charger
 at("C34", 53.5, 43.5, 0); at("D20", 47.0, 43.5, 0); at("R21", 43.5, 43.5, 0)   # one row: R21 - D20 - C34
 
+# --- Log flash (right of the MCU, next to its OCTOSPI pins); decoupling and pull-ups in a row along its top edge
+at("U12", 58.2, 35.0, 90)
+row(["C90", "C91", "R90", "R91", "R92"], 57.0, 29.0, 1.6, 0, 90)
+
 # --- Radio (top edge, centred over the MCU). Module flush with the edge; the antenna sits over the footprint's
 # copper keepout (all layers), the second of the two placements Espressif allows (the first overhangs the edge).
 at("U11", 42.0, 8.3, 0)
@@ -106,13 +110,19 @@ FANOUT = [("U9", "C3", 0.55, 0.55), ("C30", "GND", 0.0, -0.95), ("C31", "GND", 0
           ("U6", "6", 0.0, 0.9),            # IMU GND, straight down between VDDIO and a reserved pin
           ("U7", "3", -0.6, 0.7),           # baro GND corner pin, fenced in by its own +3V3 feed
           ("U11", "51", 0.6, 0.75),
-          ("J1", "A12", -1.0, -0.6)]        # USB-C GND pair A12/B1, boxed in by VBUS and the shield tab         # radio GND corner pad, between the strap resistors and the MCU decoupling row
+          ("J1", "A12", -1.0, -0.6),        # USB-C GND pair A12/B1, boxed in by VBUS and the shield tab
+          ("J60", "11#2", -1.1, 0.0)]       # microSD shell tab nearest the MCU         # radio GND corner pad, between the strap resistors and the MCU decoupling row
 # GND pins of these packages get a locked stub inwards to a via under the body before autorouting.
 FANOUT_INWARD = ["U5"]
 # Single pins the router tends to box in: (ref, pad, +1 outwards / -1 inwards under the body)
 FANOUT_AXIAL = [("U1", "2", +1), ("U10", "24", -1)]
 # Hand routes, locked: (ref, pad, ref, pad, layer, width mm). The supercap mid-point link is a straight bar.
 PREROUTE = [("C3", "2", "C4", "1", "B", 0.6)]
+# Hand routes along a path of board points (mm): (ref, pad, [(x, y), ...], ref, pad, layer, width mm).
+# The GNSS antenna feed runs short and direct on F.Cu over the In1 ground, clear of the corner hole; the router
+# only adds the bias-tee stub from L50.
+PREROUTE_PATH = [("J50", "1", [(2.95, 48.26), (2.95, 50.5), (7.0, 54.55), (8.35, 55.9)], "U10", "11", "F", 0.25),
+                 ("L50", "2", [(5.72, 48.26), (2.95, 48.26)], None, None, "F", 0.15)]   # bias-tee stub, ends on the feed
 
 HOLES = [(4.0, 4.0), (W - 4.0, 4.0), (4.0, H - 4.0), (W - 4.0, H - 4.0)]
 
@@ -322,6 +332,14 @@ def main():
         b = next(p for p in board.FindFootprintByReference(rb).Pads() if p.GetNumber() == pb)
         t = pcbnew.PCB_TRACK(board); t.SetStart(a.GetPosition()); t.SetEnd(b.GetPosition()); t.SetWidth(MM(w))
         t.SetLayer(pcbnew.F_Cu if side == "F" else pcbnew.B_Cu); t.SetNet(a.GetNet()); t.SetLocked(True); board.Add(t)
+    for ra, pa, pts, rb, pb, side, w in PREROUTE_PATH:
+        a = next(p for p in board.FindFootprintByReference(ra).Pads() if p.GetNumber() == pa)
+        path = [a.GetPosition()] + [pcbnew.VECTOR2I(MM(OX + x), MM(OY + y)) for x, y in pts]
+        if rb:
+            path.append(next(p for p in board.FindFootprintByReference(rb).Pads() if p.GetNumber() == pb).GetPosition())
+        for s, e in zip(path, path[1:]):
+            t = pcbnew.PCB_TRACK(board); t.SetStart(s); t.SetEnd(e); t.SetWidth(MM(w))
+            t.SetLayer(pcbnew.F_Cu if side == "F" else pcbnew.B_Cu); t.SetNet(a.GetNet()); t.SetLocked(True); board.Add(t)
     fan = list(FANOUT)
     axial = [(r, None, -1) for r in FANOUT_INWARD] + FANOUT_AXIAL
     for ref, only, sign in axial:
@@ -338,7 +356,8 @@ def main():
                 fan.append((ref, pad.GetNumber(), 0.0, sign * (half + 0.55) * (1 if d.y > 0 else -1)))
     fan += passive_gnd_vias(board, fan)
     for ref, num, dx, dy in fan:
-        pad = next(p for p in board.FindFootprintByReference(ref).Pads() if num in (p.GetNumber(), p.GetNetname()))
+        num, _, k = num.partition("#")           # "11#2": the third pad numbered 11 (shell tabs share a number)
+        pad = [p for p in board.FindFootprintByReference(ref).Pads() if num in (p.GetNumber(), p.GetNetname())][int(k or 0)]
         a = pad.GetPosition(); c = pcbnew.VECTOR2I(a.x + MM(dx), a.y + MM(dy))
         t = pcbnew.PCB_TRACK(board); t.SetStart(a); t.SetEnd(c); t.SetWidth(MM(0.15)); t.SetLayer(pcbnew.F_Cu)
         t.SetNet(pad.GetNet()); t.SetLocked(True); board.Add(t)

@@ -3284,7 +3284,7 @@
         (path "/dc76e9f0-c000-6e8f-919e-0c515c66dbba/7d44ccb4-e9da-36c2-4125-246b8de7e588"
           (reference "U5")
           (unit 1)))))
-  (global_label "SPI4_SCK"
+  (global_label "FLASH_IO2"
     (shape passive)
     (at 40.64 78.74 180)
     (fields_autoplaced)
@@ -3646,9 +3646,20 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (no_connect
-    (at 91.44 99.06)
-    (uuid "995a52ef-9c3c-cf59-6180-044128e72cac"))
+  (global_label "FLASH_CLK"
+    (shape passive)
+    (at 91.44 99.06 0)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify left))
+    (uuid "995a52ef-9c3c-cf59-6180-044128e72cac")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 91.44 99.06 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
   (global_label "BTN_1"
     (shape passive)
     (at 40.64 91.44 180)
@@ -3719,7 +3730,7 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (global_label "EPD_RST"
+  (global_label "FLASH_CS"
     (shape passive)
     (at 40.64 101.6 180)
     (fields_autoplaced)
@@ -3733,7 +3744,7 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (global_label "RADIO_CS"
+  (global_label "SPI4_SCK"
     (shape passive)
     (at 40.64 104.14 180)
     (fields_autoplaced)
@@ -3943,15 +3954,48 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (no_connect
-    (at 40.64 142.24)
-    (uuid "eaa9dc83-2468-9f8c-62b1-f4111eca8815"))
-  (no_connect
-    (at 40.64 144.78)
-    (uuid "a13e7bda-4ae9-3e55-0b34-f1bb28c9621c"))
-  (no_connect
-    (at 40.64 147.32)
-    (uuid "bcc93aa6-bacc-8419-8039-030410ba01e1"))
+  (global_label "EPD_RST"
+    (shape passive)
+    (at 40.64 142.24 180)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify right))
+    (uuid "eaa9dc83-2468-9f8c-62b1-f4111eca8815")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 40.64 142.24 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
+  (global_label "FLASH_IO0"
+    (shape passive)
+    (at 40.64 144.78 180)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify right))
+    (uuid "a13e7bda-4ae9-3e55-0b34-f1bb28c9621c")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 40.64 144.78 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
+  (global_label "FLASH_IO1"
+    (shape passive)
+    (at 40.64 147.32 180)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify right))
+    (uuid "bcc93aa6-bacc-8419-8039-030410ba01e1")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 40.64 147.32 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
   (global_label "VBAT_BKP"
     (shape passive)
     (at 58.42 43.18 90)
@@ -3966,7 +4010,7 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (global_label "RADIO_BOOT"
+  (global_label "FLASH_IO3"
     (shape passive)
     (at 40.64 149.86 180)
     (fields_autoplaced)
@@ -3980,12 +4024,34 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (no_connect
-    (at 40.64 152.4)
-    (uuid "8a9725b4-e7c7-3203-7d07-d16ac71aa236"))
-  (no_connect
-    (at 40.64 154.94)
-    (uuid "5d35d56c-f34d-1eab-fdde-1199bd62dded"))
+  (global_label "RADIO_BOOT"
+    (shape passive)
+    (at 40.64 152.4 180)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify right))
+    (uuid "8a9725b4-e7c7-3203-7d07-d16ac71aa236")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 40.64 152.4 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
+  (global_label "RADIO_CS"
+    (shape passive)
+    (at 40.64 154.94 180)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify right))
+    (uuid "5d35d56c-f34d-1eab-fdde-1199bd62dded")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 40.64 154.94 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
   (no_connect
     (at 91.44 152.4)
     (uuid "c8d65f73-95a8-00c3-623f-7991acdb82be"))

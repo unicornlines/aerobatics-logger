@@ -37,9 +37,16 @@ row(["C26", "C27"], 31.5, 34.0, 0, 2.0, 0)           # VCAP, near pins 48/73
 at("C28", 38.0, 16.5, 90); at("C29", 35.5, 16.5, 90); at("R20", 47.5, 16.5, 90)
 at("Y1", 28.0, 27.0, 90); at("C30", 28.0, 24.0, 0); at("C31", 28.0, 30.0, 0)
 at("Y2", 28.0, 20.5, 90); at("C32", 26.0, 19.0, 90); at("C33", 26.0, 22.0, 90)
-at("FB1", 40.5, 16.5, 90); at("C10", 43.0, 16.5, 90); at("C11", 45.0, 16.5, 90)
+at("FB1", 40.5, 16.5, 0); at("C10", 43.0, 16.5, 90); at("C11", 45.0, 16.5, 90)
 # backup supercap and charger
 at("C34", 53.5, 40.5, 0); row(["D20", "R21"], 47.5, 41.0, 0, 2.0, 0)
+
+# --- Radio (top edge, centred over the MCU; antenna overhangs the edge by 2.1 mm, Espressif's preferred placement)
+at("U11", 42.0, 6.2, 0)
+at("C80", 31.0, 6.5, 90); at("C81", 33.3, 6.0, 0)              # next to 3V3 (pin 3)
+at("R80", 33.3, 10.6, 0); at("C82", 33.3, 12.2, 0)             # EN: pulled low, RC
+row(["R81", "R82", "R83"], 50.5, 9.0, 0, 1.6, 0)                # strapping pull-ups (IO9, IO8, IO15)
+at("TP80", 51.0, 3.6, 0); at("TP81", 51.0, 5.6, 0)              # USB-Serial-JTAG pads
 
 # --- Display (top-left) and buttons (left edge) -------------------------------
 at("J61", 17.0, 5.5, 180)
@@ -96,9 +103,12 @@ at("J62", 40.0, 58.5, 90); at("R66", 40.0, 55.0, 0)
 # GND via on the far side from the crystal so the oscillator loop can't enclose them.
 FANOUT = [("U9", "C3", 0.55, 0.55), ("C30", "GND", 0.0, -0.95), ("C31", "GND", 0.0, 0.95),
           ("U6", "10", 0.95, 0.0),          # IMU OCSB tie-high, between two escapes
-          ("U6", "7", 0.0, 0.9)]            # IMU GND pair 6/7 (joined by the pour)
+          ("U6", "7", 0.0, 0.9),            # IMU GND pair 6/7 (joined by the pour)
+          ("U7", "3", -0.6, 0.7)]           # baro GND corner pin, fenced in by its own +3V3 feed
 # GND pins of these packages get a locked stub inwards to a via under the body before autorouting.
 FANOUT_INWARD = ["U5"]
+# Single pins the router tends to box in: (ref, pad, +1 outwards / -1 inwards under the body)
+FANOUT_AXIAL = [("U1", "2", +1), ("U10", "24", -1)]
 # Hand routes, locked: (ref, pad, ref, pad, layer, width mm). The supercap mid-point link is a straight bar.
 PREROUTE = [("C3", "2", "C4", "1", "B", 0.6)]
 
@@ -163,9 +173,12 @@ REF_POS = {"U5": (42.0, 27.0)}            # reference centred in the MCU outline
 LABELS = [
     ("UP", 7.2, 22.0, 0, 1.0, "F"), ("OK", 7.2, 29.0, 0, 1.0, "F"), ("DN", 7.2, 36.0, 0, 1.0, "F"),
     ("SWD", 59.5, 42.3, 0, 0.9, "F"), ("CAM", 36.6, 58.5, 0, 0.9, "F"),
-    ("ANT", 4.0, 49.6, 0, 0.9, "F"), ("microSD", 60.0, 21.2, 0, 0.9, "F"), ("E-PAPER", 31.0, 4.5, 0, 0.9, "F"),
+    ("ANT", 4.0, 49.6, 0, 0.9, "F"), ("microSD", 60.0, 21.2, 0, 0.9, "F"), ("E-PAPER", 29.2, 2.2, 0, 0.9, "F"), ("D-", 51.0, 1.6, 0, 0.8, "F"), ("D+", 51.0, 7.55, 0, 0.8, "F"),
+    ("UNICORNLINES\u00ae", 17.0, 35.6, 0, 1.2, "F"), ("Never Stop Dreaming", 17.0, 37.6, 0, 0.9, "F", True),
     ("AEROBATICS LOGGER", 44.0, 27.0, 0, 2.0, "B"), ("rev A  2026-11", 44.0, 30.5, 0, 1.2, "B"),
+    ("PER PERFECTIONEM AD FELICITATEM", 44.0, 34.5, 0, 1.1, "B", True),
 ]
+LOGO = ("Unicornlines_Logo", 17.0, 27.5)   # tools/mklogo.py, from art/unicornlines-logo.svg
 IMU_AXES = (49.0, 51.5)   # origin of the IMU axis arrows (BMI563, pin 1 top-left; check vs final datasheet)
 
 
@@ -180,12 +193,13 @@ def tidy_refs(f, ref):
         t.SetLayer(pcbnew.F_Fab if f.GetLayer() == pcbnew.F_Cu else pcbnew.B_Fab)
 
 
-def text(board, s, x, y, rot, size, layer):
+def text(board, s, x, y, rot, size, layer, italic=False):
     t = pcbnew.PCB_TEXT(board)
     t.SetText(s); t.SetPosition(pcbnew.VECTOR2I(MM(OX + x), MM(OY + y)))
     t.SetTextSize(pcbnew.VECTOR2I(MM(size), MM(size))); t.SetTextThickness(MM(size * 0.15))
     t.SetTextAngle(pcbnew.EDA_ANGLE(rot, pcbnew.DEGREES_T))
     t.SetLayer(pcbnew.F_SilkS if layer == "F" else pcbnew.B_SilkS)
+    t.SetItalic(italic)
     if layer == "B":
         t.SetMirrored(True)
     board.Add(t)
@@ -307,17 +321,19 @@ def main():
         t = pcbnew.PCB_TRACK(board); t.SetStart(a.GetPosition()); t.SetEnd(b.GetPosition()); t.SetWidth(MM(w))
         t.SetLayer(pcbnew.F_Cu if side == "F" else pcbnew.B_Cu); t.SetNet(a.GetNet()); t.SetLocked(True); board.Add(t)
     fan = list(FANOUT)
-    for ref in FANOUT_INWARD:
+    axial = [(r, None, -1) for r in FANOUT_INWARD] + FANOUT_AXIAL
+    for ref, only, sign in axial:
         f = board.FindFootprintByReference(ref); fc = f.GetPosition()
         for pad in f.Pads():
-            if pad.GetNetname() != "GND":
+            if pad.GetNetname() != "GND" or (only and pad.GetNumber() != only):
                 continue
             d = pad.GetPosition() - fc
             half = max(pad.GetSize().x, pad.GetSize().y) / 2e6
-            if abs(d.x) > abs(d.y):
-                fan.append((ref, pad.GetNumber(), -(half + 0.55) * (1 if d.x > 0 else -1), 0.0))
+            bb = pad.GetBoundingBox()
+            if bb.GetWidth() > bb.GetHeight():          # along the pad's long axis
+                fan.append((ref, pad.GetNumber(), sign * (half + 0.55) * (1 if d.x > 0 else -1), 0.0))
             else:
-                fan.append((ref, pad.GetNumber(), 0.0, -(half + 0.55) * (1 if d.y > 0 else -1)))
+                fan.append((ref, pad.GetNumber(), 0.0, sign * (half + 0.55) * (1 if d.y > 0 else -1)))
     fan += passive_gnd_vias(board, fan)
     for ref, num, dx, dy in fan:
         pad = next(p for p in board.FindFootprintByReference(ref).Pads() if num in (p.GetNumber(), p.GetNetname()))
@@ -326,6 +342,8 @@ def main():
         t.SetNet(pad.GetNet()); t.SetLocked(True); board.Add(t)
         v = pcbnew.PCB_VIA(board); v.SetPosition(c); v.SetWidth(MM(0.5)); v.SetDrill(MM(0.25))
         v.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu); v.SetNet(pad.GetNet()); v.SetLocked(True); board.Add(v)   # GND or +3V3 plane
+    logo = load("logger:" + LOGO[0]); logo.SetReference("LOGO1"); logo.Reference().SetVisible(False)
+    logo.SetPosition(pcbnew.VECTOR2I(MM(OX + LOGO[1]), MM(OY + LOGO[2]))); board.Add(logo)
     outline(board)
     for lb in LABELS:
         text(board, *lb)

@@ -139,6 +139,32 @@
       (project "logger"
         (path "/dc76e9f0-c000-6e8f-919e-0c515c66dbba"
           (page "6")))))
+  (sheet
+    (at 270 120)
+    (size 90 40)
+    (fields_autoplaced)
+    (stroke
+      (width 0.1524)
+      (type solid))
+    (fill
+      (color 0 0 0 0))
+    (uuid "c680daf2-60cc-a95f-0ff3-d374f0c64ee6")
+    (property "Sheetname" "Radio: ESP32-C6 (Wi-Fi 6, BLE 5)"
+      (at 270 119.3 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (justify left bottom)))
+    (property "Sheetfile" "radio.kicad_sch"
+      (at 270 160.6 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (justify left top)))
+    (instances
+      (project "logger"
+        (path "/dc76e9f0-c000-6e8f-919e-0c515c66dbba"
+          (page "7")))))
   (sheet_instances
     (path "/"
       (page "1"))))

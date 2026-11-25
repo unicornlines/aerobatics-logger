@@ -1,7 +1,8 @@
 """Build the project symbol library ../kicad/logger.kicad_sym for parts KiCad doesn't ship.
 
 Pin tables come from the manufacturers' datasheets; see the SOURCE lines.
-Each pin: (number, name, type, side) with side 'L' or 'R'.
+Each pin: (number, name, type, side) with side 'L' or 'R'. Side 'L+'/'R+' stacks the pin, hidden, on the
+row of the pin before it (for the many GND and NC pads of modules).
 """
 import os
 from sexpr import Sym, dump
@@ -39,6 +40,22 @@ PARTS = {
         ("2", "RSVD", "no_connect", "R"), ("5", "RSVD", "no_connect", "R"), ("6", "RSVD", "no_connect", "R"),
         ("7", "RSVD", "no_connect", "R"), ("15", "RSVD", "no_connect", "R"), ("16", "RSVD", "no_connect", "R"),
         ("17", "RSVD", "no_connect", "R"), ("18", "RSVD", "no_connect", "R"), ("19", "RSVD", "no_connect", "R")]),
+    # SOURCE: Espressif ESP32-C6-MINI-1/MINI-1U datasheet v1.5, table 3-1 (pin definitions) and section 4 (strapping).
+    "ESP32-C6-MINI-1": dict(ref="U", fp="logger:ESP32-C6-MINI-1", desc="Wi-Fi 6 + BLE 5 module, PCB antenna", pins=[
+        ("3", "3V3", "power_in", "L"),
+        ("8", "EN", "input", "L"),
+        ("23", "IO9/BOOT", "bidirectional", "L"), ("22", "IO8", "bidirectional", "L"), ("20", "IO15", "bidirectional", "L"),
+        ("31", "TXD0", "bidirectional", "L"), ("30", "RXD0", "bidirectional", "L"),
+        ("18", "IO13/USB_D-", "bidirectional", "L"), ("17", "IO12/USB_D+", "bidirectional", "L"),
+        ("1", "GND", "power_in", "L")] + [(n, "GND", "passive", "L+") for n in
+        ["2", "11", "14"] + [str(i) for i in range(36, 54)]] + [
+        ("15", "IO6/FSPICLK", "bidirectional", "R"), ("16", "IO7/FSPID", "bidirectional", "R"),
+        ("5", "IO2/FSPIQ", "bidirectional", "R"), ("24", "IO18", "bidirectional", "R"), ("25", "IO19", "bidirectional", "R"),
+        ("9", "IO4/MTMS", "bidirectional", "R"), ("10", "IO5/MTDI", "bidirectional", "R"),
+        ("12", "IO0", "bidirectional", "R"), ("13", "IO1", "bidirectional", "R"), ("6", "IO3", "bidirectional", "R"),
+        ("19", "IO14", "bidirectional", "R"), ("26", "IO20", "bidirectional", "R"), ("27", "IO21", "bidirectional", "R"),
+        ("28", "IO22", "bidirectional", "R"), ("29", "IO23", "bidirectional", "R"),
+        ("4", "NC", "no_connect", "R")] + [(n, "NC", "no_connect", "R+") for n in ["7", "21", "32", "33", "34", "35"]]),
 }
 
 LOADED = {}
@@ -54,9 +71,9 @@ def eff(hide=False, justify=None):
 
 
 def build(name, d):
-    left = [p for p in d["pins"] if p[3] == "L"]
-    right = [p for p in d["pins"] if p[3] == "R"]
-    rows = max(len(left), len(right))
+    left = [p for p in d["pins"] if p[3].startswith("L")]
+    right = [p for p in d["pins"] if p[3].startswith("R")]
+    rows = max(sum(p[3] == "L" for p in left), sum(p[3] == "R" for p in right))
     half_w = 10.16
     top = (rows + 1) * 2.54 / 2
     top = round(top / 2.54) * 2.54
@@ -67,12 +84,18 @@ def build(name, d):
              [Sym("fill"), [Sym("type"), Sym("background")]]]]
     pins = [Sym("symbol"), f"{name}_1_1"]
     for side, lst in (("L", left), ("R", right)):
-        for i, (num, pname, ptype, _) in enumerate(lst):
-            y = top - 2.54 * (i + 1)
+        i = 0
+        for num, pname, ptype, sd in lst:
+            stacked = sd.endswith("+")
+            if not stacked:
+                i += 1
+            y = top - 2.54 * i
             x = -half_w - 2.54 if side == "L" else half_w + 2.54
             ang = 0 if side == "L" else 180
-            pins.append([Sym("pin"), Sym(ptype), Sym("line"), [Sym("at"), x, y, ang], [Sym("length"), 2.54],
-                         [Sym("name"), pname, eff()], [Sym("number"), num, eff()]])
+            pin = [Sym("pin"), Sym(ptype), Sym("line"), [Sym("at"), x, y, ang], [Sym("length"), 2.54]]
+            if stacked:
+                pin.append(Sym("hide"))
+            pins.append(pin + [[Sym("name"), pname, eff()], [Sym("number"), num, eff()]])
     return [Sym("symbol"), name, [Sym("in_bom"), Sym("yes")], [Sym("on_board"), Sym("yes")],
             [Sym("property"), "Reference", d["ref"], [Sym("at"), -half_w, top + 1.27, 0], eff(justify="left")],
             [Sym("property"), "Value", name, [Sym("at"), half_w, top + 1.27, 0], eff(justify="right")],

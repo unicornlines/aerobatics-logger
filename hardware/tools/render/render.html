@@ -92,10 +92,10 @@ for (const p of S.standins) {
   const g = new THREE.Group();
   const mat = new THREE.MeshStandardMaterial({ color: p.color, roughness: p.color === "#1b1b1d" ? 0.6 : 0.35, metalness: p.color === "#1b1b1d" ? 0 : 0.8 });
   const body = new THREE.Mesh(new THREE.BoxGeometry(p.w, p.h, p.l), mat);
-  body.position.y = p.h / 2; body.castShadow = body.receiveShadow = true; g.add(body);
-  if (p.w > 5) {
+  body.position.set(p.dx || 0, (p.dz || 0) + p.h / 2, p.dy || 0); body.castShadow = body.receiveShadow = true; g.add(body);
+  if (p.w > 5 && p.label) {
     const lab = new THREE.Mesh(new THREE.PlaneGeometry(p.w * 0.8, p.l * 0.8), new THREE.MeshBasicMaterial({ map: label(p.label, p.w, p.l), transparent: true }));
-    lab.rotation.x = -Math.PI / 2; lab.position.y = p.h + 0.01; g.add(lab);
+    lab.rotation.x = -Math.PI / 2; lab.position.set(p.dx || 0, (p.dz || 0) + p.h + 0.01, p.dy || 0); g.add(lab);
   }
   g.position.set(p.x, p.bottom ? 0 : S.thickness, p.y);
   if (p.bottom) g.rotation.x = Math.PI;

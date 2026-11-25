@@ -16,6 +16,10 @@ STANDINS = {
     "U7": (2.0, 2.0, 0.75, "#d7d9dc", "BMP390"),               # metal lid with vent hole
     "U9": (1.28, 1.28, 0.6, "#1b1b1d", "BMM350"),
     "Y2": (2.0, 1.2, 0.6, "#cfd2d6", "32.768 kHz"),
+    # radio module: its own 0.8 mm PCB (antenna end bare, over the board edge) with the shield can on it.
+    # Several boxes per part: (w, l, h, colour, label, dx, dy, dz) relative to the footprint origin.
+    "U11": [(13.2, 16.6, 0.8, "#1b1b1d", "", 0.0, 0.0, 0.0),
+            (12.4, 10.6, 1.6, "#c9ccd0", "ESP32-C6", 0.0, 2.75, 0.8)],
 }
 
 
@@ -27,11 +31,12 @@ def main():
         ref = f.GetReference()
         if ref not in STANDINS:
             continue
-        w, l, h, col, label = STANDINS[ref]
+        boxes = STANDINS[ref] if isinstance(STANDINS[ref], list) else [STANDINS[ref] + (0.0, 0.0, 0.0)]
         p = f.GetPosition()
-        parts.append(dict(ref=ref, x=pcbnew.ToMM(p.x) - layout.OX, y=pcbnew.ToMM(p.y) - layout.OY,
-                          rot=f.GetOrientationDegrees(), w=w, l=l, h=h, color=col, label=label,
-                          bottom=f.GetLayer() == pcbnew.B_Cu))
+        for w, l, h, col, label, dx, dy, dz in boxes:
+            parts.append(dict(ref=ref, x=pcbnew.ToMM(p.x) - layout.OX, y=pcbnew.ToMM(p.y) - layout.OY,
+                              rot=f.GetOrientationDegrees(), w=w, l=l, h=h, color=col, label=label,
+                              dx=dx, dy=dy, dz=dz, bottom=f.GetLayer() == pcbnew.B_Cu))
     scene = dict(width=layout.W, height=layout.H, thickness=1.6, corner=2.0,
                  holes=[dict(x=x, y=y, d=3.2) for x, y in layout.HOLES], standins=parts)
     with open(out, "w") as fh:

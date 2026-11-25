@@ -109,8 +109,11 @@ MCU_NETS = {
     "24": "GNSS_RXD", "25": "GNSS_TXD", "15": "GNSS_RESET_N",
     # microSD on SDMMC1
     "65": "SD_D0", "66": "SD_D1", "78": "SD_D2", "79": "SD_D3", "80": "SD_CLK", "83": "SD_CMD", "84": "SD_DET",
-    # e-paper display on SPI4
-    "1": "EPD_SCK", "5": "EPD_MOSI", "3": "EPD_CS", "2": "EPD_DC", "4": "EPD_BUSY", "41": "EPD_RST",
+    # SPI4: e-paper display and the radio share SCK/MOSI, each with its own CS; MISO (PE13) is the radio's only
+    "1": "SPI4_SCK", "5": "SPI4_MOSI", "3": "EPD_CS", "2": "EPD_DC", "4": "EPD_BUSY", "41": "EPD_RST",
+    "43": "RADIO_MISO", "42": "RADIO_CS", "44": "RADIO_IRQ",
+    # radio control and its UART0 (USART3: bootloader, console); names from the module's side
+    "45": "RADIO_EN", "60": "RADIO_BOOT", "55": "RADIO_RXD", "56": "RADIO_TXD",
     # buttons, power fail, camera sync, LED
     "37": "BTN_1", "38": "BTN_2", "39": "BTN_3", "34": "PWR_FAIL_N", "35": "CAM_SYNC", "40": "LED_STATUS",
     # USB and debug
@@ -216,7 +219,7 @@ IO = dict(file="io.kicad_sch", title="IO: microSD, e-paper display, buttons, cam
          fp="Connector_FFC-FPC:Hirose_FH12-24S-0.5SH_1x24-1MP_P0.50mm_Horizontal",
          nets={"1": "NC", "2": "EPD_GDR", "3": "EPD_RESE", "4": "NC", "5": "EPD_VSH2", "6": "NC", "7": "NC",
                "8": "GND", "9": "EPD_BUSY", "10": "EPD_RST", "11": "EPD_DC", "12": "EPD_CS",
-               "13": "EPD_SCK", "14": "EPD_MOSI", "15": "+3V3", "16": "+3V3", "17": "GND",
+               "13": "SPI4_SCK", "14": "SPI4_MOSI", "15": "+3V3", "16": "+3V3", "17": "GND",
                "18": "EPD_VDD", "19": "NC", "20": "EPD_VSH1", "21": "EPD_VGH", "22": "EPD_VSL",
                "23": "EPD_VGL", "24": "EPD_VCOM"}),
     C("C62", "1u", "+3V3", "GND"),
@@ -253,4 +256,30 @@ IO = dict(file="io.kicad_sch", title="IO: microSD, e-paper display, buttons, cam
     "Buttons use the MCU's internal pull-ups; debounce in firmware.",
 ])
 
-SHEETS = [POWER, MCU, SENSORS, GNSS, IO]
+# ---------------------------------------------------------------- radio
+RADIO = dict(file="radio.kicad_sch", title="Radio: ESP32-C6 (Wi-Fi 6, BLE 5)", parts=[
+    dict(ref="U11", lib="logger:ESP32-C6-MINI-1", value="ESP32-C6-MINI-1-N4", fp="logger:ESP32-C6-MINI-1",
+         nets={"3": "+3V3", "8": "RADIO_EN", "23": "RADIO_BOOT", "22": "RADIO_IO8", "20": "RADIO_IO15",
+               "31": "RADIO_TXD", "30": "RADIO_RXD", "18": "RADIO_USB_DM", "17": "RADIO_USB_DP",
+               "15": "SPI4_SCK", "16": "SPI4_MOSI", "5": "RADIO_MISO", "24": "RADIO_CS", "25": "RADIO_IRQ",
+               "9": "NC", "10": "NC", "12": "NC", "13": "NC", "6": "NC", "19": "NC",
+               "26": "NC", "27": "NC", "28": "NC", "29": "NC",
+               **{n: "GND" for n in ["1", "2", "11", "14"] + [str(i) for i in range(36, 54)]},
+               **{n: "NC" for n in ["4", "7", "21", "32", "33", "34", "35"]}}),
+    C("C80", "22u", "+3V3", "GND", fp=C0805), C("C81", "100n", "+3V3", "GND"),
+    R("R80", "10k", "RADIO_EN", "GND"), C("C82", "100n", "RADIO_EN", "GND"),
+    R("R81", "10k", "RADIO_BOOT", "+3V3"), R("R82", "10k", "RADIO_IO8", "+3V3"), R("R83", "10k", "RADIO_IO15", "+3V3"),
+    dict(ref="TP80", lib="Connector:TestPoint", value="USB_D-", fp="TestPoint:TestPoint_Pad_D1.0mm",
+         nets={"1": "RADIO_USB_DM"}),
+    dict(ref="TP81", lib="Connector:TestPoint", value="USB_D+", fp="TestPoint:TestPoint_Pad_D1.0mm",
+         nets={"1": "RADIO_USB_DP"}),
+], notes=[
+    "ESP32-C6-MINI-1 pin table: Espressif datasheet v1.5, table 3-1. Footprint from Espressif's KiCad library.",
+    "EN is pulled low: the radio stays off until the MCU turns it on, and firmware keeps it off while logging.",
+    "Strapping: IO9 high = boot from flash; the MCU pulls RADIO_BOOT low with EN to enter the UART bootloader.",
+    "IO8 must be high for download mode; IO15 must not float. Data: SPI slave on SPI4 (up to 40 MHz).",
+    "Peak TX current about 0.38 A from +3V3. Antenna over the board edge, no copper under it; case wall there must be plastic.",
+    "USB_D-/D+ test pads: USB-Serial-JTAG for bench debugging of the radio firmware.",
+])
+
+SHEETS = [POWER, MCU, SENSORS, GNSS, IO, RADIO]

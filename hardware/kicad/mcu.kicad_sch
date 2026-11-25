@@ -3284,7 +3284,7 @@
         (path "/dc76e9f0-c000-6e8f-919e-0c515c66dbba/7d44ccb4-e9da-36c2-4125-246b8de7e588"
           (reference "U5")
           (unit 1)))))
-  (global_label "EPD_SCK"
+  (global_label "SPI4_SCK"
     (shape passive)
     (at 40.64 78.74 180)
     (fields_autoplaced)
@@ -3733,18 +3733,62 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (no_connect
-    (at 40.64 104.14)
-    (uuid "70792b52-cb56-be92-13bb-c36b2eeb7134"))
-  (no_connect
-    (at 40.64 106.68)
-    (uuid "963a8cbf-af6b-2290-eaa2-8c887fa018cf"))
-  (no_connect
-    (at 40.64 109.22)
-    (uuid "4e4a6ada-fbb2-9923-3c61-ea0ac92ba36d"))
-  (no_connect
-    (at 40.64 111.76)
-    (uuid "b55c61ea-e038-cd06-c23f-4a3fc2b476ed"))
+  (global_label "RADIO_CS"
+    (shape passive)
+    (at 40.64 104.14 180)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify right))
+    (uuid "70792b52-cb56-be92-13bb-c36b2eeb7134")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 40.64 104.14 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
+  (global_label "RADIO_MISO"
+    (shape passive)
+    (at 40.64 106.68 180)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify right))
+    (uuid "963a8cbf-af6b-2290-eaa2-8c887fa018cf")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 40.64 106.68 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
+  (global_label "RADIO_IRQ"
+    (shape passive)
+    (at 40.64 109.22 180)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify right))
+    (uuid "4e4a6ada-fbb2-9923-3c61-ea0ac92ba36d")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 40.64 109.22 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
+  (global_label "RADIO_EN"
+    (shape passive)
+    (at 40.64 111.76 180)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify right))
+    (uuid "b55c61ea-e038-cd06-c23f-4a3fc2b476ed")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 40.64 111.76 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
   (global_label "BARO_INT"
     (shape passive)
     (at 91.44 119.38 0)
@@ -3787,7 +3831,7 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (global_label "EPD_MOSI"
+  (global_label "SPI4_MOSI"
     (shape passive)
     (at 40.64 88.9 180)
     (fields_autoplaced)
@@ -3871,12 +3915,34 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (no_connect
-    (at 40.64 137.16)
-    (uuid "073d8370-df0f-209b-fec7-7ffd8bd1eb1a"))
-  (no_connect
-    (at 40.64 139.7)
-    (uuid "8604008b-823e-1085-d871-177a7f1c2711"))
+  (global_label "RADIO_RXD"
+    (shape passive)
+    (at 40.64 137.16 180)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify right))
+    (uuid "073d8370-df0f-209b-fec7-7ffd8bd1eb1a")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 40.64 137.16 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
+  (global_label "RADIO_TXD"
+    (shape passive)
+    (at 40.64 139.7 180)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify right))
+    (uuid "8604008b-823e-1085-d871-177a7f1c2711")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 40.64 139.7 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
   (no_connect
     (at 40.64 142.24)
     (uuid "eaa9dc83-2468-9f8c-62b1-f4111eca8815"))
@@ -3900,9 +3966,20 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (no_connect
-    (at 40.64 149.86)
-    (uuid "e952ab46-285b-8871-98a2-014bed73bb4e"))
+  (global_label "RADIO_BOOT"
+    (shape passive)
+    (at 40.64 149.86 180)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify right))
+    (uuid "e952ab46-285b-8871-98a2-014bed73bb4e")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 40.64 149.86 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
   (no_connect
     (at 40.64 152.4)
     (uuid "8a9725b4-e7c7-3203-7d07-d16ac71aa236"))

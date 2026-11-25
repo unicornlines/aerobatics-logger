@@ -333,6 +333,49 @@ def drc():
     return open(rpt).read()
 
 
+def isolated_pads(board, net="GND"):
+    """Pads of `net` whose copper (fill pieces, tracks, vias) never reaches the main body of the net.
+    DRC reports such a piece as 'Zone - Zone' without a location, so find it by our own union-find."""
+    par = {}
+    def root(a):
+        while par.setdefault(a, a) != a: a = par[a]
+        return a
+    def join(a, b): par[root(a)] = root(b)
+    frags = []
+    for z in board.Zones():
+        if z.GetNetname() != net or z.GetIsRuleArea(): continue
+        for L in z.GetLayerSet().Seq():
+            fp = z.GetFilledPolysList(L)
+            for i in range(fp.OutlineCount()):
+                one = pcbnew.SHAPE_POLY_SET(); one.AddOutline(fp.Outline(i))
+                for h in range(fp.HoleCount(i)): one.AddHole(fp.Hole(i, h))
+                frags.append((("Z", len(frags)), L, one)); root(frags[-1][0])
+    pads = [(("P", i), p) for i, p in enumerate(p for f in board.GetFootprints() for p in f.Pads() if p.GetNetname() == net)]
+    trs = [(("T", i), t) for i, t in enumerate(t for t in board.GetTracks() if t.GetNetname() == net)]
+    for k, _ in pads + trs: root(k)
+    for k, t in trs:
+        via = t.GetClass() == "PCB_VIA"
+        for pt in ([t.GetPosition()] if via else [t.GetStart(), t.GetEnd()]):
+            for kf, L, one in frags:
+                if (via or L == t.GetLayer()) and one.Collide(pt, 1000): join(k, kf)
+            for kp, p in pads:
+                if (via or p.IsOnLayer(t.GetLayer())) and p.HitTest(pt): join(k, kp)
+            for k2, t2 in trs:
+                if k2 != k and (via or t2.GetClass() == "PCB_VIA" or t2.GetLayer() == t.GetLayer()) and t2.HitTest(pt, 0): join(k, k2)
+    for kp, p in pads:                     # thermal spokes: the fill reaches to within the gap of the pad edge
+        for kf, L, one in frags:
+            if p.IsOnLayer(L) and one.Collide(p.GetPosition(), max(p.GetSize().x, p.GetSize().y) // 2 + MM(0.6)): join(kp, kf)
+    groups = {}
+    for k in par: groups.setdefault(root(k), []).append(k)
+    main = max(groups.values(), key=len)
+    out = []
+    for g in groups.values():
+        has_zone = any(k[0] == "Z" for k in g)
+        if g is not main and has_zone:
+            out += [p for kp, p in pads if kp in g and not p.HasHole()]
+    return out
+
+
 def repair(txt):
     """Second pass on what DRC still reports: GND pads left off the plane get a forced fanout, two pads of
     one net still apart get a straight track on the first layer where it fits, starved thermals go solid."""
@@ -341,11 +384,15 @@ def repair(txt):
     cu = Copper(board, [t for t in items if t.GetClass() == "PCB_TRACK"], [t for t in items if t.GetClass() == "PCB_VIA"])
     pads = {(p.GetParent().GetReference(), p.GetNumber()): p for p in cu.pads}
     pad_re = r"(?i:pad) (\S+) \[([^\]]+)\] of (\S+)"
+    fanned = set()
     for block in re.split(r"\n(?=\[)", txt):
         found = [(r, n, net) for n, net, r in re.findall(pad_re, block)]
         if block.startswith("[starved_thermal]"):
             for r, n, net in found:
                 pads[(r, n)].SetZoneConnection(pcbnew.ZONE_CONNECTION_FULL); print("  solid GND connection:", r, n)
+        elif block.startswith("[unconnected_items]") and not found and "Zone [GND]" in block and "Track [GND]" not in block:
+            for p in isolated_pads(board):
+                print("  isolated GND piece at", p.GetParent().GetReference(), p.GetNumber()); fanout_pad(cu, p)
         elif block.startswith("[unconnected_items]") and not found:
             for x, y, L in re.findall(r"@\(([\d.]+) mm, ([\d.]+) mm\): Track \[GND\] on ([FB]\.Cu)", block):
                 maze_fanout(cu, pcbnew.VECTOR2I(MM(float(x)), MM(float(y))), {"F.Cu": pcbnew.F_Cu, "B.Cu": pcbnew.B_Cu}[L], label=f"GND stub at {x},{y}")
@@ -362,7 +409,9 @@ def repair(txt):
             else:
                 for r, n, net in found:
                     if net in ("GND", "+3V3"):
-                        fanout_pad(cu, pads[(r, n)])
+                        at = (pads[(r, n)].GetPosition().x, pads[(r, n)].GetPosition().y, net)
+                        if at not in fanned:       # stacked pads (USB-C A12/B1) need one fanout, not two
+                            fanned.add(at); fanout_pad(cu, pads[(r, n)])
                     else:
                         a = pads[(r, n)]
                         others = sorted((q for q in cu.pads if q.GetNetname() == net and q is not a),

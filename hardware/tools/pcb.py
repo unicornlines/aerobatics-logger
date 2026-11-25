@@ -18,7 +18,7 @@ W, H = 88.0, 62.0
 MM = pcbnew.FromMM
 
 # Extra pads the footprint has but the symbol doesn't.
-EXTRA_PADS = {("J60", "11"): "GND", ("J61", "MP"): "GND"}
+EXTRA_PADS = {("J60", "11"): "GND", ("J61", "MP"): "GND", ("J63", "MP"): "GND"}
 
 # ref: (x, y, rotation, side)  -- board coordinates in mm from the top-left corner; side "F" or "B"
 P = {}
@@ -49,24 +49,25 @@ row(["C90", "C91", "R90", "R91", "R92"], 57.0, 29.0, 1.6, 0, 90)
 # copper keepout (all layers), the second of the two placements Espressif allows (the first overhangs the edge).
 at("U11", 42.0, 8.3, 0)
 row(["C80", "C81"], 33.0, 8.0, 0, 2.0, 0)                       # 3V3 bulk + HF, next to pin 3
-row(["R80", "C82"], 33.0, 12.0, 0, 1.6, 0)                       # EN: pulled low, RC
+row(["R84", "R80", "C82"], 31.4, 12.0, 0, 1.6, 0)                # EN: 1k from the MCU, pulled low, RC
 row(["R81", "R82", "R83"], 50.5, 11.5, 0, 1.6, 0)                # strapping pull-ups (IO9, IO8, IO15)
-at("TP80", 50.5, 5.4, 0); at("TP81", 50.5, 7.6, 0)              # USB-Serial-JTAG pads
+at("TP80", 50.5, 4.6, 0); at("TP81", 50.5, 6.8, 0)              # USB-Serial-JTAG pads
+at("R85", 50.5, 10.0, 0)                                        # U0TXD series resistor, next to pin 31
 
 # --- Display (top-left) and buttons (left edge) -------------------------------
 at("J61", 17.0, 5.5, 180)
 row(["C63", "C64", "C65", "C66", "C67", "C68", "C69"], 8.5, 10.5, 2.0, 0, 90)
 at("C62", 23.0, 10.5, 90); at("C70", 25.0, 10.5, 90)
-at("L60", 9.5, 14.3, 0); at("Q60", 13.5, 14.3, 0); at("R67", 16.5, 14.3, 90); at("C71", 18.5, 14.3, 90)
+at("L60", 9.2, 14.3, 0); at("Q60", 13.6, 14.3, 0); at("R67", 16.5, 14.3, 90); at("C71", 18.5, 14.3, 90)
 row(["D60", "D61", "D62"], 10.5, 18.2, 5.0, 0, 0)                 # booster diodes side by side
 row(["SW1", "SW2", "SW3"], 3.6, 22.0, 0, 7.0, 90)
 
 # --- GNSS (bottom-left) ---------------------------------------------------------
 at("U10", 16.0, 50.0, 0)
 at("J50", 4.0, 46.0, 0)                               # U.FL; pigtail to the SMA bulkhead in the case wall
-at("R50", 7.5, 39.5, 0); at("L50", 7.5, 46.0, 0); at("C52", 7.5, 41.5, 0)
+at("R50", 7.5, 39.5, 0); at("L50", 7.5, 46.0, 0); at("C52", 7.5, 43.5, 0); at("FB51", 7.5, 41.5, 0)
 at("FB2", 25.0, 44.0, 90); at("C50", 25.0, 48.0, 90); at("C51", 25.0, 51.0, 90)
-at("TP50", 25.0, 55.5, 0)
+at("TP50", 25.0, 53.0, 0)
 
 # --- Sensors (below the MCU, near the board centre) ---------------------------
 at("U6", 44.0, 49.0, 0)                               # IMU, close to the centre
@@ -102,13 +103,16 @@ at("U4", 66.0, 36.0, 0); row(["R10", "R11", "R12"], 66.0, 40.0, 0, 1.6, 0); row(
 at("J20", 59.5, 44.0, 0)
 at("D21", 49.0, 58.5, 0); at("R22", 49.0, 56.5, 0)
 at("J62", 40.0, 58.5, 90); at("R66", 40.0, 55.0, 0)
+row(["R68", "R69", "C72"], 43.5, 55.0, 1.6, 0, 90)                # marker input: series, pull-up, filter
+at("J63", 30.3, 58.6, 0)                                         # I2C expansion (Qwiic), cable exits the bottom edge
+row(["F1", "R70", "R71"], 24.8, 56.6, 0, 1.6, 0)                  # expansion PTC and pull-ups, column left of J63
 
 # Hand fanouts, placed before autorouting and locked: (ref, pad or net, dx, dy) -> GND via at pad + (dx, dy) mm.
 # U9 C3 is a corner ball the router boxes in with the VDDIO escape; the crystal load caps get their own
 # GND via on the far side from the crystal so the oscillator loop can't enclose them.
 FANOUT = [("U9", "C3", 0.55, 0.55), ("C30", "GND", 0.0, -0.95), ("C31", "GND", 0.0, 0.95),
           ("U6", "6", 0.0, 0.9),            # IMU GND, straight down between VDDIO and a reserved pin
-          ("U7", "3", -0.6, 0.7),           # baro GND corner pin, fenced in by its own +3V3 feed
+          ("U7", "9", 0.75, 0.0),           # baro GND (right side, middle pad), straight out to a via
           ("U11", "51", 0.6, 0.75),
           ("J1", "A12", -1.0, -0.6),        # USB-C GND pair A12/B1, boxed in by VBUS and the shield tab
           ("J60", "11#2", -1.1, 0.0)]       # microSD shell tab nearest the MCU         # radio GND corner pad, between the strap resistors and the MCU decoupling row
@@ -156,8 +160,16 @@ def edge_arc(board, cx, cy, sx, sy, angle):
     board.Add(s)
 
 
+# Cut-out under the radio antenna (Espressif guidelines 1.4.7: no board material under or beside the antenna).
+# The module still sits flush with the top edge; the notch is hidden under it.
+ANT_NOTCH = (35.4, 48.6, 5.0, 0.5)      # x from, x to, depth, inner corner radius
+
+
 def outline(board, r=2.0):
-    edge_line(board, r, 0, W - r, 0); edge_line(board, W, r, W, H - r)
+    x0, x1, d, rr = ANT_NOTCH
+    edge_line(board, r, 0, x0, 0); edge_line(board, x0, 0, x0, d - rr); edge_arc(board, x0 + rr, d - rr, x0, d - rr, -90)
+    edge_line(board, x0 + rr, d, x1 - rr, d); edge_arc(board, x1 - rr, d - rr, x1 - rr, d, -90); edge_line(board, x1, d - rr, x1, 0)
+    edge_line(board, x1, 0, W - r, 0); edge_line(board, W, r, W, H - r)
     edge_line(board, W - r, H, r, H); edge_line(board, 0, H - r, 0, r)
     edge_arc(board, W - r, r, W - r, 0, 90); edge_arc(board, W - r, H - r, W, H - r, 90)
     edge_arc(board, r, H - r, r, H, 90); edge_arc(board, r, r, 0, r, 90)
@@ -178,20 +190,20 @@ def zone(board, net, layer, inset=0.3):
 
 
 SILK_REF_PREFIXES = ("U", "J")          # ICs and connectors keep their reference on the silkscreen
-LABELLED = {"J20", "J50", "J60", "J61", "J62"}   # ...unless a function label replaces it (see LABELS)
+LABELLED = {"J20", "J50", "J60", "J61", "J62", "J63"}   # ...unless a function label replaces it (see LABELS)
 REF_POS = {"U5": (42.0, 29.1)}            # reference centred in the MCU outline
 
 # Silkscreen labels: (text, x, y, rotation, size_mm, layer)
 LABELS = [
     ("UP", 7.2, 22.0, 0, 1.0, "F"), ("OK", 7.2, 29.0, 0, 1.0, "F"), ("DN", 7.2, 36.0, 0, 1.0, "F"),
-    ("SWD", 59.5, 42.3, 0, 0.9, "F"), ("CAM", 36.6, 58.5, 0, 0.9, "F"),
-    ("ANT", 4.0, 49.6, 0, 0.9, "F"), ("microSD", 60.0, 21.2, 0, 0.9, "F"), ("E-PAPER", 29.2, 2.2, 0, 0.9, "F"), ("D-", 50.5, 3.6, 0, 0.8, "F"), ("D+", 50.5, 9.4, 0, 0.8, "F"),
+    ("SWD", 59.5, 42.3, 0, 0.9, "F"), ("CAM", 40.0, 61.1, 0, 0.8, "F"), ("MRK", 45.08, 61.1, 0, 0.8, "F"), ("I2C", 24.8, 61.2, 0, 0.8, "F"),
+    ("ANT", 4.0, 49.6, 0, 0.9, "F"), ("microSD", 60.0, 21.2, 0, 0.9, "F"), ("E-PAPER", 29.2, 2.2, 0, 0.9, "F"), ("D-", 50.5, 2.8, 0, 0.8, "F"), ("D+", 50.5, 8.6, 0, 0.8, "F"),
     ("UNICORNLINES\u00ae", 17.0, 35.6, 0, 1.2, "F"), ("Never Stop Dreaming", 17.0, 37.6, 0, 0.9, "F", True),
     ("AEROBATICS LOGGER", 44.0, 27.0, 0, 2.0, "B"), ("rev A  2026-11", 44.0, 30.5, 0, 1.2, "B"),
     ("PER PERFECTIONEM AD FELICITATEM", 44.0, 34.5, 0, 1.1, "B", True),
 ]
 LOGO = ("Unicornlines_Logo", 17.0, 27.5)   # tools/mklogo.py, from art/unicornlines-logo.svg
-IMU_AXES = (49.0, 51.5)   # origin of the IMU axis arrows (ICM-45686, pin 1 top-left: +X right, +Y up; check vs DS-000577 fig.)
+IMU_AXES = (49.0, 51.5)   # origin of the IMU axis arrows (ICM-45686, pin 1 top-left: +X right, +Y up, +Z out of the top; as TDK fig. 14 and CogniPilot's footprint)
 
 
 def tidy_refs(f, ref):
@@ -309,7 +321,7 @@ def main():
             f.SetOrientationDegrees(rot)
             f.SetPosition(pcbnew.VECTOR2I(MM(OX + x), MM(OY + y)))
             if p.get("dnp"):
-                f.SetAttributes(f.GetAttributes() | pcbnew.FP_DNP)
+                f.SetAttributes(f.GetAttributes() | getattr(pcbnew, "FP_DNP", 0) | pcbnew.FP_EXCLUDE_FROM_BOM | pcbnew.FP_EXCLUDE_FROM_POS_FILES)
             for pad in f.Pads():
                 num = pad.GetNumber()
                 n = p["nets"].get(num) or EXTRA_PADS.get((ref, num))

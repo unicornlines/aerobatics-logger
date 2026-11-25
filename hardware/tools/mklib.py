@@ -20,9 +20,9 @@ PARTS = {
         ("4", "INT1", "output", "R"), ("9", "INT2/FSYNC/CLKIN", "bidirectional", "R"),
         ("2", "RESV/AUX1_SDIO", "passive", "R"), ("3", "RESV/AUX1_SCLK", "passive", "R"), ("7", "RESV", "passive", "R"),
         ("10", "RESV/AUX1_CS", "passive", "R"), ("11", "RESV/AUX1_SDO", "passive", "R")]),
-    # SOURCE: GigaDevice DS-01328 GD5F8GM8UE rev 1.0, section 2.2 WSON8 8x6 connection diagram
+    # SOURCE: GigaDevice DS-00846 GD5F4GM8UE rev 1.3, WSON8 8x6 connection diagram
     # (same pin order as Winbond W25N). EP to GND.
-    "GD5F8GM8UE": dict(ref="U", fp="Package_SON:WSON-8-1EP_8x6mm_P1.27mm_EP3.4x4.3mm", desc="8 Gbit (1 GB) SPI NAND flash, quad I/O, on-chip ECC", pins=[
+    "GD5F4GM8UE": dict(ref="U", fp="Package_SON:WSON-8-1EP_8x6mm_P1.27mm_EP3.4x4.3mm", desc="4 Gbit (512 MB) SPI NAND flash, quad I/O, on-chip ECC", pins=[
         ("8", "VCC", "power_in", "L"), ("1", "~{CS}", "input", "L"), ("6", "CLK", "input", "L"),
         ("4", "GND", "power_in", "L"), ("9", "EP", "passive", "L"),
         ("5", "DI/IO0", "bidirectional", "R"), ("2", "DO/IO1", "bidirectional", "R"),
@@ -40,16 +40,17 @@ PARTS = {
         ("B1", "GND", "power_in", "L"), ("C3", "BYPASS", "passive", "L"),
         ("A1", "INT", "output", "R"), ("C2", "CRST", "passive", "R")]),
     # SOURCE: u-blox NEO-F10N datasheet UBX-23002117 R05, table 10.
-    "NEO-F10N": dict(ref="U", fp="RF_GPS:ublox_NEO", desc="u-blox L1/L5 GNSS module", pins=[
+    # SOURCE: u-blox NEO-M9N data sheet UBX-19014285 R02, section 3 pin definition (cross-checked with SparkFun's symbol).
+    "NEO-M9N": dict(ref="U", fp="RF_GPS:ublox_NEO", desc="u-blox M9 GNSS module, 25 Hz, NEO footprint", pins=[
         ("23", "VCC", "power_in", "L"), ("22", "V_BCKP", "power_in", "L"),
-        ("21", "RXD", "input", "L"), ("20", "TXD", "output", "L"), ("8", "RESET_N", "input", "L"),
-        ("1", "SAFEBOOT_N", "input", "L"), ("4", "EXTINT", "input", "L"),
+        ("21", "RXD1", "input", "L"), ("20", "TXD1", "output", "L"), ("8", "RESET_N", "input", "L"),
+        ("1", "SAFEBOOT_N", "input", "L"), ("4", "EXTINT", "input", "L"), ("2", "D_SEL", "input", "L"),
         ("10", "GND", "power_in", "L"), ("12", "GND", "passive", "L"), ("13", "GND", "passive", "L"), ("24", "GND", "passive", "L"),
         ("11", "RF_IN", "input", "R"), ("9", "VCC_RF", "power_out", "R"), ("14", "LNA_EN", "output", "R"),
-        ("3", "TIMEPULSE", "output", "R"),
-        ("2", "RSVD", "no_connect", "R"), ("5", "RSVD", "no_connect", "R"), ("6", "RSVD", "no_connect", "R"),
-        ("7", "RSVD", "no_connect", "R"), ("15", "RSVD", "no_connect", "R"), ("16", "RSVD", "no_connect", "R"),
-        ("17", "RSVD", "no_connect", "R"), ("18", "RSVD", "no_connect", "R"), ("19", "RSVD", "no_connect", "R")]),
+        ("3", "TIMEPULSE", "output", "R"), ("7", "VDD_USB", "power_in", "R"),
+        ("5", "USB_DM", "bidirectional", "R"), ("6", "USB_DP", "bidirectional", "R"),
+        ("18", "SDA", "bidirectional", "R"), ("19", "SCL", "bidirectional", "R"),
+        ("15", "RSVD", "no_connect", "R"), ("16", "RSVD", "no_connect", "R"), ("17", "RSVD", "no_connect", "R")]),
     # SOURCE: Espressif ESP32-C6-MINI-1/MINI-1U datasheet v1.5, table 3-1 (pin definitions) and section 4 (strapping).
     "ESP32-C6-MINI-1": dict(ref="U", fp="logger:ESP32-C6-MINI-1", desc="Wi-Fi 6 + BLE 5 module, PCB antenna", pins=[
         ("3", "3V3", "power_in", "L"),

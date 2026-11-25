@@ -195,7 +195,7 @@
           (effects
             (font
               (size 1.27 1.27)))))))
-  (symbol "GD5F8GM8UE"
+  (symbol "GD5F4GM8UE"
     (in_bom yes)
     (on_board yes)
     (property "Reference" "U"
@@ -204,7 +204,7 @@
         (font
           (size 1.27 1.27))
         (justify left)))
-    (property "Value" "GD5F8GM8UE"
+    (property "Value" "GD5F4GM8UE"
       (at 10.16 8.89 0)
       (effects
         (font
@@ -220,12 +220,12 @@
       (effects
         (font
           (size 1.27 1.27)) hide))
-    (property "Description" "8 Gbit (1 GB) SPI NAND flash, quad I/O, on-chip ECC"
+    (property "Description" "4 Gbit (512 MB) SPI NAND flash, quad I/O, on-chip ECC"
       (at 0 0 0)
       (effects
         (font
           (size 1.27 1.27)) hide))
-    (symbol "GD5F8GM8UE_0_1"
+    (symbol "GD5F4GM8UE_0_1"
       (rectangle
         (start -10.16 7.62)
         (end 10.16 -7.62)
@@ -234,7 +234,7 @@
           (type default))
         (fill
           (type background))))
-    (symbol "GD5F8GM8UE_1_1"
+    (symbol "GD5F4GM8UE_1_1"
       (pin power_in line
         (at -12.7 5.08 0)
         (length 2.54)
@@ -623,7 +623,7 @@
           (effects
             (font
               (size 1.27 1.27)))))))
-  (symbol "NEO-F10N"
+  (symbol "NEO-M9N"
     (in_bom yes)
     (on_board yes)
     (property "Reference" "U"
@@ -632,7 +632,7 @@
         (font
           (size 1.27 1.27))
         (justify left)))
-    (property "Value" "NEO-F10N"
+    (property "Value" "NEO-M9N"
       (at 10.16 19.05 0)
       (effects
         (font
@@ -648,21 +648,21 @@
       (effects
         (font
           (size 1.27 1.27)) hide))
-    (property "Description" "u-blox L1/L5 GNSS module"
+    (property "Description" "u-blox M9 GNSS module, 25 Hz, NEO footprint"
       (at 0 0 0)
       (effects
         (font
           (size 1.27 1.27)) hide))
-    (symbol "NEO-F10N_0_1"
+    (symbol "NEO-M9N_0_1"
       (rectangle
         (start -10.16 17.78)
-        (end 10.16 -17.78)
+        (end 10.16 -15.24)
         (stroke
           (width 0.254)
           (type default))
         (fill
           (type background))))
-    (symbol "NEO-F10N_1_1"
+    (symbol "NEO-M9N_1_1"
       (pin power_in line
         (at -12.7 15.24 0)
         (length 2.54)
@@ -688,7 +688,7 @@
       (pin input line
         (at -12.7 10.16 0)
         (length 2.54)
-        (name "RXD"
+        (name "RXD1"
           (effects
             (font
               (size 1.27 1.27))))
@@ -699,7 +699,7 @@
       (pin output line
         (at -12.7 7.62 0)
         (length 2.54)
-        (name "TXD"
+        (name "TXD1"
           (effects
             (font
               (size 1.27 1.27))))
@@ -740,8 +740,19 @@
           (effects
             (font
               (size 1.27 1.27)))))
-      (pin power_in line
+      (pin input line
         (at -12.7 -2.54 0)
+        (length 2.54)
+        (name "D_SEL"
+          (effects
+            (font
+              (size 1.27 1.27))))
+        (number "2"
+          (effects
+            (font
+              (size 1.27 1.27)))))
+      (pin power_in line
+        (at -12.7 -5.08 0)
         (length 2.54)
         (name "GND"
           (effects
@@ -752,7 +763,7 @@
             (font
               (size 1.27 1.27)))))
       (pin passive line
-        (at -12.7 -5.08 0)
+        (at -12.7 -7.62 0)
         (length 2.54)
         (name "GND"
           (effects
@@ -763,7 +774,7 @@
             (font
               (size 1.27 1.27)))))
       (pin passive line
-        (at -12.7 -7.62 0)
+        (at -12.7 -10.16 0)
         (length 2.54)
         (name "GND"
           (effects
@@ -774,7 +785,7 @@
             (font
               (size 1.27 1.27)))))
       (pin passive line
-        (at -12.7 -10.16 0)
+        (at -12.7 -12.7 0)
         (length 2.54)
         (name "GND"
           (effects
@@ -828,43 +839,10 @@
           (effects
             (font
               (size 1.27 1.27)))))
-      (pin no_connect line
+      (pin power_in line
         (at 12.7 5.08 180)
         (length 2.54)
-        (name "RSVD"
-          (effects
-            (font
-              (size 1.27 1.27))))
-        (number "2"
-          (effects
-            (font
-              (size 1.27 1.27)))))
-      (pin no_connect line
-        (at 12.7 2.54 180)
-        (length 2.54)
-        (name "RSVD"
-          (effects
-            (font
-              (size 1.27 1.27))))
-        (number "5"
-          (effects
-            (font
-              (size 1.27 1.27)))))
-      (pin no_connect line
-        (at 12.7 0 180)
-        (length 2.54)
-        (name "RSVD"
-          (effects
-            (font
-              (size 1.27 1.27))))
-        (number "6"
-          (effects
-            (font
-              (size 1.27 1.27)))))
-      (pin no_connect line
-        (at 12.7 -2.54 180)
-        (length 2.54)
-        (name "RSVD"
+        (name "VDD_USB"
           (effects
             (font
               (size 1.27 1.27))))
@@ -872,14 +850,47 @@
           (effects
             (font
               (size 1.27 1.27)))))
-      (pin no_connect line
-        (at 12.7 -5.08 180)
+      (pin bidirectional line
+        (at 12.7 2.54 180)
         (length 2.54)
-        (name "RSVD"
+        (name "USB_DM"
           (effects
             (font
               (size 1.27 1.27))))
-        (number "15"
+        (number "5"
+          (effects
+            (font
+              (size 1.27 1.27)))))
+      (pin bidirectional line
+        (at 12.7 0 180)
+        (length 2.54)
+        (name "USB_DP"
+          (effects
+            (font
+              (size 1.27 1.27))))
+        (number "6"
+          (effects
+            (font
+              (size 1.27 1.27)))))
+      (pin bidirectional line
+        (at 12.7 -2.54 180)
+        (length 2.54)
+        (name "SDA"
+          (effects
+            (font
+              (size 1.27 1.27))))
+        (number "18"
+          (effects
+            (font
+              (size 1.27 1.27)))))
+      (pin bidirectional line
+        (at 12.7 -5.08 180)
+        (length 2.54)
+        (name "SCL"
+          (effects
+            (font
+              (size 1.27 1.27))))
+        (number "19"
           (effects
             (font
               (size 1.27 1.27)))))
@@ -890,7 +901,7 @@
           (effects
             (font
               (size 1.27 1.27))))
-        (number "16"
+        (number "15"
           (effects
             (font
               (size 1.27 1.27)))))
@@ -901,7 +912,7 @@
           (effects
             (font
               (size 1.27 1.27))))
-        (number "17"
+        (number "16"
           (effects
             (font
               (size 1.27 1.27)))))
@@ -912,18 +923,7 @@
           (effects
             (font
               (size 1.27 1.27))))
-        (number "18"
-          (effects
-            (font
-              (size 1.27 1.27)))))
-      (pin no_connect line
-        (at 12.7 -15.24 180)
-        (length 2.54)
-        (name "RSVD"
-          (effects
-            (font
-              (size 1.27 1.27))))
-        (number "19"
+        (number "17"
           (effects
             (font
               (size 1.27 1.27)))))))

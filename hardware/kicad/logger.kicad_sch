@@ -97,7 +97,7 @@
     (fill
       (color 0 0 0 0))
     (uuid "f86b2138-94d4-c867-0ee1-582e947a7e1e")
-    (property "Sheetname" "GNSS: NEO-F10N"
+    (property "Sheetname" "GNSS: NEO-M9N"
       (at 30 119.3 0)
       (effects
         (font

@@ -58,7 +58,7 @@ def main():
     if os.path.exists(ses):
         os.remove(ses)
     cmd = ["java", "-Xmx6g", "-jar", jar, "-de", dsn, "-do", ses, "--gui.enabled=false",
-           f"--router.max_passes={PASSES}", "--router.fanout.enabled=true", "--router.optimizer.max_passes=20", "--router.job_timeout=00:05:00",
+           f"--router.max_passes={PASSES}", "--router.fanout.enabled=true", "--router.optimizer.max_passes=20", "--router.job_timeout=00:10:00",
            "--profile.allow_telemetry=false", "--usage_and_diagnostic_data.disable_analytics=true"]
     print(" ".join(cmd))
     subprocess.run(cmd, check=True, timeout=1500)

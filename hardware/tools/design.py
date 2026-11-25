@@ -104,7 +104,7 @@ MCU_NETS = {
     # barometer on SPI2
     "51": "BARO_CS", "52": "BARO_SCK", "53": "BARO_MISO", "54": "BARO_MOSI",
     # magnetometer on I2C1
-    "92": "MAG_SCL", "93": "MAG_SDA",
+    "92": "MAG_SCL", "93": "MAG_SDA", "95": "EXP_SCL", "96": "EXP_SDA", "77": "MARKER",
     # GNSS on USART2 (names from the module's side)
     "24": "GNSS_RXD", "25": "GNSS_TXD", "15": "GNSS_RESET_N",
     # microSD on SDMMC1
@@ -115,7 +115,7 @@ MCU_NETS = {
     # log flash on OCTOSPI1 in quad mode: CLK PB2, NCS PE11, IO0 PD11, IO1 PD12, IO2 PE2, IO3 PD13
     "36": "FLASH_CLK", "41": "FLASH_CS", "58": "FLASH_IO0", "59": "FLASH_IO1", "1": "FLASH_IO2", "60": "FLASH_IO3",
     # radio control and its UART0 (USART3: bootloader, console); names from the module's side
-    "45": "RADIO_EN", "61": "RADIO_BOOT", "55": "RADIO_RXD", "56": "RADIO_TXD",
+    "45": "RADIO_EN_MCU", "61": "RADIO_BOOT", "55": "RADIO_RXD", "56": "RADIO_TXD",
     # buttons, power fail, camera sync, LED
     "37": "BTN_1", "38": "BTN_2", "39": "BTN_3", "34": "PWR_FAIL_N", "35": "CAM_SYNC", "40": "LED_STATUS",
     # USB and debug
@@ -174,29 +174,33 @@ SENSORS = dict(file="sensors.kicad_sch", title="Sensors: IMU, barometer, magneto
          nets={"C1": "+1V8_MAG", "B3": "+3V3", "A3": "MAG_SCL", "A2": "MAG_SDA", "B2": "GND",
                "B1": "GND", "C3": "GND", "A1": "MAG_INT", "C2": "MAG_CRST"}),
     C("C46", "100n", "+1V8_MAG", "GND"), C("C47", "100n", "+3V3", "GND"),
-    C("C48", "2.2u", "MAG_CRST", "GND", fp=C0603),
+    C("C48", "2.2u X7R", "MAG_CRST", "GND", fp=C0603),   # BMM350 CRST: low-ESL, non-magnetic MLCC, close to C2
     R("R40", "2.2k", "MAG_SCL", "+3V3"), R("R41", "2.2k", "MAG_SDA", "+3V3"),
     FLAG("#FLG40", "+1V8_MAG"),
 ], notes=[
-    "IMU: TDK ICM-45686 on SPI (AP_CS low selects SPI). AUX1 port and RESV pins unused, left open.",
+    "IMU: TDK ICM-45686 on SPI. RESV pins 2, 3, 7, 10, 11 left open (datasheet: NC, VDDIO or GND); keep their internal pull-ups on.",
     "INT2 can also take an external clock (CLKIN) or FSYNC if the firmware wants it.",
-    "BMM350 I2C address 0x14 (ADSEL low).",
+    "BMM350 I2C address 0x14 (ADSEL low). BYPASS (C3) to GND, CRST 2.2 uF to GND per the datasheet pin table.",
 ])
 
 # ---------------------------------------------------------------- GNSS
-GNSS = dict(file="gnss.kicad_sch", title="GNSS: NEO-F10N", parts=[
-    dict(ref="U10", lib="logger:NEO-F10N", value="NEO-F10N", fp="RF_GPS:ublox_NEO",
+GNSS = dict(file="gnss.kicad_sch", title="GNSS: NEO-M9N", parts=[
+    dict(ref="U10", lib="logger:NEO-M9N", value="NEO-M9N", fp="RF_GPS:ublox_NEO", mpn="NEO-M9N-00B",
          nets={"23": "+3V3_GNSS", "22": "VBAT_BKP", "21": "GNSS_RXD", "20": "GNSS_TXD", "8": "GNSS_RESET_N",
                "1": "GNSS_SAFEBOOT_N", "4": "NC", "10": "GND", "12": "GND", "13": "GND", "24": "GND",
-               "11": "GNSS_RF_IN", "9": "GNSS_VCC_RF", "14": "NC", "3": "GNSS_PPS"}),
+               "11": "GNSS_RF_IN", "9": "GNSS_VCC_RF", "14": "NC", "3": "GNSS_PPS", "7": "GND", "2": "NC", "5": "NC", "6": "NC", "18": "NC", "19": "NC"}),
     dict(ref="FB2", lib="Device:FerriteBead_Small", value="600R@100MHz", fp="Inductor_SMD:L_0603_1608Metric",
          nets={"1": "+3V3", "2": "+3V3_GNSS"}),
     C("C50", "10u", "+3V3_GNSS", "GND", fp=C0805), C("C51", "100n", "+3V3_GNSS", "GND"),
-    # Active antenna feed: VCC_RF -> 10R -> 27nH onto RF_IN (DC block is inside the module; verify)
-    R("R50", "10R", "GNSS_VCC_RF", "ANT_BIAS"),
-    dict(ref="L50", lib="Device:L", value="27n", fp="Inductor_SMD:L_0402_1005Metric",
+    # Active antenna feed per u-blox NEO-F9P integration manual 4.4.4.3 (fig. 42, table 36): VCC_RF -> 10R current
+    # limit -> ferrite -> 100n filter -> 47 nH bias-T inductor (>500 ohm across 1-1.8 GHz, so L5 too) onto RF_IN.
+    # The DC block is inside the module (u-blox NEO data sheets).
+    R("R50", "10R", "GNSS_VCC_RF", "ANT_BIAS_R"),
+    dict(ref="FB51", lib="Device:FerriteBead_Small", value="BLM15HB121SH1", fp="Inductor_SMD:L_0402_1005Metric",
+         mpn="BLM15HB121SH1D", nets={"1": "ANT_BIAS_R", "2": "ANT_BIAS"}),
+    dict(ref="L50", lib="Device:L", value="47n", fp="Inductor_SMD:L_0402_1005Metric", mpn="LQG15HS47NJ02D",
          nets={"1": "ANT_BIAS", "2": "GNSS_RF_IN"}),
-    C("C52", "10n", "ANT_BIAS", "GND"),
+    C("C52", "100n", "ANT_BIAS", "GND"),
     dict(ref="J50", lib="Connector:Conn_Coaxial", value="U.FL", fp="Connector_Coaxial:U.FL_Hirose_U.FL-R-SMT-1_Vertical",
          nets={"1": "GNSS_RF_IN", "2": "GND"}),
     dict(ref="TP50", lib="Connector:TestPoint", value="SAFEBOOT", fp="TestPoint:TestPoint_Pad_D1.0mm",
@@ -204,13 +208,14 @@ GNSS = dict(file="gnss.kicad_sch", title="GNSS: NEO-F10N", parts=[
     FLAG("#FLG50", "+3V3_GNSS"), FLAG("#FLG51", "GNSS_VCC_RF"),
 ], notes=[
     "RF_IN trace: 50 ohm coplanar waveguide, as short as possible.",
-    "Footprint is the standard NEO outline so a NEO-F9P can be fitted later (pinout match still to verify).",
+    "VDD_USB (pin 7) to GND: USB unused (u-blox: connect V_USB to ground when USB is not used). D_SEL open = UART1 + I2C.",
+    "Standard NEO footprint: the NEO-F9P (L1/L5 RTK) drops in with the same pins and wiring."
 ])
 
 # ---------------------------------------------------------------- IO
 IO = dict(file="io.kicad_sch", title="IO: log flash, microSD, e-paper display, buttons, camera sync", parts=[
-    # Main flight log: 8 Gbit (1 GB) SPI NAND on OCTOSPI1 (quad), 3.3 V, -40 to 85 C. The microSD is the backup copy, update and export path.
-    dict(ref="U12", lib="logger:GD5F8GM8UE", value="GD5F8GM8UEYIG", fp="Package_SON:WSON-8-1EP_8x6mm_P1.27mm_EP3.4x4.3mm",
+    # Main flight log: 4 Gbit (512 MB) SPI NAND on OCTOSPI1 (quad), 3.3 V, -40 to 85 C. Stocked at JLCPCB (C41420154). The microSD is the backup copy, update and export path.
+    dict(ref="U12", lib="logger:GD5F4GM8UE", value="GD5F4GM8UEYIG", mpn="GD5F4GM8UEYIG", fp="Package_SON:WSON-8-1EP_8x6mm_P1.27mm_EP3.4x4.3mm",
          nets={"1": "FLASH_CS", "2": "FLASH_IO1", "3": "FLASH_IO2", "4": "GND", "5": "FLASH_IO0", "6": "FLASH_CLK",
                "7": "FLASH_IO3", "8": "+3V3", "9": "GND"}),
     C("C90", "100n", "+3V3", "GND"), C("C91", "1u", "+3V3", "GND"),
@@ -232,19 +237,19 @@ IO = dict(file="io.kicad_sch", title="IO: log flash, microSD, e-paper display, b
                "18": "EPD_VDD", "19": "NC", "20": "EPD_VSH1", "21": "EPD_VGH", "22": "EPD_VSL",
                "23": "EPD_VGL", "24": "EPD_VCOM"}),
     C("C62", "1u", "+3V3", "GND"),
-    C("C63", "1u 25V", "EPD_VDD", "GND", fp=C0603), C("C64", "1u 25V", "EPD_VSH1", "GND", fp=C0603),
-    C("C65", "1u 25V", "EPD_VSH2", "GND", fp=C0603), C("C66", "1u 25V", "EPD_VGH", "GND", fp=C0603),
-    C("C67", "1u 25V", "EPD_VSL", "GND", fp=C0603), C("C68", "1u 25V", "EPD_VGL", "GND", fp=C0603),
-    C("C69", "1u 25V", "EPD_VCOM", "GND", fp=C0603),
-    dict(ref="L60", lib="Device:L", value="10u", fp="Inductor_SMD:L_0805_2012Metric",
+    C("C63", "1u 50V", "EPD_VDD", "GND", fp=C0603), C("C64", "1u 50V", "EPD_VSH1", "GND", fp=C0603),
+    C("C65", "1u 50V", "EPD_VSH2", "GND", fp=C0603), C("C66", "1u 50V", "EPD_VGH", "GND", fp=C0603),
+    C("C67", "1u 50V", "EPD_VSL", "GND", fp=C0603), C("C68", "1u 50V", "EPD_VGL", "GND", fp=C0603),
+    C("C69", "1u 50V", "EPD_VCOM", "GND", fp=C0603),
+    dict(ref="L60", lib="Device:L", value="47u", fp="Inductor_SMD:L_Changjiang_FNR4020S", mpn="FNR4020S470MT",
          nets={"1": "+3V3", "2": "EPD_SW"}),
     C("C70", "4.7u", "+3V3", "GND", fp=C0603),
-    dict(ref="Q60", lib="Device:Q_NMOS_GSD", value="Si2302", fp="Package_TO_SOT_SMD:SOT-23",
+    dict(ref="Q60", lib="Device:Q_NMOS_GSD", value="AO3400A", mpn="AO3400A", fp="Package_TO_SOT_SMD:SOT-23",
          nets={"1": "EPD_GDR", "2": "EPD_RESE", "3": "EPD_SW"}),
     R("R67", "2.2R", "EPD_RESE", "GND"),
     dict(ref="D60", lib="Device:D_Schottky", value="MBR0530", fp="Diode_SMD:D_SOD-123",
          nets={"2": "EPD_SW", "1": "EPD_VGH"}),
-    C("C71", "1u 25V", "EPD_SW", "EPD_PUMP", fp=C0603),
+    C("C71", "1u 50V", "EPD_SW", "EPD_PUMP", fp=C0603),
     dict(ref="D61", lib="Device:D_Schottky", value="MBR0530", fp="Diode_SMD:D_SOD-123",
          nets={"2": "EPD_PUMP", "1": "GND"}),
     dict(ref="D62", lib="Device:D_Schottky", value="MBR0530", fp="Diode_SMD:D_SOD-123",
@@ -256,20 +261,32 @@ IO = dict(file="io.kicad_sch", title="IO: log flash, microSD, e-paper display, b
     dict(ref="SW3", lib="Switch:SW_Push", value="BTN_3", fp="Button_Switch_SMD:SW_Push_1P1T_NO_CK_KMR2",
          nets={"1": "BTN_3", "2": "GND"}),
     R("R66", "100R", "CAM_SYNC", "CAM_SYNC_OUT"),
-    dict(ref="J62", lib="Connector_Generic:Conn_01x03", value="CAM_SYNC (V2)",
+    # Camera sync out and the pilot's marker button share one header: 1 sync out, 2 GND, 3 marker (button to GND)
+    dict(ref="J62", lib="Connector_Generic:Conn_01x03", value="CAM / MARK",
          fp="Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
-         nets={"1": "CAM_SYNC_OUT", "2": "GND", "3": "NC"}),
+         nets={"1": "CAM_SYNC_OUT", "2": "GND", "3": "MARKER_IN"}),
+    R("R68", "1k", "MARKER_IN", "MARKER"), R("R69", "10k", "MARKER", "+3V3"), C("C72", "100n", "MARKER", "GND"),
+    # Expansion: Qwiic / STEMMA QT pin order (1 GND, 2 3V3, 3 SDA, 4 SCL) on I2C4, e.g. for an airspeed sensor
+    dict(ref="J63", lib="Connector_Generic:Conn_01x04", value="I2C EXP (Qwiic)",
+         fp="Connector_JST:JST_SH_SM04B-SRSS-TB_1x04-1MP_P1.00mm_Horizontal", mpn="SM04B-SRSS-TB",
+         nets={"1": "GND", "2": "+3V3_EXP", "3": "EXP_SDA", "4": "EXP_SCL"}),
+    dict(ref="F1", lib="Device:Polyfuse_Small", value="PTC 100mA", fp="Fuse:Fuse_0603_1608Metric",
+         nets={"1": "+3V3", "2": "+3V3_EXP"}),
+    R("R70", "2.2k", "EXP_SDA", "+3V3"), R("R71", "2.2k", "EXP_SCL", "+3V3"),
 ], notes=[
-    "E-paper pin table from the GDEY0213B74 datasheet, section 5. Booster values follow the usual Good Display reference; check against section 12.",
+    "E-paper pin table from the GDEY0213B74 datasheet, section 5 (pin 8 is BS1, tied low for 4-wire SPI; 6/7 TSCL/TSDA and 19 VPP unused, open).",
+    "Booster as Good Display's reference: 47 uH, 30 V N-MOSFET, 2.2 ohm sense, MBR0530 diodes, 1 uF 50 V on the gate and source rails.",
     "Panel operating range is 0 to 50 C: firmware skips refreshes outside it (BMP390 temperature).",
     "Buttons use the MCU's internal pull-ups; debounce in firmware.",
+    "Marker input: 1k series, 10k pull-up, 100 nF (1 ms) against cable noise; EXTI15 on PA15, timestamped from TIM2.",
+    "Expansion 3V3 goes through a 100 mA PTC so a shorted cable cannot pull down the logger.",
 ])
 
 # ---------------------------------------------------------------- radio
 RADIO = dict(file="radio.kicad_sch", title="Radio: ESP32-C6 (Wi-Fi 6, BLE 5)", parts=[
     dict(ref="U11", lib="logger:ESP32-C6-MINI-1", value="ESP32-C6-MINI-1-N4", fp="logger:ESP32-C6-MINI-1",
          nets={"3": "+3V3", "8": "RADIO_EN", "23": "RADIO_BOOT", "22": "RADIO_IO8", "20": "RADIO_IO15",
-               "31": "RADIO_TXD", "30": "RADIO_RXD", "18": "RADIO_USB_DM", "17": "RADIO_USB_DP",
+               "31": "RADIO_TXD_ESP", "30": "RADIO_RXD", "18": "RADIO_USB_DM", "17": "RADIO_USB_DP",
                "15": "SPI4_SCK", "16": "SPI4_MOSI", "5": "RADIO_MISO", "24": "RADIO_CS", "25": "RADIO_IRQ",
                "9": "NC", "10": "NC", "12": "NC", "13": "NC", "6": "NC", "19": "NC",
                "26": "NC", "27": "NC", "28": "NC", "29": "NC",
@@ -277,6 +294,10 @@ RADIO = dict(file="radio.kicad_sch", title="Radio: ESP32-C6 (Wi-Fi 6, BLE 5)", p
                **{n: "NC" for n in ["4", "7", "21", "32", "33", "34", "35"]}}),
     C("C80", "22u", "+3V3", "GND", fp=C0805), C("C81", "100n", "+3V3", "GND"),
     R("R80", "10k", "RADIO_EN", "GND"), C("C82", "100n", "RADIO_EN", "GND"),
+    # 1k from the MCU: limits the GPIO charging current into C82; EN still sees 3.0 V (VIH 0.75 x 3V3 = 2.5 V)
+    R("R84", "1k", "RADIO_EN_MCU", "RADIO_EN"),
+    # Espressif guidelines 1.3.7: series resistor on U0TXD, close to the module
+    R("R85", "499R", "RADIO_TXD_ESP", "RADIO_TXD"),
     R("R81", "10k", "RADIO_BOOT", "+3V3"), R("R82", "10k", "RADIO_IO8", "+3V3"), R("R83", "10k", "RADIO_IO15", "+3V3"),
     dict(ref="TP80", lib="Connector:TestPoint", value="USB_D-", fp="TestPoint:TestPoint_Pad_D1.0mm",
          nets={"1": "RADIO_USB_DM"}),
@@ -284,7 +305,7 @@ RADIO = dict(file="radio.kicad_sch", title="Radio: ESP32-C6 (Wi-Fi 6, BLE 5)", p
          nets={"1": "RADIO_USB_DP"}),
 ], notes=[
     "ESP32-C6-MINI-1 pin table: Espressif datasheet v1.5, table 3-1. Footprint from Espressif's KiCad library.",
-    "EN is pulled low: the radio stays off until the MCU turns it on.",
+    "EN is pulled low: the radio stays off until the MCU turns it on (through R84). Set RADIO_BOOT high before EN rises and hold it 3 ms.",
     "Strapping: IO9 high = boot from flash; the MCU pulls RADIO_BOOT low with EN to enter the UART bootloader.",
     "IO8 must be high for download mode; IO15 must not float. Data: SPI slave on SPI4 (up to 40 MHz).",
     "Peak TX current about 0.38 A from +3V3. Antenna over the board edge, no copper under it; case wall there must be plastic.",

@@ -1065,7 +1065,7 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (global_label "RADIO_TXD"
+  (global_label "RADIO_TXD_ESP"
     (shape passive)
     (at 43.18 50.8 180)
     (fields_autoplaced)
@@ -1309,32 +1309,32 @@
           (size 1.27 1.27)) hide)))
   (symbol
     (lib_id "Device:C")
-    (at 106.68 48.26 0)
+    (at 109.22 48.26 0)
     (unit 1)
     (in_bom yes)
     (on_board yes)
     (dnp no)
     (uuid "358ff043-1b10-31fa-1cb8-d88c7d85fe84")
     (property "Reference" "C81"
-      (at 108.18 42.95 0)
+      (at 110.72 42.95 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
     (property "Value" "100n"
-      (at 108.18 45.45 0)
+      (at 110.72 45.45 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
     (property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
-      (at 106.68 48.26 0)
+      (at 109.22 48.26 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left) hide))
     (property "Datasheet" ""
-      (at 106.68 48.26 0)
+      (at 109.22 48.26 0)
       (effects
         (font
           (size 1.27 1.27))
@@ -1350,7 +1350,7 @@
           (unit 1)))))
   (global_label "+3V3"
     (shape passive)
-    (at 106.68 44.45 90)
+    (at 109.22 44.45 90)
     (fields_autoplaced)
     (effects
       (font
@@ -1358,13 +1358,13 @@
       (justify left))
     (uuid "43e48982-9d7c-7ed1-478a-a34fee512357")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 106.68 44.45 0)
+      (at 109.22 44.45 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
   (global_label "GND"
     (shape passive)
-    (at 106.68 52.07 270)
+    (at 109.22 52.07 270)
     (fields_autoplaced)
     (effects
       (font
@@ -1372,38 +1372,38 @@
       (justify right))
     (uuid "d8ec6cbb-f0f8-655d-948b-6483702e5e6a")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 106.68 52.07 0)
+      (at 109.22 52.07 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
   (symbol
     (lib_id "Device:R")
-    (at 119.38 48.26 0)
+    (at 121.92 48.26 0)
     (unit 1)
     (in_bom yes)
     (on_board yes)
     (dnp no)
     (uuid "2628e10c-ae9f-0bed-783b-73fc655fdff9")
     (property "Reference" "R80"
-      (at 120.88 42.95 0)
+      (at 123.42 42.95 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
     (property "Value" "10k"
-      (at 120.88 45.45 0)
+      (at 123.42 45.45 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
     (property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-      (at 119.38 48.26 0)
+      (at 121.92 48.26 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left) hide))
     (property "Datasheet" ""
-      (at 119.38 48.26 0)
+      (at 121.92 48.26 0)
       (effects
         (font
           (size 1.27 1.27))
@@ -1419,7 +1419,7 @@
           (unit 1)))))
   (global_label "RADIO_EN"
     (shape passive)
-    (at 119.38 44.45 90)
+    (at 121.92 44.45 90)
     (fields_autoplaced)
     (effects
       (font
@@ -1427,13 +1427,13 @@
       (justify left))
     (uuid "3ed8ff30-a224-31c5-7937-893fff43660b")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 119.38 44.45 0)
+      (at 121.92 44.45 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
   (global_label "GND"
     (shape passive)
-    (at 119.38 52.07 270)
+    (at 121.92 52.07 270)
     (fields_autoplaced)
     (effects
       (font
@@ -1441,7 +1441,7 @@
       (justify right))
     (uuid "339c96ff-0eab-4136-3f4b-9ed539951efb")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 119.38 52.07 0)
+      (at 121.92 52.07 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
@@ -1516,139 +1516,139 @@
           (size 1.27 1.27)) hide)))
   (symbol
     (lib_id "Device:R")
-    (at 144.78 48.26 0)
+    (at 144.78 53.34 0)
     (unit 1)
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid "31c06c26-5d5c-277d-b2a2-55b9ecc5ef21")
-    (property "Reference" "R81"
-      (at 146.28 42.95 0)
+    (uuid "8bd8780f-e20e-70e4-4822-389ede3badbc")
+    (property "Reference" "R84"
+      (at 146.28 48.03 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
-    (property "Value" "10k"
-      (at 146.28 45.45 0)
+    (property "Value" "1k"
+      (at 146.28 50.53 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
     (property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-      (at 144.78 48.26 0)
+      (at 144.78 53.34 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left) hide))
     (property "Datasheet" ""
-      (at 144.78 48.26 0)
+      (at 144.78 53.34 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left) hide))
     (pin "1"
-      (uuid "5eb767c8-3082-04e3-59e5-0b00ccf8bc17"))
+      (uuid "2f0c6e44-8712-7ec7-1a3a-ccba696a5e17"))
     (pin "2"
-      (uuid "3ca6f9a2-1844-45cc-9167-e3003e6d23c1"))
+      (uuid "9460e17b-bf65-1d74-4bc4-291ed7d8073a"))
     (instances
       (project "logger"
         (path "/dc76e9f0-c000-6e8f-919e-0c515c66dbba/c680daf2-60cc-a95f-0ff3-d374f0c64ee6"
-          (reference "R81")
+          (reference "R84")
           (unit 1)))))
-  (global_label "RADIO_BOOT"
+  (global_label "RADIO_EN_MCU"
     (shape passive)
-    (at 144.78 44.45 90)
+    (at 144.78 49.53 90)
     (fields_autoplaced)
     (effects
       (font
         (size 1.27 1.27))
       (justify left))
-    (uuid "6843991d-0050-bc9e-6d54-2a060a880ee1")
+    (uuid "0a5e2666-0958-d838-2902-c38b1e5d8610")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 144.78 44.45 0)
+      (at 144.78 49.53 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (global_label "+3V3"
+  (global_label "RADIO_EN"
     (shape passive)
-    (at 144.78 52.07 270)
+    (at 144.78 57.15 270)
     (fields_autoplaced)
     (effects
       (font
         (size 1.27 1.27))
       (justify right))
-    (uuid "92387676-ce88-60a7-57d6-0b8ecf04e689")
+    (uuid "26b40bd1-8d6c-85b1-094d-9b90dacdad4c")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 144.78 52.07 0)
+      (at 144.78 57.15 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
   (symbol
     (lib_id "Device:R")
-    (at 154.94 48.26 0)
+    (at 157.48 55.88 0)
     (unit 1)
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid "27f4b0b5-0b1d-5831-de26-4fc7183e402a")
-    (property "Reference" "R82"
-      (at 156.44 42.95 0)
+    (uuid "fa2f3415-632e-c51a-36e5-a3c354d57544")
+    (property "Reference" "R85"
+      (at 158.98 50.57 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
-    (property "Value" "10k"
-      (at 156.44 45.45 0)
+    (property "Value" "499R"
+      (at 158.98 53.07 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
     (property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-      (at 154.94 48.26 0)
+      (at 157.48 55.88 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left) hide))
     (property "Datasheet" ""
-      (at 154.94 48.26 0)
+      (at 157.48 55.88 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left) hide))
     (pin "1"
-      (uuid "de4716d1-28f1-f45c-871d-e09689eff520"))
+      (uuid "d3815ec5-b220-d835-56d8-b55403510407"))
     (pin "2"
-      (uuid "e788f13f-8753-5138-2d97-5297d6969731"))
+      (uuid "06262b69-4cb3-b316-1dc0-562974da37bc"))
     (instances
       (project "logger"
         (path "/dc76e9f0-c000-6e8f-919e-0c515c66dbba/c680daf2-60cc-a95f-0ff3-d374f0c64ee6"
-          (reference "R82")
+          (reference "R85")
           (unit 1)))))
-  (global_label "RADIO_IO8"
+  (global_label "RADIO_TXD_ESP"
     (shape passive)
-    (at 154.94 44.45 90)
+    (at 157.48 52.07 90)
     (fields_autoplaced)
     (effects
       (font
         (size 1.27 1.27))
       (justify left))
-    (uuid "e864848d-cf7d-a18b-f92e-f2b5eba0207c")
+    (uuid "393beada-a025-1362-94d4-5eae08763db1")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 154.94 44.45 0)
+      (at 157.48 52.07 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (global_label "+3V3"
+  (global_label "RADIO_TXD"
     (shape passive)
-    (at 154.94 52.07 270)
+    (at 157.48 59.69 270)
     (fields_autoplaced)
     (effects
       (font
         (size 1.27 1.27))
       (justify right))
-    (uuid "712d215d-dad7-bcc1-813c-74565918f1d0")
+    (uuid "57eaf254-d47d-8f39-b7e0-a38b3fb65861")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 154.94 52.07 0)
+      (at 157.48 59.69 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
@@ -1659,8 +1659,8 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid "f2635298-a626-f5bb-971f-8f3b802a4ace")
-    (property "Reference" "R83"
+    (uuid "31c06c26-5d5c-277d-b2a2-55b9ecc5ef21")
+    (property "Reference" "R81"
       (at 169.14 42.95 0)
       (effects
         (font
@@ -1685,15 +1685,15 @@
           (size 1.27 1.27))
         (justify left) hide))
     (pin "1"
-      (uuid "2b9530ba-7a89-ff5c-e9c7-c105f7e49e1f"))
+      (uuid "5eb767c8-3082-04e3-59e5-0b00ccf8bc17"))
     (pin "2"
-      (uuid "8dd4b38a-3667-2537-092e-0db5d7f79748"))
+      (uuid "3ca6f9a2-1844-45cc-9167-e3003e6d23c1"))
     (instances
       (project "logger"
         (path "/dc76e9f0-c000-6e8f-919e-0c515c66dbba/c680daf2-60cc-a95f-0ff3-d374f0c64ee6"
-          (reference "R83")
+          (reference "R81")
           (unit 1)))))
-  (global_label "RADIO_IO15"
+  (global_label "RADIO_BOOT"
     (shape passive)
     (at 167.64 44.45 90)
     (fields_autoplaced)
@@ -1701,7 +1701,7 @@
       (font
         (size 1.27 1.27))
       (justify left))
-    (uuid "1e4682da-4116-5bbc-9a59-c70657dacaf6")
+    (uuid "6843991d-0050-bc9e-6d54-2a060a880ee1")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
       (at 167.64 44.45 0)
       (effects
@@ -1715,40 +1715,178 @@
       (font
         (size 1.27 1.27))
       (justify right))
-    (uuid "8130f6b9-a36a-e4e7-8e76-9a67c2d2f910")
+    (uuid "92387676-ce88-60a7-57d6-0b8ecf04e689")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
       (at 167.64 52.07 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
   (symbol
+    (lib_id "Device:R")
+    (at 180.34 48.26 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "27f4b0b5-0b1d-5831-de26-4fc7183e402a")
+    (property "Reference" "R82"
+      (at 181.84 42.95 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (justify left)))
+    (property "Value" "10k"
+      (at 181.84 45.45 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (justify left)))
+    (property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+      (at 180.34 48.26 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (justify left) hide))
+    (property "Datasheet" ""
+      (at 180.34 48.26 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (justify left) hide))
+    (pin "1"
+      (uuid "de4716d1-28f1-f45c-871d-e09689eff520"))
+    (pin "2"
+      (uuid "e788f13f-8753-5138-2d97-5297d6969731"))
+    (instances
+      (project "logger"
+        (path "/dc76e9f0-c000-6e8f-919e-0c515c66dbba/c680daf2-60cc-a95f-0ff3-d374f0c64ee6"
+          (reference "R82")
+          (unit 1)))))
+  (global_label "RADIO_IO8"
+    (shape passive)
+    (at 180.34 44.45 90)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify left))
+    (uuid "e864848d-cf7d-a18b-f92e-f2b5eba0207c")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 180.34 44.45 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
+  (global_label "+3V3"
+    (shape passive)
+    (at 180.34 52.07 270)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify right))
+    (uuid "712d215d-dad7-bcc1-813c-74565918f1d0")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 180.34 52.07 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
+  (symbol
+    (lib_id "Device:R")
+    (at 193.04 48.26 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "f2635298-a626-f5bb-971f-8f3b802a4ace")
+    (property "Reference" "R83"
+      (at 194.54 42.95 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (justify left)))
+    (property "Value" "10k"
+      (at 194.54 45.45 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (justify left)))
+    (property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+      (at 193.04 48.26 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (justify left) hide))
+    (property "Datasheet" ""
+      (at 193.04 48.26 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (justify left) hide))
+    (pin "1"
+      (uuid "2b9530ba-7a89-ff5c-e9c7-c105f7e49e1f"))
+    (pin "2"
+      (uuid "8dd4b38a-3667-2537-092e-0db5d7f79748"))
+    (instances
+      (project "logger"
+        (path "/dc76e9f0-c000-6e8f-919e-0c515c66dbba/c680daf2-60cc-a95f-0ff3-d374f0c64ee6"
+          (reference "R83")
+          (unit 1)))))
+  (global_label "RADIO_IO15"
+    (shape passive)
+    (at 193.04 44.45 90)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify left))
+    (uuid "1e4682da-4116-5bbc-9a59-c70657dacaf6")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 193.04 44.45 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
+  (global_label "+3V3"
+    (shape passive)
+    (at 193.04 52.07 270)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify right))
+    (uuid "8130f6b9-a36a-e4e7-8e76-9a67c2d2f910")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 193.04 52.07 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
+  (symbol
     (lib_id "Connector:TestPoint")
-    (at 180.34 53.34 0)
+    (at 205.74 53.34 0)
     (unit 1)
     (in_bom yes)
     (on_board yes)
     (dnp no)
     (uuid "30f2ab1a-5555-39ab-2060-abe0521e5c8b")
     (property "Reference" "TP80"
-      (at 181.84 51.84 0)
+      (at 207.24 51.84 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
     (property "Value" "USB_D-"
-      (at 181.84 54.34 0)
+      (at 207.24 54.34 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
     (property "Footprint" "TestPoint:TestPoint_Pad_D1.0mm"
-      (at 180.34 53.34 0)
+      (at 205.74 53.34 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left) hide))
     (property "Datasheet" ""
-      (at 180.34 53.34 0)
+      (at 205.74 53.34 0)
       (effects
         (font
           (size 1.27 1.27))
@@ -1762,7 +1900,7 @@
           (unit 1)))))
   (global_label "RADIO_USB_DM"
     (shape passive)
-    (at 180.34 53.34 270)
+    (at 205.74 53.34 270)
     (fields_autoplaced)
     (effects
       (font
@@ -1770,38 +1908,38 @@
       (justify right))
     (uuid "9a08ce85-d53b-3bda-aeae-41159984f45c")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 180.34 53.34 0)
+      (at 205.74 53.34 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
   (symbol
     (lib_id "Connector:TestPoint")
-    (at 190.5 53.34 0)
+    (at 215.9 53.34 0)
     (unit 1)
     (in_bom yes)
     (on_board yes)
     (dnp no)
     (uuid "4d7356d3-f0f0-105b-50a0-7a2cbb011ed7")
     (property "Reference" "TP81"
-      (at 192 51.84 0)
+      (at 217.4 51.84 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
     (property "Value" "USB_D+"
-      (at 192 54.34 0)
+      (at 217.4 54.34 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
     (property "Footprint" "TestPoint:TestPoint_Pad_D1.0mm"
-      (at 190.5 53.34 0)
+      (at 215.9 53.34 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left) hide))
     (property "Datasheet" ""
-      (at 190.5 53.34 0)
+      (at 215.9 53.34 0)
       (effects
         (font
           (size 1.27 1.27))
@@ -1815,7 +1953,7 @@
           (unit 1)))))
   (global_label "RADIO_USB_DP"
     (shape passive)
-    (at 190.5 53.34 270)
+    (at 215.9 53.34 270)
     (fields_autoplaced)
     (effects
       (font
@@ -1823,7 +1961,7 @@
       (justify right))
     (uuid "7cdcdfb2-5553-1bf0-2ea8-388245baade0")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 190.5 53.34 0)
+      (at 215.9 53.34 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
@@ -1834,7 +1972,7 @@
         (size 1.27 1.27))
       (justify left))
     (uuid "0da89ea1-c72e-0b15-993f-daf4f29ef1db"))
-  (text "EN is pulled low: the radio stays off until the MCU turns it on."
+  (text "EN is pulled low: the radio stays off until the MCU turns it on (through R84). Set RADIO_BOOT high before EN rises and hold it 3 ms."
     (at 20 262 0)
     (effects
       (font

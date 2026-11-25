@@ -2073,7 +2073,7 @@
         (font
           (size 1.27 1.27))
         (justify left)))
-    (property "Value" "2.2u"
+    (property "Value" "2.2u X7R"
       (at 362.18 45.45 0)
       (effects
         (font
@@ -2319,7 +2319,7 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (text "IMU: TDK ICM-45686 on SPI (AP_CS low selects SPI). AUX1 port and RESV pins unused, left open."
+  (text "IMU: TDK ICM-45686 on SPI. RESV pins 2, 3, 7, 10, 11 left open (datasheet: NC, VDDIO or GND); keep their internal pull-ups on."
     (at 20 257 0)
     (effects
       (font
@@ -2333,7 +2333,7 @@
         (size 1.27 1.27))
       (justify left))
     (uuid "c65d5c84-b51c-24ca-35ab-b5719e89adf2"))
-  (text "BMM350 I2C address 0x14 (ADSEL low)."
+  (text "BMM350 I2C address 0x14 (ADSEL low). BYPASS (C3) to GND, CRST 2.2 uF to GND per the datasheet pin table."
     (at 20 267 0)
     (effects
       (font

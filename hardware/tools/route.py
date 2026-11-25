@@ -21,8 +21,8 @@ PCB = os.path.join(HERE, "..", "kicad", "logger.kicad_pcb")
 WORK = os.environ.get("ROUTE_WORK", "/tmp/logger-route")
 # High-current nets get a wider class. Plane nets (GND, +3V3) keep the default width so they
 # can fan out of 0.4-0.5 mm pitch pads.
-POWER_NETS = ["VBUS", "VSYS", "HOLD_TOP", "HOLD_MID", "BUCK_SW"]
-POWER_WIDTH_UM = 300
+POWER_NETS = ["VBUS", "VSYS", "HOLD_TOP", "HOLD_MID", "BUCK_SW", "CHG_PMID", "CHG_SW", "VBAT", "BAT_CONN"]
+POWER_WIDTH_UM = 400
 PASSES = os.environ.get("PASSES", "25")
 
 
@@ -61,7 +61,23 @@ def main():
            f"--router.max_passes={PASSES}", "--router.fanout.enabled=true", "--router.optimizer.max_passes=20", "--router.job_timeout=00:10:00",
            "--profile.allow_telemetry=false", "--usage_and_diagnostic_data.disable_analytics=true"]
     print(" ".join(cmd))
-    subprocess.run(cmd, check=True, timeout=1500)
+    # Freerouting 2.1's fanout pass sometimes dies on a null corner and the job then hangs forever; the run is
+    # random, so a fresh start usually goes through. Watch its output and restart it (up to 4 tries).
+    for attempt in range(4):
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        crashed = False
+        for line in p.stdout:
+            sys.stdout.write(line)
+            if "from_corner" in line:
+                crashed = True
+                p.kill()
+                break
+        p.wait(timeout=1500)
+        if not crashed:
+            break
+        print(f"freerouting fanout crash, restarting (attempt {attempt + 2})", flush=True)
+    else:
+        raise SystemExit("freerouting crashed four times")
     # import in a fresh process: a second LoadBoard after the export's zone removal returns a broken object
     subprocess.run([sys.executable, os.path.abspath(__file__), "--import"], check=True)
 
@@ -134,7 +150,7 @@ def read_ses(board, path):
 
 
 STITCH_PITCH = 3.0          # mm, GND stitching via grid
-STITCH_AVOID = ("J1", "J60", "J61", "SW1", "SW2", "SW3")   # metal shells / FPC: no vias underneath
+STITCH_AVOID = ("J1", "J60", "J61", "SW1", "SW2", "SW3", "SW4")   # metal shells / FPC: no vias underneath
 MM = pcbnew.FromMM
 OUTER = (pcbnew.F_Cu, pcbnew.B_Cu)
 
@@ -457,7 +473,7 @@ def import_ses():
         txt = drc()
     kinds = re.findall(r"^\[(\w+)\]", txt, re.M)
     print({k: kinds.count(k) for k in sorted(set(kinds))})
-    nets = re.findall(r"\[unconnected_items\].*?\n.*?\[([^\]]+)\]", txt)
+    nets = re.findall(r"\[unconnected_items\].*?\n(?:\s+Local.*\n)?.*?\[([^\]]+)\]", txt)
     print("unconnected by net:", {n: nets.count(n) for n in sorted(set(nets), key=nets.count, reverse=True)})
     print("tracks:", len(board.GetTracks()))
 

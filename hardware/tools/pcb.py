@@ -18,7 +18,7 @@ W, H = 88.0, 62.0
 MM = pcbnew.FromMM
 
 # Extra pads the footprint has but the symbol doesn't.
-EXTRA_PADS = {("J60", "11"): "GND", ("J61", "MP"): "GND", ("J63", "MP"): "GND"}
+EXTRA_PADS = {("J60", "11"): "GND", ("J61", "MP"): "GND", ("J63", "MP"): "GND", ("J2", "MP"): "GND"}
 
 # ref: (x, y, rotation, side)  -- board coordinates in mm from the top-left corner; side "F" or "B"
 P = {}
@@ -86,13 +86,30 @@ at("C60", 69.5, 19.5, 90); at("C61", 69.5, 16.5, 90)
 
 # --- Power (right column) -------------------------------------------------------
 at("J1", 84.5, 33.0, 90)                              # USB-C opening on the right edge
-row(["R1", "R2"], 78.0, 28.0, 0, 2.0, 0)
-at("U1", 74.0, 36.0, 90); at("D1", 79.5, 41.0, 90); at("R3", 82.5, 41.0, 90); at("C1", 84.0, 41.0, 90)
-at("U2", 78.0, 23.0, 0); at("C2", 82.0, 23.0, 90)
+row(["R1", "R2"], 77.0, 39.0, 0, 1.6, 0)                          # CC pull-downs, below the connector
+row(["R108", "R109"], 75.0, 39.0, 0, 1.6, 0); at("C108", 73.0, 39.0, 0)   # CC level to the ADC
+at("U1", 74.0, 36.0, 90); at("D1", 79.62, 41.0, 270); at("R3", 82.5, 41.0, 90); at("C1", 84.0, 41.0, 90)
+# charger (BQ25601) between the USB-C and the 3.3 V buck: VBUS/PMID on its top-left, SW top-right to L2, SYS and BAT on
+# its right side, logic pins left and bottom
+at("U13", 75.0, 25.0, 0)
+# along its top edge, as TI's layout example: PMID 22u, REGN 4.7u, then the bootstrap cap over pins 20/21
+at("C100", 72.6, 20.4, 90); at("C102", 74.5, 20.4, 90); at("C103", 75.9, 20.9, 90)
+at("C2", 70.7, 23.2, 180)                                        # VBUS 1u at pins 1/24, VBUS pad inboard
+at("L2", 80.6, 21.0, 0)                                          # straight off the SW pins at the top-right corner
+row(["C104", "C105"], 78.7, 25.2, 2.0, 0, 90)                     # SYS 2 x 10u
+at("C106", 78.35, 29.4, 270)                                      # BAT 10u, VBAT pad up
+row(["R103", "R100", "R101"], 73.4, 28.8, 1.6, 0, 270)            # INT pull-up, TS divider (GND ends down)
+at("R102", 69.6, 24.6, 0)                                        # PSEL pull-up, clear of the logic pins' channel
+row(["R106", "R107", "C107"], 67.8, 42.8, 1.6, 0, 90)              # VBAT/2 divider and filter, next to the battery FET
+at("SW4", 85.4, 22.5, 90)                                        # PWR button next to the USB-C
+at("R104", 83.0, 25.0, 90); at("D22", 83.4, 26.9, 0)              # charge LED
+# battery corner: JST PH (cable out of the right edge), reverse-polarity FET, NTC next to the cell
+at("J2", 82.6, 48.5, 90)
+at("Q1", 73.5, 43.6, 0); at("R105", 76.4, 43.0, 90); at("RT1", 79.0, 54.6, 0)
 at("U3", 77.0, 13.0, 0); at("L1", 77.0, 7.5, 0)
 row(["C5", "C6"], 82.5, 11.0, 0, 3.6, 90)
 row(["C8", "C9"], 71.5, 5.0, 0, 2.5, 0)
-row(["C7", "R7", "R8", "R9"], 72.5, 13.5, 0, 1.6, 0)
+row(["C7", "R7", "R8", "R9"], 72.5, 12.9, 0, 1.6, 0)
 # hold-up: supercaps in the bottom-right corner
 at("C3", 62.0, 55.5, 0); at("C4", 72.0, 55.5, 0)
 at("R4", 64.0, 48.0, 0); at("D2", 70.5, 48.0, 0); row(["R5", "R6"], 76.0, 47.2, 0, 1.6, 0)
@@ -106,6 +123,7 @@ at("J62", 40.0, 58.5, 90); at("R66", 40.0, 55.0, 0)
 row(["R68", "R69", "C72"], 43.5, 55.0, 1.6, 0, 90)                # marker input: series, pull-up, filter
 at("J63", 30.3, 58.6, 0)                                         # I2C expansion (Qwiic), cable exits the bottom edge
 row(["F1", "R70", "R71"], 24.8, 56.6, 0, 1.6, 0)                  # expansion PTC and pull-ups, column left of J63
+at("U14", 36.5, 57.4, 90)                                        # ESD array for J62 and J63, between the two
 
 # Hand fanouts, placed before autorouting and locked: (ref, pad or net, dx, dy) -> GND via at pad + (dx, dy) mm.
 # U9 C3 is a corner ball the router boxes in with the VDDIO escape; the crystal load caps get their own
@@ -115,7 +133,20 @@ FANOUT = [("U9", "C3", 0.55, 0.55), ("C30", "GND", 0.0, -0.95), ("C31", "GND", 0
           ("U7", "9", 0.75, 0.0),           # baro GND (right side, middle pad), straight out to a via
           ("U11", "51", 0.6, 0.75),
           ("J1", "A12", -1.0, -0.6),        # USB-C GND pair A12/B1, boxed in by VBUS and the shield tab
-          ("J60", "11#2", -1.1, 0.0)]       # microSD shell tab nearest the MCU         # radio GND corner pad, between the strap resistors and the MCU decoupling row
+          ("J60", "11#2", -1.1, 0.0),       # microSD shell tab nearest the MCU
+          # charger: VBUS and VBAT get their own 0.6/0.3 mm via out of the crowded corner, for the long runs
+          ("C2", "1", -0.57, -1.3, 0.4, 0.6, 0.3), ("C106", "1", -0.8, -0.95, 0.4, 0.6, 0.3),
+          ("U1", "5", 0.0, -1.002, 0.4, 0.6, 0.3), ("Q1", "2", -1.262, 0.0, 0.4, 0.6, 0.3),
+          ("J1", "B4", -1.2, 0.0, 0.4, 0.6, 0.3), ("J1", "A4", -1.2, 0.0, 0.4, 0.6, 0.3),
+          ("R10", "1", -0.9, 0.0, 0.3, 0.6, 0.3)]
+# Free tracks between the via ends above, locked before autorouting: (net, [(x, y), ...], layer, width mm).
+# The router can't get the charger's VBUS and VBAT out of their corner, so they run on B.Cu by hand.
+# VBUS from the USB-C pairs runs on In2 (it crosses VBAT, which is on B.Cu).
+TRACKS = [("VBUS", [(70.91, 21.90), (71.9, 22.9), (71.9, 31.0), (74.0, 33.1), (74.0, 33.86)], "B", 0.5),
+          ("VBUS", [(79.62, 30.6), (79.62, 33.86), (79.62, 35.4)], "In2", 0.5),
+          ("VBUS", [(79.62, 33.86), (74.0, 33.86)], "In2", 0.5),
+          ("VBUS", [(74.0, 33.86), (70.0, 37.86), (67.86, 40.0), (64.59, 40.0)], "In2", 0.3),   # to the VBUS-detect divider
+          ("VBAT", [(77.55, 27.5), (77.55, 37.6), (71.3, 43.85), (71.3, 44.55)], "B", 0.5)]
 # GND pins of these packages get a locked stub inwards to a via under the body before autorouting.
 FANOUT_INWARD = ["U5"]
 # Single pins the router tends to box in: (ref, pad, +1 outwards / -1 inwards under the body)
@@ -126,7 +157,22 @@ PREROUTE = [("C3", "2", "C4", "1", "B", 0.6)]
 # The GNSS antenna feed runs short and direct on F.Cu over the In1 ground, clear of the corner hole; the router
 # only adds the bias-tee stub from L50.
 PREROUTE_PATH = [("J50", "1", [(2.95, 48.26), (2.95, 50.5), (7.0, 54.55), (8.35, 55.9)], "U10", "11", "F", 0.25),
-                 ("L50", "2", [(5.72, 48.26), (2.95, 48.26)], None, None, "F", 0.15)]   # bias-tee stub, ends on the feed
+                 ("L50", "2", [(5.72, 48.26), (2.95, 48.26)], None, None, "F", 0.15),   # bias-tee stub, ends on the feed
+                 # Charger switch node: 0.8 mm from L2 to the top-right corner of U13, necked to 0.25 mm into pins 19/20
+                 # (the bootstrap cap's SW pad sits on it). SYS: a 0.8 mm bar from L2 to both 10u caps.
+                 ("L2", "1", [(77.0, 21.0), (76.0, 22.0), (76.0, 22.4)], None, None, "F", 0.8),
+                 ("U13", "19", [(76.25, 22.4)], None, None, "F", 0.25),
+                 ("U13", "20", [(75.75, 22.4)], None, None, "F", 0.25),
+                 ("L2", "2", [(82.1, 25.51), (82.1, 25.8), (80.7, 25.8)], "C105", "1", "F", 0.8),
+                 ("C105", "1", [(78.7, 25.8)], "C104", "1", "F", 0.8),
+                 ("R104", "1", [(82.1, 25.51)], None, None, "F", 0.3),          # LED feed onto the SYS bar
+                 # VBUS: pins 24 and 1 round the corner to the 1u; BAT: pins 13/14 down the right side to the 10u
+                 ("U13", "24", [(73.75, 22.45), (72.55, 22.45), (72.1, 22.9)], "C2", "1", "F", 0.25),
+                 ("U13", "1", [(72.3, 23.75)], "C2", "1", "F", 0.25),
+                 ("U13", "14", [(77.55, 25.75), (77.55, 26.25), (77.55, 28.45)], "C106", "1", "F", 0.3),
+                 ("U13", "13", [(77.55, 26.25)], None, None, "F", 0.25),
+                 ("D1", "1", [(79.62, 35.4)], None, None, "F", 0.4),           # TVS straight onto the USB-C VBUS via
+                 ("R106", "1", [(67.8, 44.55), (71.3, 44.55)], None, None, "F", 0.3)]
 
 HOLES = [(4.0, 4.0), (W - 4.0, 4.0), (4.0, H - 4.0), (W - 4.0, H - 4.0)]
 
@@ -190,13 +236,14 @@ def zone(board, net, layer, inset=0.3):
 
 
 SILK_REF_PREFIXES = ("U", "J")          # ICs and connectors keep their reference on the silkscreen
-LABELLED = {"J20", "J50", "J60", "J61", "J62", "J63"}   # ...unless a function label replaces it (see LABELS)
-REF_POS = {"U5": (42.0, 29.1)}            # reference centred in the MCU outline
+LABELLED = {"J2", "J20", "J50", "J60", "J61", "J62", "J63"}   # ...unless a function label replaces it (see LABELS)
+REF_POS = {"U5": (42.0, 29.1), "U13": (66.9, 26.4)}            # reference centred in the MCU outline
 
 # Silkscreen labels: (text, x, y, rotation, size_mm, layer)
 LABELS = [
     ("UP", 7.2, 22.0, 0, 1.0, "F"), ("OK", 7.2, 29.0, 0, 1.0, "F"), ("DN", 7.2, 36.0, 0, 1.0, "F"),
-    ("SWD", 59.5, 42.3, 0, 0.9, "F"), ("CAM", 40.0, 61.1, 0, 0.8, "F"), ("MRK", 45.08, 61.1, 0, 0.8, "F"), ("I2C", 24.8, 61.2, 0, 0.8, "F"),
+    ("SWD", 59.5, 42.3, 0, 0.9, "F"), ("PWR", 85.4, 18.9, 0, 0.8, "F"), ("CHG", 86.9, 26.9, 90, 0.8, "F"),
+    ("BAT", 82.6, 43.0, 0, 0.8, "F"), ("+", 77.15, 47.5, 0, 0.8, "F"), ("\u2212", 77.15, 49.5, 0, 0.8, "F"), ("CAM", 40.0, 61.1, 0, 0.8, "F"), ("MRK", 45.08, 61.1, 0, 0.8, "F"), ("I2C", 24.8, 61.2, 0, 0.8, "F"),
     ("ANT", 4.0, 49.6, 0, 0.9, "F"), ("microSD", 60.0, 21.2, 0, 0.9, "F"), ("E-PAPER", 29.2, 2.2, 0, 0.9, "F"), ("D-", 50.5, 2.8, 0, 0.8, "F"), ("D+", 50.5, 8.6, 0, 0.8, "F"),
     ("UNICORNLINES\u00ae", 17.0, 35.6, 0, 1.2, "F"), ("Never Stop Dreaming", 17.0, 37.6, 0, 0.9, "F", True),
     ("AEROBATICS LOGGER", 44.0, 27.0, 0, 2.0, "B"), ("rev A  2026-11", 44.0, 30.5, 0, 1.2, "B"),
@@ -252,7 +299,7 @@ def passive_gnd_vias(board, taken):
     """Every 2-pad R/C with a GND end gets its own via just beyond that pad, in line with the part
     (or to the side when that spot is taken). Done before autorouting, so ground never depends on the pour."""
     import math
-    done = {(r, n) for r, n, _, _ in taken}
+    done = {(r, n) for r, n, *_ in taken}
     pads = [p for f in board.GetFootprints() for p in f.Pads()]
     vias = []
     out = []
@@ -352,6 +399,11 @@ def main():
         for s, e in zip(path, path[1:]):
             t = pcbnew.PCB_TRACK(board); t.SetStart(s); t.SetEnd(e); t.SetWidth(MM(w))
             t.SetLayer(pcbnew.F_Cu if side == "F" else pcbnew.B_Cu); t.SetNet(a.GetNet()); t.SetLocked(True); board.Add(t)
+    for n, pts, side, w in TRACKS:
+        pp = [pcbnew.VECTOR2I(MM(OX + x), MM(OY + y)) for x, y in pts]
+        for s_, e_ in zip(pp, pp[1:]):
+            t = pcbnew.PCB_TRACK(board); t.SetStart(s_); t.SetEnd(e_); t.SetWidth(MM(w))
+            t.SetLayer({"F": pcbnew.F_Cu, "B": pcbnew.B_Cu, "In2": pcbnew.In2_Cu}[side]); t.SetNet(net(n)); t.SetLocked(True); board.Add(t)
     fan = list(FANOUT)
     axial = [(r, None, -1) for r in FANOUT_INWARD] + FANOUT_AXIAL
     for ref, only, sign in axial:
@@ -367,13 +419,14 @@ def main():
             else:
                 fan.append((ref, pad.GetNumber(), 0.0, sign * (half + 0.55) * (1 if d.y > 0 else -1)))
     fan += passive_gnd_vias(board, fan)
-    for ref, num, dx, dy in fan:
+    for ref, num, dx, dy, *wide in fan:
+        w, vd, vdr = wide or (0.15, 0.5, 0.25)
         num, _, k = num.partition("#")           # "11#2": the third pad numbered 11 (shell tabs share a number)
         pad = [p for p in board.FindFootprintByReference(ref).Pads() if num in (p.GetNumber(), p.GetNetname())][int(k or 0)]
         a = pad.GetPosition(); c = pcbnew.VECTOR2I(a.x + MM(dx), a.y + MM(dy))
-        t = pcbnew.PCB_TRACK(board); t.SetStart(a); t.SetEnd(c); t.SetWidth(MM(0.15)); t.SetLayer(pcbnew.F_Cu)
+        t = pcbnew.PCB_TRACK(board); t.SetStart(a); t.SetEnd(c); t.SetWidth(MM(w)); t.SetLayer(pcbnew.F_Cu)
         t.SetNet(pad.GetNet()); t.SetLocked(True); board.Add(t)
-        v = pcbnew.PCB_VIA(board); v.SetPosition(c); v.SetWidth(MM(0.5)); v.SetDrill(MM(0.25))
+        v = pcbnew.PCB_VIA(board); v.SetPosition(c); v.SetWidth(MM(vd)); v.SetDrill(MM(vdr))
         v.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu); v.SetNet(pad.GetNet()); v.SetLocked(True); board.Add(v)   # GND or +3V3 plane
     logo = load("logger:" + LOGO[0]); logo.SetReference("LOGO1"); logo.Reference().SetVisible(False)
     logo.SetPosition(pcbnew.VECTOR2I(MM(OX + LOGO[1]), MM(OY + LOGO[2]))); board.Add(logo)

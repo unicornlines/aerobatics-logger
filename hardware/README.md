@@ -22,14 +22,14 @@ kicad-cli sch export pdf ../kicad/logger.kicad_sch -o ../kicad/logger.pdf
 ![Board, top](renders/board-hero.png)
 
 - 88 x 62 mm, 4 layers, 1.6 mm: F.Cu signals and GND pour, In1 solid GND, In2 +3V3 pour with a few signal runs, B.Cu signals and GND pour.
-- Rules: 0.15 mm track and clearance, 0.5/0.25 mm vias, 0.3 mm for the power path.
-- Blocks follow the block diagram: power enters on the right (USB-C) and flows left; MCU in the centre; display FPC top left with the buttons below it; GNSS bottom left; sensors below the MCU; hold-up supercaps bottom right; microSD top edge.
+- Rules: 0.15 mm track and clearance, 0.5/0.25 mm vias, 0.4 mm for the power path, with hand-placed 0.8 mm copper for the charger's switch node and SYS.
+- Blocks follow the block diagram: power enters on the right (USB-C) and flows left; MCU in the centre; display FPC top left with the buttons below it; GNSS bottom left; sensors below the MCU; hold-up supercaps bottom right; charger between the USB-C and the 3.3 V buck, with the battery connector (cable out of the right edge), PWR button and charge LED next to it; microSD top edge.
 - The IMU moved from the Bosch BMI563 (still not on sale) to the TDK ICM-45686 on 2026-11-25.
 - The magnetometer sits away from the buck and the supercaps; the barometer is at the bottom edge under the hose chamber.
 - Storage: flights are logged to the soldered 512 MB GigaDevice GD5F4GM8UE flash next to the MCU (about 4.5 hours of raw logging; stocked at JLCPCB); the microSD keeps a backup copy and serves firmware updates and export.
 - GNSS antenna feed: hand-routed 0.25 mm on F.Cu from the U.FL to the module, short and direct over the In1 ground.
 - Radio: ESP32-C6-MINI-1 flush with the top edge. Its antenna sits over a cut-out in the board, as Espressif's guidelines ask, so there is no board material under it. The case wall in front of it must be plastic. It may stay on in flight (fine from an avionics point of view); bulk Wi-Fi transfers happen on the ground. Planned uses: camera start/stop over Bluetooth, wireless firmware updates for both chips, compressed flight download.
-- Silkscreen: references only for ICs, connectors with function labels instead (UP/OK/DN, SWD, CAM, ANT, microSD, E-PAPER, D-/D+), IMU axes next to U6. Passive references are on F.Fab for assembly.
+- Silkscreen: references only for ICs, connectors with function labels instead (UP/OK/DN, PWR, CHG, BAT +/−, SWD, CAM, MRK, I2C, ANT, microSD, E-PAPER, D-/D+), IMU axes next to U6. Passive references are on F.Fab for assembly.
 - Top: the Unicornlines logo with "UNICORNLINES®" and "Never Stop Dreaming". Back: "AEROBATICS LOGGER", the revision, and *PER PERFECTIONEM AD FELICITATEM*.
 - The logo is `art/unicornlines-logo.svg`, turned into the `logger:Unicornlines_Logo` silkscreen footprint by `tools/mklogo.py` (strokes thickened to the 0.16 mm silk minimum). Re-run it only when the artwork changes: `python3 mklogo.py ../art/unicornlines-logo.svg Unicornlines_Logo 13.0`.
 - M3 holes at the corners, 4 mm in, grounded.
@@ -43,7 +43,7 @@ python3 pcb.py && python3 route.py /path/to/freerouting.jar
 
 `pcb.py` builds the placed, unrouted board from `design.py` plus its placement table, and `route.py` routes, pours and runs DRC. The committed board is DRC-clean (0 errors, 0 unconnected). The only warnings are the "library not in this configuration" notes from a headless KiCad without the global footprint table.
 
-Renders: `tools/render/` turns the board into a GLB (KiCad STEP export, then OCCT), plots the layers into board textures and renders the views with three.js in headless Chromium. Parts KiCad has no 3D model for (NEO-F10N, ESP32-C6 module, TPS62130, BMP390, BMM350, 32 kHz crystal) are drawn as plain boxes.
+Renders: `tools/render/` turns the board into a GLB (KiCad STEP export, then OCCT), plots the layers into board textures and renders the views with three.js in headless Chromium. Parts KiCad has no 3D model for here (NEO-M9N, ESP32-C6 module, TPS62130, BQ25601, BMP390, BMM350, flash, inductors, JST sockets, 32 kHz crystal) are drawn as plain boxes.
 
 | Top | Bottom |
 | --- | --- |
@@ -53,7 +53,7 @@ Renders: `tools/render/` turns the board into a GLB (KiCad STEP export, then OCC
 
 | Sheet | Contents |
 | --- | --- |
-| Power | USB-C sink, TVS and USB ESD, MAX40200 ideal diode, 0.5 F hold-up (2 x 1 F in series), TPS62130 buck to 3.3 V, VDDA filter, MCP65R41 power-fail comparator |
+| Power | USB-C sink (CC level read by the ADC to set the input current), TVS and USB ESD, TI BQ25601 1S Li-ion charger with power path (I2C1, JEITA via an on-board NTC, ship mode), PWR button on QON, charge LED, JST-PH battery socket with reverse-polarity PMOS, battery voltage to the ADC, 0.5 F hold-up (2 x 1 F in series), TPS62130 buck to 3.3 V, VDDA filter, MCP65R41 power-fail comparator |
 | MCU | STM32H723VGT6, decoupling, 25 MHz and 32.768 kHz crystals, RTC/GNSS backup supercap, SWD header, status LED |
 | Sensors | TDK ICM-45686 IMU (SPI1, ±32 g, ±4000 °/s), BMP390 barometer (SPI2), BMM350 magnetometer (I2C1) with its 1.8 V LDO |
 | GNSS | NEO-M9N (25 Hz, JLCPCB stock), active antenna feed (u-blox VCC_RF bias circuit), U.FL. VDD_USB grounded (USB unused). A NEO-F9P drops in with the same wiring |
@@ -71,4 +71,6 @@ Renders: `tools/render/` turns the board into a GLB (KiCad STEP export, then OCC
 - [ ] Rev A layout review: the autorouter's copper is DRC-clean but not hand-polished. Worth a pass in KiCad on the SPI/SDMMC runs around the MCU and the crystal traces.
 - [x] ESP32-C6-MINI-1 checked against datasheet v1.5 and the hardware design guidelines: pins match; IO9 10k pull-up (SPI boot), IO8 10k pull-up (needed for download), IO15 10k pull-up (no internal pull, must not float). Added a 499 ohm on U0TXD and 1k between the MCU and EN (EN keeps its 10k pull-down, so the radio is off until the MCU enables it). Board cut-out under the antenna as the guidelines ask; the module stays flush with the top edge. Firmware: RADIO_BOOT high before EN rises and for 3 ms after.
 - [x] GD5F4GM8UE checked: pin-out as the family table (DS-01328 section 2.2, same order as Winbond W25N); WSON8 8x6 drawing from its own datasheet (DS-00846 rev 1.3, fig. 20-1: D 8.00, E 6.00, D2 3.40, E2 4.30, b 0.40, L 0.50, e 1.27 nom). KiCad's WSON-8 8x6 EP 3.4x4.3 (made from GigaDevice's drawing) covers the terminals at max and min tolerance. EP tied to GND. OCTOSPI1 pins checked against ST's pin data: PB2 (36) P1_CLK, PE11 (41) P1_NCS, PD11 (58) P1_IO0, PD12 (59) P1_IO1, PE2 (1) P1_IO2, PD13 (60) P1_IO3. Firmware: wait tVSL = 2 ms after power-up; 2 KB pages, 64 pages per block, 4096 blocks with at least 4016 good; on-chip ECC on by default.
+- [x] Battery charger (added 2026-11-25): BQ25601 pin table checked against TI SLUSCK5A table 7-1 (via a page-referenced extract) and KiCad's symbol, which agree. Typical application values (fig. 10-1): 1 uF VBUS, PMID 22 uF (TI: 10 uF, 22 uF for 3 A), 4.7 uF 10 V REGN, 47 nF bootstrap, 1 uH, 2 x 10 uF SYS, 10 uF BAT. TS: TI's 5.23k/30.1k divider with a Murata NCP15XH103 (B 3380) gives the JEITA corners at 0, 10, 45 and 60 °C (computed against VT1/VT2/VT3/VT5). PSEL is pulled up to REGN, so the charger starts at 500 mA input before the firmware reads the CC level. /CE is tied low; charging is controlled over I2C (0x6B). Footprint: KiCad's TI RTW footprint with its thermal vias set to 0.25 mm drill. Inductor: Sunlord SWPA4030S1R0NT on KiCad's FNR4030S land pattern, which matches the KiCad 8 SWPA4030S footprint pad for pad (1.1 x 3.7 mm at ±1.5 mm).
+- [x] ESD: SRV05-4 on J62 (camera sync, marker) and J63 (I2C expansion and its fused 3.3 V), for IEC 61000-4-2 / DO-160 section 25.
 - [ ] Run full ERC in KiCad 8 or later on a desktop.

@@ -3396,9 +3396,20 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (no_connect
-    (at 93.98 139.7)
-    (uuid "d86fe303-8ca5-8ac9-303c-fd7ea15d9098"))
+  (global_label "VBAT_SENSE"
+    (shape passive)
+    (at 93.98 139.7 0)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify left))
+    (uuid "d86fe303-8ca5-8ac9-303c-fd7ea15d9098")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 93.98 139.7 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
   (no_connect
     (at 93.98 142.24)
     (uuid "32319d32-6fd7-7aee-14a9-6a5b583498d0"))
@@ -3615,9 +3626,20 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (no_connect
-    (at 93.98 149.86)
-    (uuid "37938e4f-c0ba-83d3-d859-447098065cd9"))
+  (global_label "CC_SENSE"
+    (shape passive)
+    (at 93.98 149.86 0)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify left))
+    (uuid "37938e4f-c0ba-83d3-d859-447098065cd9")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 93.98 149.86 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
   (global_label "PWR_FAIL_N"
     (shape passive)
     (at 93.98 93.98 0)
@@ -4292,9 +4314,20 @@
   (no_connect
     (at 43.18 129.54)
     (uuid "00903505-bdf4-0f84-5c4c-255d47a8d496"))
-  (no_connect
-    (at 43.18 132.08)
-    (uuid "47082d51-3b82-cdf7-8205-6522e5d21593"))
+  (global_label "CHG_INT_N"
+    (shape passive)
+    (at 43.18 132.08 180)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify right))
+    (uuid "47082d51-3b82-cdf7-8205-6522e5d21593")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 43.18 132.08 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
   (no_connect
     (at 43.18 134.62)
     (uuid "e35fb53d-418a-278f-f929-9411d785ca76"))
@@ -4332,7 +4365,7 @@
   (no_connect
     (at 93.98 106.68)
     (uuid "e78850f8-bb57-a81e-5ab6-a169a0191b0b"))
-  (global_label "MAG_SCL"
+  (global_label "I2C1_SCL"
     (shape passive)
     (at 93.98 109.22 0)
     (fields_autoplaced)
@@ -4346,7 +4379,7 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (global_label "MAG_SDA"
+  (global_label "I2C1_SDA"
     (shape passive)
     (at 93.98 111.76 0)
     (fields_autoplaced)

@@ -24,7 +24,7 @@ def FLAG(ref, net):
 
 
 # ---------------------------------------------------------------- power
-POWER = dict(file="power.kicad_sch", title="Power: USB-C, hold-up, 3.3 V", parts=[
+POWER = dict(file="power.kicad_sch", title="Power: USB-C, Li-ion charger, hold-up, 3.3 V", paper="A2", parts=[
     dict(ref="J1", lib="Connector:USB_C_Receptacle_USB2.0_16P", value="USB-C",
          fp="Connector_USB:USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal",
          nets={"A4": "VBUS", "A9": "VBUS", "B4": "VBUS", "B9": "VBUS",
@@ -40,10 +40,48 @@ POWER = dict(file="power.kicad_sch", title="Power: USB-C, hold-up, 3.3 V", parts
          nets={"1": "VBUS", "2": "GND"}),
     dict(ref="U1", lib="Power_Protection:USBLC6-2SC6", value="USBLC6-2SC6", fp="Package_TO_SOT_SMD:SOT-23-6",
          nets={"1": "USB_DP", "6": "USB_DP", "3": "USB_DM", "4": "USB_DM", "2": "GND", "5": "VBUS"}),
-    # Ideal diode: stops the hold-up capacitors feeding back into the USB cable.
-    dict(ref="U2", lib="Analog_Switch:MAX40200AUK", value="MAX40200AUK", fp="Package_TO_SOT_SMD:SOT-23-5",
-         nets={"1": "VBUS", "2": "GND", "3": "VBUS", "5": "VSYS"}),
-    C("C2", "10u", "VBUS", "GND", fp=C0805),
+    # Charger and power path: TI BQ25601 (SLUSCK5A), 1S Li-ion, NVDC. VBUS -> RBFET -> PMID -> buck -> SYS; BATFET
+    # between SYS and BAT. Runs the logger with or without a cell; the RBFET also stops the hold-up feeding USB.
+    dict(ref="U13", lib="Battery_Management:BQ25601", value="BQ25601", mpn="BQ25601RTWR",
+         fp="logger:Texas_RTW_WQFN-24-1EP_4x4mm_P0.5mm_EP2.7x2.7mm_ThermalVias",
+         nets={"1": "VBUS", "24": "VBUS", "23": "CHG_PMID", "19": "CHG_SW", "20": "CHG_SW", "21": "CHG_BTST",
+               "22": "CHG_REGN", "15": "VSYS", "16": "VSYS", "13": "VBAT", "14": "VBAT",
+               "17": "GND", "18": "GND", "25": "GND", "9": "GND",
+               "2": "CHG_PSEL", "3": "NC", "4": "CHG_STAT", "5": "I2C1_SCL", "6": "I2C1_SDA", "7": "CHG_INT_N",
+               "8": "NC", "10": "NC", "11": "CHG_TS", "12": "PWR_BTN_N"}),
+    C("C2", "1u 25V", "VBUS", "GND", fp=C0603),                          # at VBUS pin 24
+    C("C100", "22u 16V", "CHG_PMID", "GND", fp=C0805),                  # TI: 10u, 22u for 3 A; about 10u left at 5 V bias
+    C("C102", "4.7u 10V", "CHG_REGN", "GND", fp=C0603),
+    C("C103", "47n", "CHG_SW", "CHG_BTST"),
+    dict(ref="L2", lib="Device:L", value="1u 3.6A", mpn="SWPA4030S1R0NT", fp="Inductor_SMD:L_Changjiang_FNR4030S",
+         nets={"1": "CHG_SW", "2": "VSYS"}),
+    C("C104", "10u 10V", "VSYS", "GND", fp=C0805), C("C105", "10u 10V", "VSYS", "GND", fp=C0805),
+    C("C106", "10u 10V", "VBAT", "GND", fp=C0805),
+    # TS: 5.23k/30.1k divider with a 10k B3380 NTC next to the cell -> JEITA corners at about 0/10/45/60 C.
+    R("R100", "5.23k 1%", "CHG_REGN", "CHG_TS"), R("R101", "30.1k 1%", "CHG_TS", "GND"),
+    dict(ref="RT1", lib="Device:Thermistor_NTC", value="10k B3380", mpn="NCP15XH103F03RC", fp=R0402,
+         nets={"1": "CHG_TS", "2": "GND"}),
+    R("R102", "100k", "CHG_REGN", "CHG_PSEL"),                         # PSEL high: 500 mA input until firmware says otherwise
+    R("R103", "10k", "CHG_INT_N", "+3V3"),
+    R("R104", "1k", "VSYS", "CHG_LED_A"),
+    dict(ref="D22", lib="Device:LED", value="orange", fp="LED_SMD:LED_0603_1608Metric",
+         nets={"2": "CHG_LED_A", "1": "CHG_STAT"}),
+    # Power button on QON: 1 s press leaves ship mode (on), 8 s press without USB power-cycles the system.
+    dict(ref="SW4", lib="Switch:SW_Push", value="PWR", fp="Button_Switch_SMD:SW_Push_1P1T_NO_CK_KMR2",
+         nets={"1": "PWR_BTN_N", "2": "GND"}),
+    # Battery: JST PH 2-pin, reverse-polarity PMOS (conducts both ways once its body diode lets the gate see -VBAT).
+    dict(ref="J2", lib="Connector_Generic:Conn_01x02", value="BATTERY 1S",
+         fp="Connector_JST:JST_PH_S2B-PH-SM4-TB_1x02-1MP_P2.00mm_Horizontal", mpn="S2B-PH-SM4-TB(LF)(SN)",
+         nets={"1": "GND", "2": "BAT_CONN"}),
+    dict(ref="Q1", lib="Device:Q_PMOS_GSD", value="AO3401A", mpn="AO3401A", fp="Package_TO_SOT_SMD:SOT-23",
+         nets={"1": "BAT_GATE", "2": "VBAT", "3": "BAT_CONN"}),
+    R("R105", "100k", "BAT_GATE", "GND"),
+    # Battery voltage for the ADC (half of VBAT), and the USB-C CC levels to read the source's current advertisement.
+    R("R106", "1M 1%", "VBAT", "VBAT_SENSE"), R("R107", "1M 1%", "VBAT_SENSE", "GND"),
+    C("C107", "100n", "VBAT_SENSE", "GND"),
+    # One ADC pin for both CC lines: the open one sits at 0 V on its 5.1k, so the node reads about half the active one
+    # (0.51 x Vcc). 2 x 100k loads Rd by 2.5 %, inside the USB-C vRd windows for Default, 1.5 A and 3 A.
+    R("R108", "100k", "USB_CC1", "CC_SENSE"), R("R109", "100k", "USB_CC2", "CC_SENSE"), C("C108", "100n", "CC_SENSE", "GND"),
     # Hold-up: 2 x 1 F / 2.7 V in series = 0.5 F, charged through R4, discharged through D2.
     R("R4", "10R 0.5W", "VSYS", "HOLD_TOP", fp="Resistor_SMD:R_1206_3216Metric"),
     dict(ref="D2", lib="Device:D_Schottky", value="SS14", fp="Diode_SMD:D_SMA",
@@ -85,10 +123,13 @@ POWER = dict(file="power.kicad_sch", title="Power: USB-C, hold-up, 3.3 V", parts
     C("C12", "100n", "+3V3", "GND"),
     C("C13", "100n", "VREF_1V2", "GND"),
     FLAG("#FLG01", "VBUS"), FLAG("#FLG02", "VSYS"), FLAG("#FLG03", "+3V3"),
-    FLAG("#FLG04", "GND"), FLAG("#FLG05", "+3V3A"),
+    FLAG("#FLG04", "GND"), FLAG("#FLG05", "+3V3A"), FLAG("#FLG06", "VBAT"),
 ], notes=[
-    "Hold-up: 0.5 F from 5 V to 3.6 V stores about 3 J; a 1 s file close at 1.5 W needs 1.5 J.",
-    "PWR_FAIL_N goes low when VBUS falls below about 4.3 V, before VSYS sags.",
+    "Battery optional: 1S Li-ion/LiPo with its own protection circuit, at least 2000 mAh so the charger's firmware-free default (2.04 A) stays at or below 1C.",
+    "Charger I2C address 0x6B on I2C1 (shared with the BMM350 at 0x14). Firmware: SYS_MIN 3.7 V, ICHG to the cell, IINDPM from the CC level, watchdog on.",
+    "Hold-up with no cell: VSYS of 3.9 to 4.2 V down to 3.0 V gives the 0.5 F about 1.5 to 2 J, about 1.5 s at 1.2 W with the radio off.",
+    "PWR_FAIL_N goes low when VBUS falls below about 4.3 V. With a cell fitted the firmware keeps logging and watches VBAT_SENSE instead.",
+    "Off: firmware sets BATFET_DIS (ship mode). On: PWR held 1 s, or USB plugged in.",
 ])
 
 # ---------------------------------------------------------------- MCU
@@ -103,8 +144,8 @@ MCU_NETS = {
     "28": "IMU_CS", "29": "IMU_SCK", "30": "IMU_MISO", "31": "IMU_MOSI", "32": "IMU_INT2",
     # barometer on SPI2
     "51": "BARO_CS", "52": "BARO_SCK", "53": "BARO_MISO", "54": "BARO_MOSI",
-    # magnetometer on I2C1
-    "92": "MAG_SCL", "93": "MAG_SDA", "95": "EXP_SCL", "96": "EXP_SDA", "77": "MARKER",
+    # I2C1: magnetometer and battery charger
+    "92": "I2C1_SCL", "93": "I2C1_SDA", "95": "EXP_SCL", "96": "EXP_SDA", "77": "MARKER",
     # GNSS on USART2 (names from the module's side)
     "24": "GNSS_RXD", "25": "GNSS_TXD", "15": "GNSS_RESET_N",
     # microSD on SDMMC1
@@ -117,7 +158,9 @@ MCU_NETS = {
     # radio control and its UART0 (USART3: bootloader, console); names from the module's side
     "45": "RADIO_EN_MCU", "61": "RADIO_BOOT", "55": "RADIO_RXD", "56": "RADIO_TXD",
     # buttons, power fail, camera sync, LED
-    "37": "BTN_1", "38": "BTN_2", "39": "BTN_3", "34": "PWR_FAIL_N", "35": "CAM_SYNC", "40": "LED_STATUS",
+    "37": "BTN_1", "38": "BTN_2", "39": "BTN_3", "34": "PWR_FAIL_N", "87": "CHG_INT_N",
+    # ADC: battery voltage (PC1, ADC1_INP11) and the USB-C CC level (PC5, ADC12_INP8)
+    "16": "VBAT_SENSE", "33": "CC_SENSE", "35": "CAM_SYNC", "40": "LED_STATUS",
     # USB and debug
     "70": "USB_DM", "71": "USB_DP", "72": "SWDIO", "76": "SWCLK", "89": "SWO",
 }
@@ -171,11 +214,11 @@ SENSORS = dict(file="sensors.kicad_sch", title="Sensors: IMU, barometer, magneto
          nets={"1": "+3V3", "2": "GND", "3": "+3V3", "5": "+1V8_MAG"}),
     C("C44", "1u", "+3V3", "GND"), C("C45", "1u", "+1V8_MAG", "GND"),
     dict(ref="U9", lib="logger:BMM350", value="BMM350", fp="logger:Bosch_WLCSP-9_1.28x1.28mm_P0.4mm",
-         nets={"C1": "+1V8_MAG", "B3": "+3V3", "A3": "MAG_SCL", "A2": "MAG_SDA", "B2": "GND",
+         nets={"C1": "+1V8_MAG", "B3": "+3V3", "A3": "I2C1_SCL", "A2": "I2C1_SDA", "B2": "GND",
                "B1": "GND", "C3": "GND", "A1": "MAG_INT", "C2": "MAG_CRST"}),
     C("C46", "100n", "+1V8_MAG", "GND"), C("C47", "100n", "+3V3", "GND"),
     C("C48", "2.2u X7R", "MAG_CRST", "GND", fp=C0603),   # BMM350 CRST: low-ESL, non-magnetic MLCC, close to C2
-    R("R40", "2.2k", "MAG_SCL", "+3V3"), R("R41", "2.2k", "MAG_SDA", "+3V3"),
+    R("R40", "2.2k", "I2C1_SCL", "+3V3"), R("R41", "2.2k", "I2C1_SDA", "+3V3"),
     FLAG("#FLG40", "+1V8_MAG"),
 ], notes=[
     "IMU: TDK ICM-45686 on SPI. RESV pins 2, 3, 7, 10, 11 left open (datasheet: NC, VDDIO or GND); keep their internal pull-ups on.",
@@ -273,6 +316,9 @@ IO = dict(file="io.kicad_sch", title="IO: log flash, microSD, e-paper display, b
     dict(ref="F1", lib="Device:Polyfuse_Small", value="PTC 100mA", fp="Fuse:Fuse_0603_1608Metric",
          nets={"1": "+3V3", "2": "+3V3_EXP"}),
     R("R70", "2.2k", "EXP_SDA", "+3V3"), R("R71", "2.2k", "EXP_SCL", "+3V3"),
+    # ESD on the outside-world lines of J62 and J63 (IEC 61000-4-2 / DO-160 section 25); VP also clamps the fused rail
+    dict(ref="U14", lib="Power_Protection:SRV05-4", value="SRV05-4", mpn="SRV05-4", fp="Package_TO_SOT_SMD:SOT-23-6",
+         nets={"1": "CAM_SYNC_OUT", "2": "GND", "3": "MARKER_IN", "4": "EXP_SDA", "5": "+3V3_EXP", "6": "EXP_SCL"}),
 ], notes=[
     "E-paper pin table from the GDEY0213B74 datasheet, section 5 (pin 8 is BS1, tied low for 4-wire SPI; 6/7 TSCL/TSDA and 19 VPP unused, open).",
     "Booster as Good Display's reference: 47 uH, 30 V N-MOSFET, 2.2 ohm sense, MBR0530 diodes, 1 uF 50 V on the gate and source rails.",

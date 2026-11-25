@@ -19,6 +19,9 @@ STANDINS = {
     "U12": (8.0, 6.0, 0.75, "#1b1b1d", "GD5F4GM8"),                # log flash, WSON-8 8x6
     "L60": (4.0, 4.0, 2.0, "#2a2a2c", "470"),                     # e-paper booster inductor, FNR4020S
     "J63": [(6.0, 4.4, 2.9, "#ece6d4", "", 0.0, 0.3, 0.0)],       # JST-SH 4-pin side entry (Qwiic)
+    "U13": (4.0, 4.0, 0.8, "#1b1b1d", "BQ25601"),                 # charger, WQFN-24 4x4
+    "L2": (4.0, 4.0, 3.0, "#2a2a2c", "1R0"),                      # charger inductor, SWPA4030S
+    "J2": [(7.9, 6.0, 4.8, "#ece6d4", "", 0.0, 1.4, 0.0)],        # JST-PH 2-pin side entry (battery)
     # radio module: its own 0.8 mm PCB (antenna end bare, over the board edge) with the shield can on it.
     # Several boxes per part: (w, l, h, colour, label, dx, dy, dz) relative to the footprint origin.
     "U11": [(13.2, 16.6, 0.8, "#1b1b1d", "", 0.0, 0.0, 0.0),

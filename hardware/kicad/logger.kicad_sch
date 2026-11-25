@@ -19,7 +19,7 @@
     (fill
       (color 0 0 0 0))
     (uuid "1773213d-70a4-ee0a-f655-7563ffa4794e")
-    (property "Sheetname" "Power: USB-C, hold-up, 3.3 V"
+    (property "Sheetname" "Power: USB-C, Li-ion charger, hold-up, 3.3 V"
       (at 30 49.3 0)
       (effects
         (font

@@ -103,10 +103,10 @@ at("J62", 40.0, 58.5, 90); at("R66", 40.0, 55.0, 0)
 # U9 C3 is a corner ball the router boxes in with the VDDIO escape; the crystal load caps get their own
 # GND via on the far side from the crystal so the oscillator loop can't enclose them.
 FANOUT = [("U9", "C3", 0.55, 0.55), ("C30", "GND", 0.0, -0.95), ("C31", "GND", 0.0, 0.95),
-          ("U6", "10", 0.95, 0.0),          # IMU OCSB tie-high, between two escapes
-          ("U6", "7", 0.0, 0.9),            # IMU GND pair 6/7 (joined by the pour)
+          ("U6", "6", 0.0, 0.9),            # IMU GND, straight down between VDDIO and a reserved pin
           ("U7", "3", -0.6, 0.7),           # baro GND corner pin, fenced in by its own +3V3 feed
-          ("U11", "51", 0.6, 0.75)]         # radio GND corner pad, between the strap resistors and the MCU decoupling row
+          ("U11", "51", 0.6, 0.75),
+          ("J1", "A12", -1.0, -0.6)]        # USB-C GND pair A12/B1, boxed in by VBUS and the shield tab         # radio GND corner pad, between the strap resistors and the MCU decoupling row
 # GND pins of these packages get a locked stub inwards to a via under the body before autorouting.
 FANOUT_INWARD = ["U5"]
 # Single pins the router tends to box in: (ref, pad, +1 outwards / -1 inwards under the body)
@@ -181,7 +181,7 @@ LABELS = [
     ("PER PERFECTIONEM AD FELICITATEM", 44.0, 34.5, 0, 1.1, "B", True),
 ]
 LOGO = ("Unicornlines_Logo", 17.0, 27.5)   # tools/mklogo.py, from art/unicornlines-logo.svg
-IMU_AXES = (49.0, 51.5)   # origin of the IMU axis arrows (BMI563, pin 1 top-left; check vs final datasheet)
+IMU_AXES = (49.0, 51.5)   # origin of the IMU axis arrows (ICM-45686, pin 1 top-left: +X right, +Y up; check vs DS-000577 fig.)
 
 
 def tidy_refs(f, ref):

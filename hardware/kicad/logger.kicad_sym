@@ -1,7 +1,7 @@
 (kicad_symbol_lib
   (version 20220914)
   (generator "logger-mklib")
-  (symbol "BMI563"
+  (symbol "ICM-45686"
     (in_bom yes)
     (on_board yes)
     (property "Reference" "U"
@@ -10,13 +10,13 @@
         (font
           (size 1.27 1.27))
         (justify left)))
-    (property "Value" "BMI563"
+    (property "Value" "ICM-45686"
       (at 10.16 11.43 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify right)))
-    (property "Footprint" "Package_LGA:Bosch_LGA-14_3x2.5mm_P0.5mm"
+    (property "Footprint" "Package_LGA:LGA-14_3x2.5mm_P0.5mm_LayoutBorder3x4y"
       (at 0 0 0)
       (effects
         (font
@@ -31,16 +31,16 @@
       (effects
         (font
           (size 1.27 1.27)) hide))
-    (symbol "BMI563_0_1"
+    (symbol "ICM-45686_0_1"
       (rectangle
         (start -10.16 10.16)
-        (end 10.16 -12.7)
+        (end 10.16 -10.16)
         (stroke
           (width 0.254)
           (type default))
         (fill
           (type background))))
-    (symbol "BMI563_1_1"
+    (symbol "ICM-45686_1_1"
       (pin power_in line
         (at -12.7 7.62 0)
         (length 2.54)
@@ -66,7 +66,7 @@
       (pin input line
         (at -12.7 2.54 0)
         (length 2.54)
-        (name "CSB"
+        (name "AP_CS"
           (effects
             (font
               (size 1.27 1.27))))
@@ -77,7 +77,7 @@
       (pin input line
         (at -12.7 0 0)
         (length 2.54)
-        (name "SCx"
+        (name "AP_SCLK"
           (effects
             (font
               (size 1.27 1.27))))
@@ -88,7 +88,7 @@
       (pin bidirectional line
         (at -12.7 -2.54 0)
         (length 2.54)
-        (name "SDx"
+        (name "AP_SDI"
           (effects
             (font
               (size 1.27 1.27))))
@@ -99,7 +99,7 @@
       (pin output line
         (at -12.7 -5.08 0)
         (length 2.54)
-        (name "SDO"
+        (name "AP_SDO"
           (effects
             (font
               (size 1.27 1.27))))
@@ -111,17 +111,6 @@
         (at -12.7 -7.62 0)
         (length 2.54)
         (name "GND"
-          (effects
-            (font
-              (size 1.27 1.27))))
-        (number "7"
-          (effects
-            (font
-              (size 1.27 1.27)))))
-      (pin power_in line
-        (at -12.7 -10.16 0)
-        (length 2.54)
-        (name "GNDIO"
           (effects
             (font
               (size 1.27 1.27))))
@@ -140,10 +129,10 @@
           (effects
             (font
               (size 1.27 1.27)))))
-      (pin output line
+      (pin bidirectional line
         (at 12.7 5.08 180)
         (length 2.54)
-        (name "INT2"
+        (name "INT2/FSYNC/CLKIN"
           (effects
             (font
               (size 1.27 1.27))))
@@ -151,32 +140,10 @@
           (effects
             (font
               (size 1.27 1.27)))))
-      (pin output line
+      (pin passive line
         (at 12.7 2.54 180)
         (length 2.54)
-        (name "OSDO/INT3"
-          (effects
-            (font
-              (size 1.27 1.27))))
-        (number "11"
-          (effects
-            (font
-              (size 1.27 1.27)))))
-      (pin input line
-        (at 12.7 0 180)
-        (length 2.54)
-        (name "OCSB"
-          (effects
-            (font
-              (size 1.27 1.27))))
-        (number "10"
-          (effects
-            (font
-              (size 1.27 1.27)))))
-      (pin bidirectional line
-        (at 12.7 -2.54 180)
-        (length 2.54)
-        (name "ASDx"
+        (name "RESV/AUX1_SDIO"
           (effects
             (font
               (size 1.27 1.27))))
@@ -184,14 +151,47 @@
           (effects
             (font
               (size 1.27 1.27)))))
-      (pin bidirectional line
-        (at 12.7 -5.08 180)
+      (pin passive line
+        (at 12.7 0 180)
         (length 2.54)
-        (name "ASCx"
+        (name "RESV/AUX1_SCLK"
           (effects
             (font
               (size 1.27 1.27))))
         (number "3"
+          (effects
+            (font
+              (size 1.27 1.27)))))
+      (pin passive line
+        (at 12.7 -2.54 180)
+        (length 2.54)
+        (name "RESV"
+          (effects
+            (font
+              (size 1.27 1.27))))
+        (number "7"
+          (effects
+            (font
+              (size 1.27 1.27)))))
+      (pin passive line
+        (at 12.7 -5.08 180)
+        (length 2.54)
+        (name "RESV/AUX1_CS"
+          (effects
+            (font
+              (size 1.27 1.27))))
+        (number "10"
+          (effects
+            (font
+              (size 1.27 1.27)))))
+      (pin passive line
+        (at 12.7 -7.62 180)
+        (length 2.54)
+        (name "RESV/AUX1_SDO"
+          (effects
+            (font
+              (size 1.27 1.27))))
+        (number "11"
           (effects
             (font
               (size 1.27 1.27)))))))

@@ -10,13 +10,16 @@ from sexpr import Sym, dump
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "kicad", "logger.kicad_sym")
 
 PARTS = {
-    # SOURCE: Bosch BMI563 product flyer bst-bmi563-fl000-00 (preliminary). Full datasheet not public yet.
-    "BMI563": dict(ref="U", fp="Package_LGA:Bosch_LGA-14_3x2.5mm_P0.5mm", desc="6-axis IMU, +-32 g, +-4000 dps", pins=[
+    # SOURCE: TDK ICM-45686 datasheet DS-000577 rev 1.0, section 4.1 (pin-out). Pin names cross-checked against five
+    # independent KiCad libraries; the land pattern is KiCad's LGA-14 3x2.5 mm, whose pads match those libraries.
+    # RESV pins 2, 3, 10, 11 are the AUX1 interface (unused); pin 7 is reserved. All left unconnected.
+    "ICM-45686": dict(ref="U", fp="Package_LGA:LGA-14_3x2.5mm_P0.5mm_LayoutBorder3x4y", desc="6-axis IMU, +-32 g, +-4000 dps", pins=[
         ("8", "VDD", "power_in", "L"), ("5", "VDDIO", "power_in", "L"),
-        ("12", "CSB", "input", "L"), ("13", "SCx", "input", "L"), ("14", "SDx", "bidirectional", "L"), ("1", "SDO", "output", "L"),
-        ("7", "GND", "power_in", "L"), ("6", "GNDIO", "power_in", "L"),
-        ("4", "INT1", "output", "R"), ("9", "INT2", "output", "R"), ("11", "OSDO/INT3", "output", "R"),
-        ("10", "OCSB", "input", "R"), ("2", "ASDx", "bidirectional", "R"), ("3", "ASCx", "bidirectional", "R")]),
+        ("12", "AP_CS", "input", "L"), ("13", "AP_SCLK", "input", "L"), ("14", "AP_SDI", "bidirectional", "L"), ("1", "AP_SDO", "output", "L"),
+        ("6", "GND", "power_in", "L"),
+        ("4", "INT1", "output", "R"), ("9", "INT2/FSYNC/CLKIN", "bidirectional", "R"),
+        ("2", "RESV/AUX1_SDIO", "passive", "R"), ("3", "RESV/AUX1_SCLK", "passive", "R"), ("7", "RESV", "passive", "R"),
+        ("10", "RESV/AUX1_CS", "passive", "R"), ("11", "RESV/AUX1_SDO", "passive", "R")]),
     # SOURCE: Bosch BMP390 datasheet BST-BMP390-DS002, table 52 (verify against fig. pp.47-49).
     "BMP390": dict(ref="U", fp="logger:Bosch_LGA-10_2.0x2.0mm", desc="Barometric pressure sensor", pins=[
         ("10", "VDD", "power_in", "L"), ("1", "VDDIO", "power_in", "L"),

@@ -155,10 +155,10 @@ MCU = dict(file="mcu.kicad_sch", title="MCU: STM32H723", paper="A2", parts=[
 
 # ---------------------------------------------------------------- sensors
 SENSORS = dict(file="sensors.kicad_sch", title="Sensors: IMU, barometer, magnetometer", parts=[
-    dict(ref="U6", lib="logger:BMI563", value="BMI563", fp="Package_LGA:Bosch_LGA-14_3x2.5mm_P0.5mm",
-         nets={"8": "+3V3", "5": "+3V3", "7": "GND", "6": "GND",
+    dict(ref="U6", lib="logger:ICM-45686", value="ICM-45686", fp="Package_LGA:LGA-14_3x2.5mm_P0.5mm_LayoutBorder3x4y",
+         nets={"8": "+3V3", "5": "+3V3", "6": "GND",
                "12": "IMU_CS", "13": "IMU_SCK", "14": "IMU_MOSI", "1": "IMU_MISO",
-               "4": "IMU_INT1", "9": "IMU_INT2", "11": "NC", "10": "+3V3", "2": "NC", "3": "NC"}),
+               "4": "IMU_INT1", "9": "IMU_INT2", "2": "NC", "3": "NC", "7": "NC", "10": "NC", "11": "NC"}),
     C("C40", "100n", "+3V3", "GND"), C("C41", "100n", "+3V3", "GND"),
     dict(ref="U7", lib="logger:BMP390", value="BMP390", fp="logger:Bosch_LGA-10_2.0x2.0mm",
          nets={"10": "+3V3", "1": "+3V3", "6": "BARO_CS", "2": "BARO_SCK", "4": "BARO_MOSI", "5": "BARO_MISO",
@@ -176,8 +176,8 @@ SENSORS = dict(file="sensors.kicad_sch", title="Sensors: IMU, barometer, magneto
     R("R40", "2.2k", "MAG_SCL", "+3V3"), R("R41", "2.2k", "MAG_SDA", "+3V3"),
     FLAG("#FLG40", "+1V8_MAG"),
 ], notes=[
-    "IMU: BMI563 pinout from the Bosch flyer (preliminary). OCSB tied high so the OIS port stays off.",
-    "Alternate ICM-45686 footprint is not drawn yet: its pin table still needs checking.",
+    "IMU: TDK ICM-45686 on SPI (AP_CS low selects SPI). AUX1 port and RESV pins unused, left open.",
+    "INT2 can also take an external clock (CLKIN) or FSYNC if the firmware wants it.",
     "BMM350 I2C address 0x14 (ADSEL low).",
 ])
 

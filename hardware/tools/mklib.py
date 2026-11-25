@@ -10,7 +10,7 @@ OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "kicad", "l
 
 PARTS = {
     # SOURCE: Bosch BMI563 product flyer bst-bmi563-fl000-00 (preliminary). Full datasheet not public yet.
-    "BMI563": dict(ref="U", fp="logger:Bosch_LGA-14_2.5x3.0mm", desc="6-axis IMU, +-32 g, +-4000 dps", pins=[
+    "BMI563": dict(ref="U", fp="Package_LGA:Bosch_LGA-14_3x2.5mm_P0.5mm", desc="6-axis IMU, +-32 g, +-4000 dps", pins=[
         ("8", "VDD", "power_in", "L"), ("5", "VDDIO", "power_in", "L"),
         ("12", "CSB", "input", "L"), ("13", "SCx", "input", "L"), ("14", "SDx", "bidirectional", "L"), ("1", "SDO", "output", "L"),
         ("7", "GND", "power_in", "L"), ("6", "GNDIO", "power_in", "L"),

@@ -24,7 +24,7 @@
           (font
             (size 1.27 1.27))
           (justify right)))
-      (property "Footprint" "logger:Bosch_LGA-14_2.5x3.0mm"
+      (property "Footprint" "Package_LGA:Bosch_LGA-14_3x2.5mm_P0.5mm"
         (at 0 0 0)
         (effects
           (font
@@ -840,7 +840,7 @@
         (font
           (size 1.27 1.27))
         (justify left)))
-    (property "Footprint" "logger:Bosch_LGA-14_2.5x3.0mm"
+    (property "Footprint" "Package_LGA:Bosch_LGA-14_3x2.5mm_P0.5mm"
       (at 50.8 45.72 0)
       (effects
         (font

@@ -152,7 +152,7 @@ MCU = dict(file="mcu.kicad_sch", title="MCU: STM32H723", paper="A2", parts=[
 
 # ---------------------------------------------------------------- sensors
 SENSORS = dict(file="sensors.kicad_sch", title="Sensors: IMU, barometer, magnetometer", parts=[
-    dict(ref="U6", lib="logger:BMI563", value="BMI563", fp="logger:Bosch_LGA-14_2.5x3.0mm",
+    dict(ref="U6", lib="logger:BMI563", value="BMI563", fp="Package_LGA:Bosch_LGA-14_3x2.5mm_P0.5mm",
          nets={"8": "+3V3", "5": "+3V3", "7": "GND", "6": "GND",
                "12": "IMU_CS", "13": "IMU_SCK", "14": "IMU_MOSI", "1": "IMU_MISO",
                "4": "IMU_INT1", "9": "IMU_INT2", "11": "NC", "10": "+3V3", "2": "NC", "3": "NC"}),
@@ -192,7 +192,7 @@ GNSS = dict(file="gnss.kicad_sch", title="GNSS: NEO-F10N", parts=[
     dict(ref="L50", lib="Device:L", value="27n", fp="Inductor_SMD:L_0402_1005Metric",
          nets={"1": "ANT_BIAS", "2": "GNSS_RF_IN"}),
     C("C52", "10n", "ANT_BIAS", "GND"),
-    dict(ref="J50", lib="Connector:Conn_Coaxial", value="SMA", fp="Connector_Coaxial:SMA_Amphenol_132289_EdgeMount",
+    dict(ref="J50", lib="Connector:Conn_Coaxial", value="U.FL", fp="Connector_Coaxial:U.FL_Hirose_U.FL-R-SMT-1_Vertical",
          nets={"1": "GNSS_RF_IN", "2": "GND"}),
     dict(ref="TP50", lib="Connector:TestPoint", value="SAFEBOOT", fp="TestPoint:TestPoint_Pad_D1.0mm",
          nets={"1": "GNSS_SAFEBOOT_N"}),
@@ -237,11 +237,11 @@ IO = dict(file="io.kicad_sch", title="IO: microSD, e-paper display, buttons, cam
          nets={"2": "EPD_PUMP", "1": "GND"}),
     dict(ref="D62", lib="Device:D_Schottky", value="MBR0530", fp="Diode_SMD:D_SOD-123",
          nets={"2": "EPD_VGL", "1": "EPD_PUMP"}),
-    dict(ref="SW1", lib="Switch:SW_Push", value="BTN_1", fp="Button_Switch_SMD:SW_SPST_PTS645",
+    dict(ref="SW1", lib="Switch:SW_Push", value="BTN_1", fp="Button_Switch_SMD:SW_Push_1P1T_NO_CK_KMR2",
          nets={"1": "BTN_1", "2": "GND"}),
-    dict(ref="SW2", lib="Switch:SW_Push", value="BTN_2", fp="Button_Switch_SMD:SW_SPST_PTS645",
+    dict(ref="SW2", lib="Switch:SW_Push", value="BTN_2", fp="Button_Switch_SMD:SW_Push_1P1T_NO_CK_KMR2",
          nets={"1": "BTN_2", "2": "GND"}),
-    dict(ref="SW3", lib="Switch:SW_Push", value="BTN_3", fp="Button_Switch_SMD:SW_SPST_PTS645",
+    dict(ref="SW3", lib="Switch:SW_Push", value="BTN_3", fp="Button_Switch_SMD:SW_Push_1P1T_NO_CK_KMR2",
          nets={"1": "BTN_3", "2": "GND"}),
     R("R66", "100R", "CAM_SYNC", "CAM_SYNC_OUT"),
     dict(ref="J62", lib="Connector_Generic:Conn_01x03", value="CAM_SYNC (V2)",

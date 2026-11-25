@@ -1603,13 +1603,13 @@
         (font
           (size 1.27 1.27))
         (justify left)))
-    (property "Value" "SMA"
+    (property "Value" "U.FL"
       (at 194.54 44.18 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
-    (property "Footprint" "Connector_Coaxial:SMA_Amphenol_132289_EdgeMount"
+    (property "Footprint" "Connector_Coaxial:U.FL_Hirose_U.FL-R-SMT-1_Vertical"
       (at 193.04 43.18 0)
       (effects
         (font

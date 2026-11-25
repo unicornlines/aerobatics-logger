@@ -209,8 +209,8 @@ GNSS = dict(file="gnss.kicad_sch", title="GNSS: NEO-F10N", parts=[
 
 # ---------------------------------------------------------------- IO
 IO = dict(file="io.kicad_sch", title="IO: log flash, microSD, e-paper display, buttons, camera sync", parts=[
-    # Main flight log: 4 Gbit SPI NAND on OCTOSPI1 (quad). The microSD is the backup copy, update and export path.
-    dict(ref="U12", lib="logger:W25N04KV", value="W25N04KVZEIR", fp="Package_SON:WSON-8-1EP_8x6mm_P1.27mm_EP3.4x4.3mm",
+    # Main flight log: 8 Gbit (1 GB) SPI NAND on OCTOSPI1 (quad), 3.3 V, -40 to 85 C. The microSD is the backup copy, update and export path.
+    dict(ref="U12", lib="logger:GD5F8GM8UE", value="GD5F8GM8UEYIG", fp="Package_SON:WSON-8-1EP_8x6mm_P1.27mm_EP3.4x4.3mm",
          nets={"1": "FLASH_CS", "2": "FLASH_IO1", "3": "FLASH_IO2", "4": "GND", "5": "FLASH_IO0", "6": "FLASH_CLK",
                "7": "FLASH_IO3", "8": "+3V3", "9": "GND"}),
     C("C90", "100n", "+3V3", "GND"), C("C91", "1u", "+3V3", "GND"),

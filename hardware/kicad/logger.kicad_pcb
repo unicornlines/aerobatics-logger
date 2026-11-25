@@ -2853,7 +2853,7 @@
         (effects (font (size 0.8 0.8) (thickness 0.12)))
       (tstamp 7773709e-eee7-4278-83b9-784b43144f0f)
     )
-    (fp_text value "W25N04KVZEIR" (at 0 3.95 90) (layer "F.Fab")
+    (fp_text value "GD5F8GM8UEYIG" (at 0 3.95 90) (layer "F.Fab")
         (effects (font (size 1 1) (thickness 0.15)))
       (tstamp 1d771b5d-9f42-4115-b593-6a3738459136)
     )

@@ -3,7 +3,7 @@
 Rev A draft schematic and board for the logger, in KiCad 7 format. Both are generated from code:
 
 - `tools/design.py`: every part and every pin's net. **Edit this, not the `.kicad_sch` files.**
-- `tools/mklib.py`: builds `kicad/logger.kicad_sym` for parts KiCad doesn't ship (ICM-45686, BMP390, BMM350, NEO-F10N, ESP32-C6-MINI-1, W25N04KV), with pin tables from the datasheets.
+- `tools/mklib.py`: builds `kicad/logger.kicad_sym` for parts KiCad doesn't ship (ICM-45686, BMP390, BMM350, NEO-F10N, ESP32-C6-MINI-1, GD5F8GM8UE), with pin tables from the datasheets.
 - `tools/gen.py`: writes the sheets under `kicad/`, joining nets with global labels and flagging unused pins.
 - `tools/check.py`: connectivity checks on the exported netlist (every assigned pin is on its net, power nets are driven, no output conflicts). It stands in for ERC, which the KiCad 7 command line doesn't have.
 
@@ -26,7 +26,7 @@ kicad-cli sch export pdf ../kicad/logger.kicad_sch -o ../kicad/logger.pdf
 - Blocks follow the block diagram: power enters on the right (USB-C) and flows left; MCU in the centre; display FPC top left with the buttons below it; GNSS bottom left; sensors below the MCU; hold-up supercaps bottom right; microSD top edge.
 - The IMU moved from the Bosch BMI563 (still not on sale) to the TDK ICM-45686 on 2026-11-25.
 - The magnetometer sits away from the buck and the supercaps; the barometer is at the bottom edge under the hose chamber.
-- Storage: flights are logged to the soldered W25N04KV flash next to the MCU; the microSD keeps a backup copy and serves firmware updates and export.
+- Storage: flights are logged to the soldered 1 GB GigaDevice GD5F8GM8UE flash next to the MCU (about 9 hours of raw logging); the microSD keeps a backup copy and serves firmware updates and export.
 - GNSS antenna feed: hand-routed 0.25 mm on F.Cu from the U.FL to the module, short and direct over the In1 ground.
 - Radio: ESP32-C6-MINI-1 flush with the top edge. Its antenna sits over a copper-free area on all four layers, one of the two placements Espressif allows (the other overhangs the edge, for slightly better range). The case wall in front of it must be plastic. It may stay on in flight (fine from an avionics point of view); bulk Wi-Fi transfers happen on the ground. Planned uses: camera start/stop over Bluetooth, wireless firmware updates for both chips, compressed flight download.
 - Silkscreen: references only for ICs, connectors with function labels instead (UP/OK/DN, SWD, CAM, ANT, microSD, E-PAPER, D-/D+), IMU axes next to U6. Passive references are on F.Fab for assembly.
@@ -57,7 +57,7 @@ Renders: `tools/render/` turns the board into a GLB (KiCad STEP export, then OCC
 | MCU | STM32H723VGT6, decoupling, 25 MHz and 32.768 kHz crystals, RTC/GNSS backup supercap, SWD header, status LED |
 | Sensors | TDK ICM-45686 IMU (SPI1, ±32 g, ±4000 °/s), BMP390 barometer (SPI2), BMM350 magnetometer (I2C1) with its 1.8 V LDO |
 | GNSS | NEO-F10N, active antenna feed, SMA |
-| IO | W25N04KV 4 Gbit (512 MB) log flash on OCTOSPI1 (quad): the main flight log. microSD (SDMMC1) as backup copy, firmware update and export path, GDEY0213B74 2.13-inch e-paper with its booster, 3 buttons, camera-sync header |
+| IO | GD5F8GM8UEYIG 8 Gbit (1 GB) log flash on OCTOSPI1 (quad): the main flight log. microSD (SDMMC1) as backup copy, firmware update and export path, GDEY0213B74 2.13-inch e-paper with its booster, 3 buttons, camera-sync header |
 | Radio | ESP32-C6-MINI-1 (Wi-Fi 6, BLE 5) as an SPI4 slave sharing SCK/MOSI with the e-paper, IRQ line, EN and boot straps driven by the MCU, UART0 to the MCU for flashing, USB D-/D+ test pads |
 
 ## Open items
@@ -70,5 +70,5 @@ Renders: `tools/render/` turns the board into a GLB (KiCad STEP export, then OCC
 - [ ] BMP390 land pattern `logger:Bosch_LGA-10_2.0x2.0mm` is a placeholder: check against the datasheet's recommended footprint before ordering.
 - [ ] Rev A layout review: the autorouter's copper is DRC-clean but not hand-polished. Worth a pass in KiCad on the SPI/SDMMC runs around the MCU and the crystal traces.
 - [ ] ESP32-C6-MINI-1: footprint is Espressif's; check the strapping (IO8 pull-up, IO9 driven by the MCU, IO15 pull-up) and the antenna keepout against the hardware design guidelines.
-- [ ] W25N04KV: confirm the WSON-8 8x6 pin-out and land pattern against Winbond's datasheet (KiCad's WSON-8 8x6 footprint, standard Winbond pin order), and the OCTOSPI1 pin choice (PB2, PE11, PD11, PD12, PE2, PD13) in STM32CubeMX.
+- [ ] GD5F8GM8UE: pin-out taken from the datasheet's WSON8 connection diagram (same order as Winbond W25N); confirm the exposed-pad size and land pattern against its package drawing (section 23), and the OCTOSPI1 pin choice (PB2, PE11, PD11, PD12, PE2, PD13) in STM32CubeMX.
 - [ ] Run full ERC in KiCad 8 or later on a desktop.

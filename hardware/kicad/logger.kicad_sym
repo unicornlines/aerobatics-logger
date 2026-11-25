@@ -195,7 +195,7 @@
           (effects
             (font
               (size 1.27 1.27)))))))
-  (symbol "W25N04KV"
+  (symbol "GD5F8GM8UE"
     (in_bom yes)
     (on_board yes)
     (property "Reference" "U"
@@ -204,7 +204,7 @@
         (font
           (size 1.27 1.27))
         (justify left)))
-    (property "Value" "W25N04KV"
+    (property "Value" "GD5F8GM8UE"
       (at 10.16 8.89 0)
       (effects
         (font
@@ -220,12 +220,12 @@
       (effects
         (font
           (size 1.27 1.27)) hide))
-    (property "Description" "4 Gbit SPI NAND flash, quad I/O"
+    (property "Description" "8 Gbit (1 GB) SPI NAND flash, quad I/O, on-chip ECC"
       (at 0 0 0)
       (effects
         (font
           (size 1.27 1.27)) hide))
-    (symbol "W25N04KV_0_1"
+    (symbol "GD5F8GM8UE_0_1"
       (rectangle
         (start -10.16 7.62)
         (end 10.16 -7.62)
@@ -234,7 +234,7 @@
           (type default))
         (fill
           (type background))))
-    (symbol "W25N04KV_1_1"
+    (symbol "GD5F8GM8UE_1_1"
       (pin power_in line
         (at -12.7 5.08 0)
         (length 2.54)

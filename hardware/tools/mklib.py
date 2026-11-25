@@ -20,8 +20,9 @@ PARTS = {
         ("4", "INT1", "output", "R"), ("9", "INT2/FSYNC/CLKIN", "bidirectional", "R"),
         ("2", "RESV/AUX1_SDIO", "passive", "R"), ("3", "RESV/AUX1_SCLK", "passive", "R"), ("7", "RESV", "passive", "R"),
         ("10", "RESV/AUX1_CS", "passive", "R"), ("11", "RESV/AUX1_SDO", "passive", "R")]),
-    # SOURCE: Winbond W25N04KV datasheet, WSON-8 8x6 mm pin-out (standard Winbond serial flash pin order). EP to GND.
-    "W25N04KV": dict(ref="U", fp="Package_SON:WSON-8-1EP_8x6mm_P1.27mm_EP3.4x4.3mm", desc="4 Gbit SPI NAND flash, quad I/O", pins=[
+    # SOURCE: GigaDevice DS-01328 GD5F8GM8UE rev 1.0, section 2.2 WSON8 8x6 connection diagram
+    # (same pin order as Winbond W25N). EP to GND.
+    "GD5F8GM8UE": dict(ref="U", fp="Package_SON:WSON-8-1EP_8x6mm_P1.27mm_EP3.4x4.3mm", desc="8 Gbit (1 GB) SPI NAND flash, quad I/O, on-chip ECC", pins=[
         ("8", "VCC", "power_in", "L"), ("1", "~{CS}", "input", "L"), ("6", "CLK", "input", "L"),
         ("4", "GND", "power_in", "L"), ("9", "EP", "passive", "L"),
         ("5", "DI/IO0", "bidirectional", "R"), ("2", "DO/IO1", "bidirectional", "R"),

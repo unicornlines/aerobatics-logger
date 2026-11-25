@@ -1,0 +1,96 @@
+"""Build the project symbol library ../kicad/logger.kicad_sym for parts KiCad doesn't ship.
+
+Pin tables come from the manufacturers' datasheets; see the SOURCE lines.
+Each pin: (number, name, type, side) with side 'L' or 'R'.
+"""
+import os
+from sexpr import Sym, dump
+
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "kicad", "logger.kicad_sym")
+
+PARTS = {
+    # SOURCE: Bosch BMI563 product flyer bst-bmi563-fl000-00 (preliminary). Full datasheet not public yet.
+    "BMI563": dict(ref="U", fp="logger:Bosch_LGA-14_2.5x3.0mm", desc="6-axis IMU, +-32 g, +-4000 dps", pins=[
+        ("8", "VDD", "power_in", "L"), ("5", "VDDIO", "power_in", "L"),
+        ("12", "CSB", "input", "L"), ("13", "SCx", "input", "L"), ("14", "SDx", "bidirectional", "L"), ("1", "SDO", "output", "L"),
+        ("7", "GND", "power_in", "L"), ("6", "GNDIO", "power_in", "L"),
+        ("4", "INT1", "output", "R"), ("9", "INT2", "output", "R"), ("11", "OSDO/INT3", "output", "R"),
+        ("10", "OCSB", "input", "R"), ("2", "ASDx", "bidirectional", "R"), ("3", "ASCx", "bidirectional", "R")]),
+    # SOURCE: Bosch BMP390 datasheet BST-BMP390-DS002, table 52 (verify against fig. pp.47-49).
+    "BMP390": dict(ref="U", fp="logger:Bosch_LGA-10_2.0x2.0mm", desc="Barometric pressure sensor", pins=[
+        ("10", "VDD", "power_in", "L"), ("1", "VDDIO", "power_in", "L"),
+        ("6", "CSB", "input", "L"), ("2", "SCK", "input", "L"), ("4", "SDI", "bidirectional", "L"), ("5", "SDO", "output", "L"),
+        ("3", "VSS", "power_in", "L"), ("8", "VSS", "passive", "L"), ("9", "VSS", "passive", "L"),
+        ("7", "INT", "output", "R")]),
+    # SOURCE: Bosch BMM350 datasheet BST-BMM350-DS002 rev 1.29, section 6. VDD is 1.72-1.98 V.
+    "BMM350": dict(ref="U", fp="logger:Bosch_WLCSP-9_1.28x1.28mm_P0.4mm", desc="3-axis magnetometer, VDD 1.8 V", pins=[
+        ("C1", "VDD", "power_in", "L"), ("B3", "VDDIO", "power_in", "L"),
+        ("A3", "SCK", "input", "L"), ("A2", "SDA", "bidirectional", "L"), ("B2", "ADSEL", "input", "L"),
+        ("B1", "GND", "power_in", "L"), ("C3", "BYPASS", "passive", "L"),
+        ("A1", "INT", "output", "R"), ("C2", "CRST", "passive", "R")]),
+    # SOURCE: u-blox NEO-F10N datasheet UBX-23002117 R05, table 10.
+    "NEO-F10N": dict(ref="U", fp="RF_GPS:ublox_NEO", desc="u-blox L1/L5 GNSS module", pins=[
+        ("23", "VCC", "power_in", "L"), ("22", "V_BCKP", "power_in", "L"),
+        ("21", "RXD", "input", "L"), ("20", "TXD", "output", "L"), ("8", "RESET_N", "input", "L"),
+        ("1", "SAFEBOOT_N", "input", "L"), ("4", "EXTINT", "input", "L"),
+        ("10", "GND", "power_in", "L"), ("12", "GND", "passive", "L"), ("13", "GND", "passive", "L"), ("24", "GND", "passive", "L"),
+        ("11", "RF_IN", "input", "R"), ("9", "VCC_RF", "power_out", "R"), ("14", "LNA_EN", "output", "R"),
+        ("3", "TIMEPULSE", "output", "R"),
+        ("2", "RSVD", "no_connect", "R"), ("5", "RSVD", "no_connect", "R"), ("6", "RSVD", "no_connect", "R"),
+        ("7", "RSVD", "no_connect", "R"), ("15", "RSVD", "no_connect", "R"), ("16", "RSVD", "no_connect", "R"),
+        ("17", "RSVD", "no_connect", "R"), ("18", "RSVD", "no_connect", "R"), ("19", "RSVD", "no_connect", "R")]),
+}
+
+LOADED = {}
+
+
+def eff(hide=False, justify=None):
+    e = [Sym("effects"), [Sym("font"), [Sym("size"), 1.27, 1.27]]]
+    if justify:
+        e.append([Sym("justify"), Sym(justify)])
+    if hide:
+        e.append(Sym("hide"))
+    return e
+
+
+def build(name, d):
+    left = [p for p in d["pins"] if p[3] == "L"]
+    right = [p for p in d["pins"] if p[3] == "R"]
+    rows = max(len(left), len(right))
+    half_w = 10.16
+    top = (rows + 1) * 2.54 / 2
+    top = round(top / 2.54) * 2.54
+    bottom = top - (rows + 1) * 2.54
+    body = [Sym("symbol"), f"{name}_0_1",
+            [Sym("rectangle"), [Sym("start"), -half_w, top], [Sym("end"), half_w, bottom],
+             [Sym("stroke"), [Sym("width"), 0.254], [Sym("type"), Sym("default")]],
+             [Sym("fill"), [Sym("type"), Sym("background")]]]]
+    pins = [Sym("symbol"), f"{name}_1_1"]
+    for side, lst in (("L", left), ("R", right)):
+        for i, (num, pname, ptype, _) in enumerate(lst):
+            y = top - 2.54 * (i + 1)
+            x = -half_w - 2.54 if side == "L" else half_w + 2.54
+            ang = 0 if side == "L" else 180
+            pins.append([Sym("pin"), Sym(ptype), Sym("line"), [Sym("at"), x, y, ang], [Sym("length"), 2.54],
+                         [Sym("name"), pname, eff()], [Sym("number"), num, eff()]])
+    return [Sym("symbol"), name, [Sym("in_bom"), Sym("yes")], [Sym("on_board"), Sym("yes")],
+            [Sym("property"), "Reference", d["ref"], [Sym("at"), -half_w, top + 1.27, 0], eff(justify="left")],
+            [Sym("property"), "Value", name, [Sym("at"), half_w, top + 1.27, 0], eff(justify="right")],
+            [Sym("property"), "Footprint", d["fp"], [Sym("at"), 0, 0, 0], eff(hide=True)],
+            [Sym("property"), "Datasheet", "", [Sym("at"), 0, 0, 0], eff(hide=True)],
+            [Sym("property"), "Description", d["desc"], [Sym("at"), 0, 0, 0], eff(hide=True)],
+            body, pins]
+
+
+def main():
+    lib = [Sym("kicad_symbol_lib"), [Sym("version"), 20220914], [Sym("generator"), "logger-mklib"]]
+    for name, d in PARTS.items():
+        lib.append(build(name, d))
+    os.makedirs(os.path.dirname(OUT), exist_ok=True)
+    with open(OUT, "w") as f:
+        f.write(dump(lib) + "\n")
+    print("wrote", OUT)
+
+
+if __name__ == "__main__":
+    main()

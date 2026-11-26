@@ -58,7 +58,7 @@ def main():
     if os.path.exists(ses):
         os.remove(ses)
     cmd = ["java", "-Xmx6g", "-jar", jar, "-de", dsn, "-do", ses, "--gui.enabled=false",
-           f"--router.max_passes={PASSES}", "--router.fanout.enabled=true", "--router.optimizer.max_passes=20", "--router.job_timeout=00:10:00",
+           f"--router.max_passes={PASSES}", "--router.fanout.enabled=true", "--router.optimizer.max_passes=20", f"--router.job_timeout={os.environ.get('JOB_TIMEOUT', '00:10:00')}",
            "--profile.allow_telemetry=false", "--usage_and_diagnostic_data.disable_analytics=true"]
     print(" ".join(cmd))
     # Freerouting 2.1's fanout pass sometimes dies on a null corner and the job then hangs forever; the run is
@@ -99,7 +99,8 @@ def read_ses(board, path):
             if item[0] == "wire":
                 p = item[1]
                 xy = [(nm(p[3 + i]), -nm(p[4 + i])) for i in range(0, len(p) - 4, 2)]
-                segs += [(net[1], layers[p[1]], a, b, nm(p[2])) for a, b in zip(xy, xy[1:]) if a != b]
+                segs += [(net[1], layers[p[1]], a, b, nm(p[2])) for a, b in zip(xy, xy[1:])
+                         if abs(a[0] - b[0]) + abs(a[1] - b[1]) > 10000]     # drop sub-10 um crumbs (DRC: dangling)
             elif item[0] == "via":
                 m = re.search(r"_(\d+):(\d+)_um", item[1])
                 vias.append((net[1], (nm(item[2]), -nm(item[3])), int(m.group(1)) * 1000, int(m.group(2)) * 1000))
@@ -166,6 +167,9 @@ class Copper:
         fps = list(board.GetFootprints())
         self.avoid = [f.GetCourtyard(pcbnew.F_CrtYd) for f in fps if f.GetReference() in STITCH_AVOID]
         self.avoid += [z.Outline() for f in fps for z in f.Zones() if z.GetIsRuleArea()]
+        self.inside = pcbnew.SHAPE_POLY_SET()       # the board outline shrunk by edge clearance + via radius
+        board.GetBoardPolygonOutlines(self.inside)
+        self.inside.Deflate(MM(0.8), 16)
 
     def near(self, a, b, r):
         return abs(a.x - b.x) < r and abs(a.y - b.y) < r
@@ -174,6 +178,8 @@ class Copper:
         import pcb as layout
         x, y = pcbnew.ToMM(c.x) - layout.OX, pcbnew.ToMM(c.y) - layout.OY
         if not (1.2 < x < layout.W - 1.2 and 1.2 < y < layout.H - 1.2):
+            return False
+        if not self.inside.Contains(c):
             return False
         if any(a.Contains(c) for a in self.avoid):
             return False

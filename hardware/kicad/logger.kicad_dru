@@ -1,6 +1,1 @@
 (version 1)
-# Alps SKRTLAE010: the maker's land pattern (as in KiCad's library and in LCSC/JLCPCB's own footprint for C110293)
-# puts the terminal pads about 0.1 mm from the 0.9 mm NPTH boss holes. Allow it for these switches only.
-(rule "SKRT boss holes"
-  (constraint hole_clearance (min 0.05mm))
-  (condition "A.insideCourtyard('SW*') && B.insideCourtyard('SW*')"))

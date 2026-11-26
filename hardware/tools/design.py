@@ -168,7 +168,7 @@ MCU_NETS = {
     "28": "IMU_CS", "29": "IMU_SCK", "30": "IMU_MISO", "31": "IMU_MOSI", "32": "IMU_INT2",
     # barometer on SPI2
     "51": "BARO_CS", "52": "BARO_SCK", "53": "BARO_MISO", "54": "BARO_MOSI",
-    # I2C1: magnetometer
+    # I2C1: magnetometer (0x14) and temperature / humidity (SHT40, 0x44)
     "92": "I2C1_SCL", "93": "I2C1_SDA", "95": "EXP_SCL", "96": "EXP_SDA", "77": "MARKER",
     # GNSS on USART2 (names from the module's side)
     "24": "GNSS_RXD", "25": "GNSS_TXD", "15": "GNSS_RESET_N",
@@ -183,12 +183,16 @@ MCU_NETS = {
     # radio control and its UART0 (USART3: bootloader, console); names from the module's side
     "45": "RADIO_EN_MCU", "61": "RADIO_BOOT", "55": "RADIO_RXD", "56": "RADIO_TXD",
     # buttons, power fail, camera sync, LED
-    # keys: UP on PE7, DOWN on PE9; OK is the power key and is read on PD7 (PWR_BTN)
-    "37": "BTN_UP", "39": "BTN_DOWN", "34": "PWR_FAIL_N",
+    # keys: UP on PE8 (EXTI8), DOWN on PE9 (EXTI9); OK is the power key and is read on PD7 (PWR_BTN, EXTI7).
+    # Every EXTI line has one pin only: PWR_FAIL_N on PA10 (EXTI10), marker PA15 (EXTI15), IMU INT2 PC4 (EXTI4).
+    "38": "BTN_UP", "39": "BTN_DOWN", "69": "PWR_FAIL_N",
     # power latch and charger: PD4 hold, PD7 button sense, PD6 CHG status, PD5 / PD0 charge and input current steps
     "85": "PWR_HOLD", "88": "PWR_BTN", "87": "CHG_STAT_N", "86": "ISET_HI", "81": "ILIM_HI",
     # ADC: battery voltage (PC1, ADC1_INP11) and the USB-C CC level (PC5, ADC12_INP8)
-    "16": "VBAT_SENSE", "33": "CC_SENSE", "35": "CAM_SYNC", "40": "LED_STATUS",
+    "16": "VBAT_SENSE", "33": "CC_SENSE", "91": "CAM_SYNC", "40": "LED_STATUS",   # camera sync on PB5 = TIM3_CH2
+    # PDM microphone on DFSDM1 channel 1: the DFSDM's own clock out on PB0 (DFSDM1_CKOUT), data in on PB1
+    # (DFSDM1_DATIN1). Both sit on the MCU's bottom-left side, toward the mic; clear of the PC2_C/PC3_C analog switch.
+    "34": "MIC_CLK_SRC", "35": "MIC_DATA",
     # USB and debug
     "70": "USB_DM", "71": "USB_DP", "72": "SWDIO", "76": "SWCLK", "89": "SWO",
 }
@@ -228,7 +232,7 @@ MCU = dict(file="mcu.kicad_sch", title="MCU: STM32H723", paper="A2", parts=[
 ])
 
 # ---------------------------------------------------------------- sensors
-SENSORS = dict(file="sensors.kicad_sch", title="Sensors: IMU, barometer, magnetometer", parts=[
+SENSORS = dict(file="sensors.kicad_sch", title="Sensors: IMU, barometer, magnetometer, humidity, microphone", parts=[
     dict(ref="U6", lib="logger:ICM-45686", value="ICM-45686", fp="Package_LGA:LGA-14_3x2.5mm_P0.5mm_LayoutBorder3x4y",
          nets={"8": "+3V3", "5": "+3V3", "6": "GND",
                "12": "IMU_CS", "13": "IMU_SCK", "14": "IMU_MOSI", "1": "IMU_MISO",
@@ -249,10 +253,25 @@ SENSORS = dict(file="sensors.kicad_sch", title="Sensors: IMU, barometer, magneto
     C("C48", "2.2u X7R", "MAG_CRST", "GND", fp=C0603),   # BMM350 CRST: low-ESL, non-magnetic MLCC, close to C2
     R("R40", "2.2k", "I2C1_SCL", "+3V3"), R("R41", "2.2k", "I2C1_SDA", "+3V3"),
     FLAG("#FLG40", "+1V8_MAG"),
+    # Temperature and humidity for density altitude: Sensirion SHT40 (I2C 0x44) at the left board edge, behind a slot that
+    # keeps the board's heat away, under a vent in the case wall.
+    dict(ref="U17", lib="Sensor_Humidity:SHT4x", value="SHT40-AD1B", mpn="SHT40-AD1B-R3",
+         fp="Sensor_Humidity:Sensirion_DFN-4_1.5x1.5mm_P0.8mm_SHT4x_NoCentralPad",
+         nets={"1": "I2C1_SDA", "2": "I2C1_SCL", "3": "+3V3", "4": "GND"}),
+    C("C49", "100n", "+3V3", "GND"),
+    # PDM microphone: Infineon IM69D130 (AOP 130 dB SPL, so cockpit and propeller noise does not clip), bottom port,
+    # mounted on the back so the sound comes through the board hole from the case front. SELECT low = data on the
+    # falling clock edge (left channel).
+    dict(ref="MK1", lib="Sensor_Audio:IM69D130", value="IM69D130", mpn="IM69D130V01XTSA1",
+         fp="Sensor_Audio:Infineon_PG-LLGA-5-1",
+         nets={"1": "MIC_DATA", "2": "+3V3", "3": "MIC_CLK", "4": "GND", "5": "GND"}),
+    C("C53", "100n", "+3V3", "GND"), R("R42", "33R", "MIC_CLK_SRC", "MIC_CLK"),
 ], notes=[
     "IMU: TDK ICM-45686 on SPI. RESV pins 2, 3, 7, 10, 11 left open (datasheet: NC, VDDIO or GND); keep their internal pull-ups on.",
     "INT2 can also take an external clock (CLKIN) or FSYNC if the firmware wants it.",
     "BMM350 I2C address 0x14 (ADSEL low). BYPASS (C3) to GND, CRST 2.2 uF to GND per the datasheet pin table.",
+    "SHT40-AD1B: I2C address 0x44, shares I2C1 and its 2.2k pull-ups with the BMM350. Centre pad left unsoldered (Sensirion allows it).",
+    "IM69D130: PDM, 1.62-3.6 V, clock 0.4-3.3 MHz from DFSDM1_CKOUT (PB0) through 33R; DFSDM1 channel 1 (PB1) samples on the falling edge (SELECT low).",
 ])
 
 # ---------------------------------------------------------------- GNSS

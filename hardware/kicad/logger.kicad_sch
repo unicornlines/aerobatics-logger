@@ -71,7 +71,7 @@
     (fill
       (color 0 0 0 0))
     (uuid "5ee828f5-695b-fb23-3ad2-7e3c5ccebf86")
-    (property "Sheetname" "Sensors: IMU, barometer, magnetometer"
+    (property "Sheetname" "Sensors: IMU, barometer, magnetometer, humidity, microphone"
       (at 270 49.3 0)
       (effects
         (font

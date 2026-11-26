@@ -83,6 +83,13 @@ at("U9", 20.0, 45.0, 0)                               # magnetometer, far from t
 at("C46", 18.0, 47.5, 0); at("C47", 20.5, 47.5, 0); at("C48", 23.0, 47.5, 0)
 row(["R40", "R41"], 18.0, 42.0, 2.0, 0, 90)
 at("U8", 12.5, 44.5, 90); at("C44", 12.5, 41.0, 0); at("C45", 12.5, 48.0, 90)
+# Temperature / humidity at the left edge, outside the panel, on a tongue cut free by an L-shaped milled notch (SLOT_L) so the
+# board's heat reaches it only through the narrow bottom neck; the case vents the wall in front of it.
+at("U17", 3.2, 45.8, 0); at("C49", 3.2, 48.4, 0)
+# PDM microphone on the back, its sound port through the board to the front, just left of the panel and as close to
+# PB0/PB1 as the panel allows; the case ports the bezel over it. Clock series resistor at PB0.
+at("MK1", 26.5, 41.0, 90, "B"); at("C53", 26.2, 37.9, 0, "B")
+at("R42", 48.8, 36.8, 90)
 at("U7", 24.5, 53.5, 0)                               # barometer: hose chamber over it, barb out of the bottom wall
 at("C42", 22.0, 53.5, 90); at("C43", 27.0, 53.5, 90)
 
@@ -157,14 +164,26 @@ at("Q1", 92.0, 40.6, 0); at("R105", 92.0, 43.8, 0)        # reverse-polarity PMO
 FANOUT = [("U9", "C3", 0.55, 0.55), ("C30", "GND", 0.0, -0.95), ("C31", "GND", 0.0, 0.95),
           ("U6", "6", 0.0, 0.9),            # IMU GND, straight down between VDDIO and a reserved pin
           ("U7", "9", 0.75, 0.0),           # baro GND (right side, middle pad), straight out to a via
-          ("U11", "51", 0.6, 0.75)]
-TRACKS = []
+          ("U11", "51", 0.6, 0.75),
+          ("C53", "2", 0.0, 0.75)]          # mic decoupling (back): its GND via between the cap and the mic, off the 3V3 run
+# Hand tracks (net, points, side, width) and vias (net, x, y), locked. The humidity sensor's I2C pair leaves its tongue
+# on the back through the neck below the notch and climbs to the pull-ups R40 (SCL) / R41 (SDA), in two parallel
+# lanes (pads exit sideways: the sensor's footprint keeps tracks off its body); the router kept missing this branch. SDA joins the bus at the via under R41.
+SDA_VIA = (20.0, 43.3325)
+TRACKS = [("I2C1_SDA", [(2.5, 45.4), (1.3, 45.4)], "F", 0.2),
+          ("I2C1_SDA", [(1.3, 45.4), (1.3, 52.6), (16.0, 52.6), (20.0, 48.6), SDA_VIA], "B", 0.2),
+          ("I2C1_SDA", [SDA_VIA, (20.0, 42.51)], "F", 0.2),
+          ("I2C1_SCL", [(2.5, 46.2), (2.05, 46.2), (2.05, 46.95)], "F", 0.2),
+          ("I2C1_SCL", [(2.05, 46.95), (2.05, 52.0), (14.0, 52.0), (18.0, 48.0), (18.0, 43.3)], "B", 0.2),
+          ("I2C1_SCL", [(18.0, 43.3), (18.0, 42.51)], "F", 0.2)]
+HAND_VIAS = [("I2C1_SDA", 1.3, 45.4), ("I2C1_SDA", *SDA_VIA), ("I2C1_SCL", 2.05, 46.95), ("I2C1_SCL", 18.0, 43.3)]
 FANOUT_INWARD = ["U5"]
 FANOUT_AXIAL = [("U1", "2", +1), ("U10", "24", -1)]
 PREROUTE = []
 PREROUTE_PATH = [("J50", "1", [(GX - 13.05, GY - 1.74), (GX - 13.05, GY + 0.5), (GX - 9.0, GY + 4.55), (GX - 7.65, GY + 5.9)], "U10", "11", "F", 0.25),
                  ("L50", "2", [(GX - 10.28, GY - 1.74), (GX - 13.05, GY - 1.74)], None, None, "F", 0.15)]
 
+SLOT_L = (6.2, 41.0, 50.8, 1.0)   # L-shaped 1.0 mm milled notch around the humidity sensor: in from the left edge along y0 to x1, then down to y1; width
 HOLES = [(4.0, 4.0), (W - 4.0, 4.0), (4.0, H - 4.0), (W - 4.0, H - 4.0)]   # corners only: the cell lies behind the middle
 HOLE_KEEPOUT = 7.0             # mm: hole pad diameter (0.5 mm from the edge at the corners), so parts, tracks and vias stay off it on every layer; the case bosses clamp here
 
@@ -208,9 +227,21 @@ def outline(board, r=2.0):
     edge_line(board, r, 0, x0, 0); edge_line(board, x0, 0, x0, d - rr); edge_arc(board, x0 + rr, d - rr, x0, d - rr, -90)
     edge_line(board, x0 + rr, d, x1 - rr, d); edge_arc(board, x1 - rr, d - rr, x1 - rr, d, -90); edge_line(board, x1, d - rr, x1, 0)
     edge_line(board, x1, 0, W - r, 0); edge_line(board, W, r, W, H - r)
-    edge_line(board, W - r, H, r, H); edge_line(board, 0, H - r, 0, r)
+    edge_line(board, W - r, H, r, H)
+    edge_line(board, 0, H - r, 0, SLOT_L[1] + SLOT_L[3] / 2); edge_line(board, 0, SLOT_L[1] - SLOT_L[3] / 2, 0, r)   # left edge, broken by the sensor notch
     edge_arc(board, W - r, r, W - r, 0, 90); edge_arc(board, W - r, H - r, W, H - r, 90)
     edge_arc(board, r, H - r, r, H, 90); edge_arc(board, r, r, 0, r, 90)
+
+
+def slots(board):
+    """The L-shaped milled notch that frees the humidity sensor's tongue: in from the left edge along y0 to the corner
+    at x1, then down to y1, with a round end. The left edge (outline) stops on either side of it. The tool's radius
+    rounds the outer corner of the L; the tongue's own corner stays sharp."""
+    x1, y0, y1, w = SLOT_L
+    h = w / 2
+    edge_line(board, 0, y0 - h, x1, y0 - h); edge_arc(board, x1, y0, x1, y0 - h, 90)
+    edge_line(board, x1 + h, y0, x1 + h, y1); edge_arc(board, x1, y1, x1 + h, y1, 180)
+    edge_line(board, x1 - h, y1, x1 - h, y0 + h); edge_line(board, x1 - h, y0 + h, 0, y0 + h)
 
 
 def zone(board, net, layer, inset=0.3):
@@ -418,6 +449,9 @@ def main():
         for s_, e_ in zip(pp, pp[1:]):
             t = pcbnew.PCB_TRACK(board); t.SetStart(s_); t.SetEnd(e_); t.SetWidth(MM(w))
             t.SetLayer({"F": pcbnew.F_Cu, "B": pcbnew.B_Cu, "In2": pcbnew.In2_Cu}[side]); t.SetNet(net(n)); t.SetLocked(True); board.Add(t)
+    for n, x, y in HAND_VIAS:
+        v = pcbnew.PCB_VIA(board); v.SetPosition(pcbnew.VECTOR2I(MM(OX + x), MM(OY + y))); v.SetWidth(MM(0.5)); v.SetDrill(MM(0.25))
+        v.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu); v.SetNet(net(n)); v.SetLocked(True); board.Add(v)
     fan = list(FANOUT)
     axial = [(r, None, -1) for r in FANOUT_INWARD] + FANOUT_AXIAL
     for ref, only, sign in axial:
@@ -438,13 +472,15 @@ def main():
         num, _, k = num.partition("#")           # "11#2": the third pad numbered 11 (shell tabs share a number)
         pad = [p for p in board.FindFootprintByReference(ref).Pads() if num in (p.GetNumber(), p.GetNetname())][int(k or 0)]
         a = pad.GetPosition(); c = pcbnew.VECTOR2I(a.x + MM(dx), a.y + MM(dy))
-        t = pcbnew.PCB_TRACK(board); t.SetStart(a); t.SetEnd(c); t.SetWidth(MM(w)); t.SetLayer(pcbnew.F_Cu)
+        t = pcbnew.PCB_TRACK(board); t.SetStart(a); t.SetEnd(c); t.SetWidth(MM(w))
+        t.SetLayer(pcbnew.F_Cu if pad.IsOnLayer(pcbnew.F_Cu) else pcbnew.B_Cu)   # bottom-side parts fan out on B.Cu
         t.SetNet(pad.GetNet()); t.SetLocked(True); board.Add(t)
         v = pcbnew.PCB_VIA(board); v.SetPosition(c); v.SetWidth(MM(vd)); v.SetDrill(MM(vdr))
         v.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu); v.SetNet(pad.GetNet()); v.SetLocked(True); board.Add(v)   # GND or +3V3 plane
     logo = load("logger:" + LOGO[0]); logo.SetReference("LOGO1"); logo.Reference().SetVisible(False)
     logo.SetPosition(pcbnew.VECTOR2I(MM(OX + LOGO[1]), MM(OY + LOGO[2]))); board.Add(logo)
     outline(board)
+    slots(board)
     for lb in LABELS:
         text(board, *lb)
     axes(board, *IMU_AXES)

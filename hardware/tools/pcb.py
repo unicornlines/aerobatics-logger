@@ -83,18 +83,19 @@ at("U9", 20.0, 45.0, 0)                               # magnetometer, far from t
 at("C46", 18.0, 47.5, 0); at("C47", 20.5, 47.5, 0); at("C48", 23.0, 47.5, 0)
 row(["R40", "R41"], 18.0, 42.0, 2.0, 0, 90)
 at("U8", 12.5, 44.5, 90); at("C44", 12.5, 41.0, 0); at("C45", 12.5, 48.0, 90)
-# Temperature / humidity at the left edge, outside the panel, on a tongue cut free by an L-shaped milled notch (SLOT_L) so the
-# board's heat reaches it only through the narrow bottom neck; the case vents the wall in front of it.
-at("U17", 3.2, 45.8, 0); at("C49", 3.2, 48.4, 0)
-# PDM microphone on the back, its sound port through the board to the front, just left of the panel and as close to
-# PB0/PB1 as the panel allows; the case ports the bezel over it. Clock series resistor at PB0.
-at("MK1", 26.5, 41.0, 90, "B"); at("C53", 26.2, 37.9, 0, "B")
+# Environmental chamber at the left edge (x 0.5-7.5, y 40.5-52.5, nothing else within 1.2 mm): the case walls it off
+# with baffles and vents it through the left side wall. Temperature / humidity on top, on a copper-free island
+# (SHT_ISLAND: no pour on any layer, thin traces) instead of a milled slot, since the board takes repeated g loads;
+# the top-port PDM microphone below it. Clock series resistor at PB0.
+at("U17", 3.0, 43.0, 180); at("C49", 1.3, 43.0, 270)
+at("MK1", 3.8, 49.3, 0); at("C53", 2.3, 46.4, 180)
 at("R42", 48.8, 36.8, 90)
+SHT_ISLAND = (1.9, 40.8, 6.5, 45.2)
 # Barometer: the case seals a hood onto the board around it (cockpit air, or a hose to the static port), so the front
 # keeps a part-free ring of 1.8 mm round its courtyard (x 19.45-25.55, y 50.45-56.55) and stays left of the key
-# bridge at x 27.2; its decoupling caps sit on the back, right under it.
+# bridge at x 27.2; its decoupling caps sit just above that ring.
 at("U7", 22.5, 53.5, 0)
-at("C42", 21.2, 53.5, 90, "B"); at("C43", 22.5, 53.5, 90, "B")
+at("C42", 21.9, 49.4, 90); at("C43", 23.3, 49.4, 90)
 
 # --- Top edge, under the panel: Qwiic and camera/marker sockets (cables out of the top) ------
 at("J63", 35.0, 3.4, 180)                              # I2C expansion (Qwiic)
@@ -154,11 +155,13 @@ row(["R60", "R61", "R62", "R63", "R64", "R65"], W - 19.4, 24.5, 0, 1.6, 0)
 at("C60", W - 19.4, 35.0, 90); at("C61", W - 19.4, 37.8, 90)
 
 # --- Battery and cell protection (bottom-right corner) ---------
-at("J2", 116.0, 46.0, 0)                                  # JST PH, cable towards the bottom edge
+# JST PH side entry, plug in from the right edge (opening at x 115): the free strip x 115-124, y 43-49 in front of it
+# carries the lead, which the case turns down into a wall gully to the cell. Clear of the corner screw H4.
+at("J2", 109.9, 45.5, 90)
 at("Q3", 97.0, 42.5, 0); at("Q4", 97.0, 45.9, 0)          # discharge / charge FETs
 row(["R113", "R112", "C109"], 100.2, 42.0, 1.4, 0, 90)
-at("U15", 104.9, 43.2, 0); row(["R111", "R110"], 107.2, 42.0, 1.4, 0, 90)
-at("F2", 108.6, 45.6, 90)                                # fuse right at the cell's + pin
+at("U15", 100.9, 45.2, 0); row(["R111", "R110"], 103.6, 44.2, 0, 2.0, 90)
+at("F2", 109.5, 52.6, 0)                                 # fuse right below the cell's pins
 at("Q1", 92.0, 40.6, 0); at("R105", 92.0, 43.8, 0)        # reverse-polarity PMOS
 
 # Hand fanouts, placed before autorouting and locked: (ref, pad or net, dx, dy) -> GND via at pad + (dx, dy) mm.
@@ -168,29 +171,38 @@ FANOUT = [("U9", "C3", 0.55, 0.55), ("C30", "GND", 0.0, -0.95), ("C31", "GND", 0
           ("U6", "6", 0.0, 0.9),            # IMU GND, straight down between VDDIO and a reserved pin
           ("U7", "9", 0.75, 0.0),           # baro GND (right side, middle pad), straight out to a via
           ("U11", "51", 0.6, 0.75),
-          ("C53", "2", 0.0, 0.75),
-          # humidity sensor: 3V3 and GND straight out sideways to the planes (its footprint keeps tracks off the body),
-          # so nothing has to find its way round the notch
-          ("U17", "3", 0.85, 0.0), ("U17", "4", 0.85, 0.0), ("C49", "1", 0.0, 0.9),
+          # environmental chamber: the humidity sensor's cap and the mic's cap get their 3V3 via just outside the
+          # copper-free island; the mic's ground ring gets a via on every side
+          ("C49", "1", 0.0, -0.9), ("C53", "1", 0.0, -0.8),
+          ("MK1", "5", 0.75, 0.0), ("MK1", "6", 0.0, -0.8), ("MK1", "7", -0.75, 0.0), ("MK1", "8", 0.0, 0.8),
           ("C62", "1", 0.7, 0.0), ("U16", "1", 0.0, -0.7)]   # LCD boost input and its cap: straight to the 3V3 plane          # mic decoupling (back): its GND via between the cap and the mic, off the 3V3 run
-# Hand tracks (net, points, side, width) and vias (net, x, y), locked. The humidity sensor's I2C pair leaves its tongue
-# on the back through the neck below the notch and climbs to the pull-ups R40 (SCL) / R41 (SDA), in two parallel
-# lanes (pads exit sideways: the sensor's footprint keeps tracks off its body); the router kept missing this branch. SDA joins the bus at the via under R41.
+# Hand tracks (net, points, side, width) and vias (net, x, y), locked. Environmental chamber: the humidity sensor's
+# pads exit sideways (its footprint keeps tracks off the body), supply and ground to C49 at the edge, the I2C pair east
+# across the island and on the back in two parallel lanes to the pull-ups R40 (SCL) / R41 (SDA). The mic's four inner
+# pads leave its ground ring through the corner gaps at 45 deg; LR is tied to the ring (left channel).
 SDA_VIA = (20.0, 43.3325)
-TRACKS = [("I2C1_SDA", [(2.5, 45.4), (1.3, 45.4)], "F", 0.2),
-          ("I2C1_SDA", [(1.3, 45.4), (1.3, 52.6), (16.0, 52.6), (20.0, 48.6), SDA_VIA], "B", 0.2),
-          ("I2C1_SDA", [SDA_VIA, (20.0, 42.51)], "F", 0.2),
-          ("I2C1_SCL", [(2.5, 46.2), (2.05, 46.2), (2.05, 46.95)], "F", 0.2),
-          ("I2C1_SCL", [(2.05, 46.95), (2.05, 52.0), (14.0, 52.0), (18.0, 48.0), (18.0, 43.3)], "B", 0.2),
-          ("I2C1_SCL", [(18.0, 43.3), (18.0, 42.51)], "F", 0.2)]
-HAND_VIAS = [("I2C1_SDA", 1.3, 45.4), ("I2C1_SDA", *SDA_VIA), ("I2C1_SCL", 2.05, 46.95), ("I2C1_SCL", 18.0, 43.3)]
+TRACKS = [("+3V3", [(2.3, 42.6), (1.3, 42.52)], "F", 0.15), ("GND", [(2.3, 43.4), (1.3, 43.48)], "F", 0.15),
+          ("I2C1_SDA", [(3.7, 43.4), (7.0, 43.4)], "F", 0.15),
+          ("I2C1_SDA", [(7.0, 43.4), (7.7, 44.1), (19.3, 44.1), SDA_VIA], "B", 0.2),
+          ("I2C1_SDA", [SDA_VIA, (20.0, 42.51)], "F", 0.2), ("I2C1_SDA", [SDA_VIA, (20.0, 44.6)], "F", 0.15),
+          # ...and on to the MCU (PB7, pad 93) along the router's earlier path, which it no longer finds on its own
+          ("I2C1_SDA", [SDA_VIA, (35.5617, 43.3325), (42.0377, 36.8565)], "B", 0.15),
+          ("I2C1_SDA", [(42.0377, 36.8565), (42.0377, 34.8722), (43.5231, 33.3868), (43.5231, 31.6012), (47.5, 27.6243), (47.5, 18.325)], "F", 0.15),
+          ("I2C1_SCL", [(3.7, 42.6), (7.8, 42.6)], "F", 0.15),
+          ("I2C1_SCL", [(7.8, 42.6), (17.3, 42.6), (18.0, 43.3)], "B", 0.2),
+          ("I2C1_SCL", [(18.0, 43.3), (18.0, 42.51)], "F", 0.2),
+          ("+3V3", [(3.375, 48.625), (3.375, 48.375), (2.78, 47.78), (2.78, 46.4)], "F", 0.15),
+          ("GND", [(3.375, 49.975), (2.575, 49.975)], "F", 0.15),
+          ("MIC_DATA", [(4.225, 48.625), (4.225, 48.375), (5.4, 47.2)], "F", 0.15),
+          ("MIC_CLK", [(4.225, 49.975), (4.225, 50.225), (5.4, 51.4)], "F", 0.15)]
+HAND_VIAS = [("I2C1_SDA", 7.0, 43.4), ("I2C1_SDA", *SDA_VIA), ("I2C1_SDA", 42.0377, 36.8565), ("I2C1_SCL", 7.8, 42.6), ("I2C1_SCL", 18.0, 43.3),
+             ("MIC_DATA", 5.4, 47.2), ("MIC_CLK", 5.4, 51.4)]
 FANOUT_INWARD = ["U5"]
 FANOUT_AXIAL = [("U1", "2", +1), ("U10", "24", -1)]
 PREROUTE = [("U16", "1", "U16", "6", "F", 0.25)]   # LCD boost: VIN and EN tied straight across the package
 PREROUTE_PATH = [("J50", "1", [(GX - 13.05, GY - 1.74), (GX - 13.05, GY + 0.5), (GX - 9.0, GY + 4.55), (GX - 7.65, GY + 5.9)], "U10", "11", "F", 0.25),
                  ("L50", "2", [(GX - 10.28, GY - 1.74), (GX - 13.05, GY - 1.74)], None, None, "F", 0.15)]
 
-SLOT_L = (6.2, 41.0, 50.8, 1.0)   # L-shaped 1.0 mm milled notch around the humidity sensor: in from the left edge along y0 to x1, then down to y1; width
 HOLES = [(4.0, 4.0), (W - 4.0, 4.0), (4.0, H - 4.0), (W - 4.0, H - 4.0)]   # corners only: the cell lies behind the middle
 HOLE_KEEPOUT = 7.0             # mm: hole pad diameter (0.5 mm from the edge at the corners), so parts, tracks and vias stay off it on every layer; the case bosses clamp here
 
@@ -224,31 +236,25 @@ def edge_arc(board, cx, cy, sx, sy, angle):
     board.Add(s)
 
 
-# Cut-out under the radio antenna (Espressif guidelines 1.4.7: no board material under or beside the antenna).
-# The module still sits flush with the top edge; the notch is hidden under it.
-ANT_NOTCH = (10.4, 23.6, 5.0, 0.5)      # x from, x to, depth, inner corner radius
-
-
 def outline(board, r=2.0):
-    x0, x1, d, rr = ANT_NOTCH
-    edge_line(board, r, 0, x0, 0); edge_line(board, x0, 0, x0, d - rr); edge_arc(board, x0 + rr, d - rr, x0, d - rr, -90)
-    edge_line(board, x0 + rr, d, x1 - rr, d); edge_arc(board, x1 - rr, d - rr, x1 - rr, d, -90); edge_line(board, x1, d - rr, x1, 0)
-    edge_line(board, x1, 0, W - r, 0); edge_line(board, W, r, W, H - r)
-    edge_line(board, W - r, H, r, H)
-    edge_line(board, 0, H - r, 0, SLOT_L[1] + SLOT_L[3] / 2); edge_line(board, 0, SLOT_L[1] - SLOT_L[3] / 2, 0, r)   # left edge, broken by the sensor notch
+    """Plain rounded rectangle: no cut-outs or slots anywhere, the board takes repeated g loads. The radio antenna has
+    its copper keep-out (in the module footprint) instead of a notch."""
+    edge_line(board, r, 0, W - r, 0); edge_line(board, W, r, W, H - r)
+    edge_line(board, W - r, H, r, H); edge_line(board, 0, H - r, 0, r)
     edge_arc(board, W - r, r, W - r, 0, 90); edge_arc(board, W - r, H - r, W, H - r, 90)
     edge_arc(board, r, H - r, r, H, 90); edge_arc(board, r, r, 0, r, 90)
 
 
-def slots(board):
-    """The L-shaped milled notch that frees the humidity sensor's tongue: in from the left edge along y0 to the corner
-    at x1, then down to y1, with a round end. The left edge (outline) stops on either side of it. The tool's radius
-    rounds the outer corner of the L; the tongue's own corner stays sharp."""
-    x1, y0, y1, w = SLOT_L
-    h = w / 2
-    edge_line(board, 0, y0 - h, x1, y0 - h); edge_arc(board, x1, y0, x1, y0 - h, 90)
-    edge_line(board, x1 + h, y0, x1 + h, y1); edge_arc(board, x1, y1, x1 + h, y1, 180)
-    edge_line(board, x1 - h, y1, x1 - h, y0 + h); edge_line(board, x1 - h, y0 + h, 0, y0 + h)
+def island(board, x0, y0, x1, y1):
+    """Copper-free island round the humidity sensor: no pour on any layer, tracks allowed (its own thin ones)."""
+    z = pcbnew.ZONE(board)
+    z.SetIsRuleArea(True); z.SetLayerSet(pcbnew.LSET.AllCuMask(4))
+    z.SetDoNotAllowCopperPour(True); z.SetDoNotAllowTracks(False); z.SetDoNotAllowVias(False)
+    z.SetDoNotAllowPads(False); z.SetDoNotAllowFootprints(False)
+    ol = z.Outline(); ol.NewOutline()
+    for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1)):
+        ol.Append(MM(OX + x), MM(OY + y))
+    board.Add(z)
 
 
 def zone(board, net, layer, inset=0.3):
@@ -267,7 +273,7 @@ def zone(board, net, layer, inset=0.3):
 
 SILK_REF_PREFIXES = ("U", "J")          # ICs and connectors keep their reference on the silkscreen
 LABELLED = {"J2", "J20", "J50", "J60", "J61", "J62", "J63"}   # ...unless a function label replaces it (see LABELS)
-REF_POS = {"U16": (DX + 9.0, 10.4), "U5": (MX, MY), "U4": (98.0, 28.0), "U13": (103.0, 11.0), "U15": (104.3, 40.6), "U10": (19.5, 21.3)}            # reference centred in the MCU outline
+REF_POS = {"U16": (DX + 9.0, 10.4), "U5": (MX, MY), "U4": (98.0, 28.0), "U13": (103.0, 11.0), "U15": (99.2, 45.2, 90), "U10": (19.5, 21.3)}            # reference centred in the MCU outline
 
 # Silkscreen labels: (text, x, y, rotation, size_mm, layer)
 LABELS = [
@@ -276,12 +282,12 @@ LABELS = [
     ("CHG", CX - 4.7, CY - 5.2, 0, 0.8, "F"), ("SWD", MX + 17.0, MY - 3.2, 0, 0.8, "F"), ("ANT", 4.0, 30.7, 0, 0.8, "F"),
     ("I2C", 29.6, 4.0, 0, 0.8, "F"), ("CAM/MRK", 52.0, 3.4, 0, 0.8, "F"), ("LCD", DX, 11.9, 0, 0.8, "F"),
     ("D+", 12.0, 21.2, 0, 0.8, "F"), ("D-", 14.4, 21.2, 0, 0.8, "F"),
-    ("BAT 1S", 122.7, 41.7, 90, 0.8, "F"), ("+", 119.6, 41.2, 0, 0.8, "F"), ("\u2212", 112.4, 41.2, 0, 0.8, "F"),
-    ("UNICORNLINES\u00ae", 101.5, 58.7, 0, 1.0, "F"), ("Never Stop Dreaming", 101.5, 60.3, 0, 0.8, "F", True),
+    ("+", 115.9, 43.5, 0, 0.8, "F"), ("\u2212", 115.9, 47.5, 0, 0.8, "F"), ("BAT 1S", 117.4, 45.5, 90, 0.8, "F"),
+    ("UNICORNLINES\u00ae", 99.8, 58.7, 0, 1.0, "F"), ("Never Stop Dreaming", 99.8, 60.3, 0, 0.8, "F", True),
     ("AEROBATICS LOGGER", DX, 24.0, 0, 2.0, "B"), ("rev A  2026-11", DX, 27.5, 0, 1.2, "B"),
     ("PER PERFECTIONEM AD FELICITATEM", DX, 31.5, 0, 1.1, "B", True),
 ]
-LOGO = ("Unicornlines_Logo", 101.5, 52.4)   # 9.5 mm, bottom-right beside DOWN, outside the panel (tools/mklogo.py)
+LOGO = ("Unicornlines_Logo", 99.8, 52.4)   # 9.5 mm, bottom-right beside DOWN, outside the panel (tools/mklogo.py)
 IMU_AXES = (35.8, 44.2)   # left of the IMU; origin of the IMU axis arrows (ICM-45686, pin 1 top-left: +X right, +Y up, +Z out of the top; as TDK fig. 14 and CogniPilot's footprint)
 
 
@@ -291,7 +297,7 @@ def tidy_refs(f, ref):
     t.SetTextSize(pcbnew.VECTOR2I(MM(0.8), MM(0.8))); t.SetTextThickness(MM(0.12))
     if ref in REF_POS:
         t.SetPosition(pcbnew.VECTOR2I(MM(OX + REF_POS[ref][0]), MM(OY + REF_POS[ref][1])))
-        t.SetTextAngle(pcbnew.EDA_ANGLE(0, pcbnew.DEGREES_T))
+        t.SetTextAngle(pcbnew.EDA_ANGLE(REF_POS[ref][2] if len(REF_POS[ref]) > 2 else 0, pcbnew.DEGREES_T))
         if ref == "U5":
             t.SetTextSize(pcbnew.VECTOR2I(MM(1.2), MM(1.2)))
     if not ref.startswith(SILK_REF_PREFIXES) or ref in LABELLED:
@@ -487,7 +493,7 @@ def main():
     logo = load("logger:" + LOGO[0]); logo.SetReference("LOGO1"); logo.Reference().SetVisible(False)
     logo.SetPosition(pcbnew.VECTOR2I(MM(OX + LOGO[1]), MM(OY + LOGO[2]))); board.Add(logo)
     outline(board)
-    slots(board)
+    island(board, *SHT_ISLAND)
     for lb in LABELS:
         text(board, *lb)
     axes(board, *IMU_AXES)

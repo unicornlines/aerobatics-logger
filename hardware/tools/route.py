@@ -132,8 +132,9 @@ def read_ses(board, path):
         return (q[0] - ax - t * (bx - ax)) ** 2 + (q[1] - ay - t * (by - ay)) ** 2 < 1000 ** 2
 
     zone_nets = ("GND", "+3V3")
+    fixed_vias = {(v.GetNetname(), (v.GetPosition().x, v.GetPosition().y)) for v in board.GetTracks() if v.GetClass() == "PCB_VIA"}
     while True:
-        vpos = {(n, q) for n, q, _, _ in vias}
+        vpos = {(n, q) for n, q, _, _ in vias} | fixed_vias     # pcb.py's locked vias count as anchors too
         keep = []
         for k, (n, L, a, b, w) in enumerate(segs):
             if n == "GND" or (n == "+3V3" and L == pcbnew.In2_Cu):     # these may end in their pour
@@ -182,6 +183,9 @@ class Copper:
         fps = list(board.GetFootprints())
         self.avoid = [f.GetCourtyard(pcbnew.F_CrtYd) for f in fps if f.GetReference() in STITCH_AVOID]
         self.avoid += [z.Outline() for f in fps for z in f.Zones() if z.GetIsRuleArea()]
+        for z in board.Zones():                     # board-level keep-outs (the humidity sensor's copper-free island)
+            if z.GetIsRuleArea():
+                o = pcbnew.SHAPE_POLY_SET(z.Outline()); o.Inflate(MM(0.6), 16); self.avoid.append(o)
         self.inside = pcbnew.SHAPE_POLY_SET()       # the board outline shrunk by edge clearance + via radius
         board.GetBoardPolygonOutlines(self.inside)
         self.inside.Deflate(MM(0.8), 16)

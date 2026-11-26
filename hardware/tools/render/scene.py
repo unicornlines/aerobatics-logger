@@ -33,7 +33,7 @@ STANDINS = {
     "F1": (1.6, 0.8, 0.5, "#ece6d4", ""),                         # expansion PTC, 0603
     "D24": (2.0, 1.25, 0.9, "#1b1b1d", ""),                       # BAT54W, SOT-323
     "U17": (1.5, 1.5, 0.5, "#3a3a3d", ""),                        # SHT40 humidity / temperature, DFN-4 1.5x1.5
-    "MK1": (4.0, 3.0, 1.2, "#cfd2d6", ""),                        # IM69D130 PDM mic, metal lid, bottom port (back side)
+    "MK1": (3.0, 4.0, 1.0, "#cfd2d6", ""),                        # MP34DT06J PDM mic, metal lid, top port
     # radio module: its own 0.8 mm PCB (antenna end bare, over the board edge) with the shield can on it.
     # Several boxes per part: (w, l, h, colour, label, dx, dy, dz) relative to the footprint origin.
     "U11": [(13.2, 16.6, 0.8, "#1b1b1d", "", 0.0, 0.0, 0.0),

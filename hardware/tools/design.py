@@ -253,25 +253,26 @@ SENSORS = dict(file="sensors.kicad_sch", title="Sensors: IMU, barometer, magneto
     C("C48", "2.2u X7R", "MAG_CRST", "GND", fp=C0603),   # BMM350 CRST: low-ESL, non-magnetic MLCC, close to C2
     R("R40", "2.2k", "I2C1_SCL", "+3V3"), R("R41", "2.2k", "I2C1_SDA", "+3V3"),
     FLAG("#FLG40", "+1V8_MAG"),
-    # Temperature and humidity for density altitude: Sensirion SHT40 (I2C 0x44) at the left board edge, behind a slot that
-    # keeps the board's heat away, under a vent in the case wall.
+    # Temperature and humidity for density altitude: Sensirion SHT40 (I2C 0x44) at the left board edge, in the case's
+    # vented side chamber. No slot (the board takes repeated g loads): a copper-free island and thin traces keep the
+    # board's heat away.
     dict(ref="U17", lib="Sensor_Humidity:SHT4x", value="SHT40-AD1B", mpn="SHT40-AD1B-R3",
          fp="Sensor_Humidity:Sensirion_DFN-4_1.5x1.5mm_P0.8mm_SHT4x_NoCentralPad",
          nets={"1": "I2C1_SDA", "2": "I2C1_SCL", "3": "+3V3", "4": "GND"}),
     C("C49", "100n", "+3V3", "GND"),
-    # PDM microphone: Infineon IM69D130 (AOP 130 dB SPL, so cockpit and propeller noise does not clip), bottom port,
-    # mounted on the back so the sound comes through the board hole from the case front. SELECT low = data on the
-    # falling clock edge (left channel).
-    dict(ref="MK1", lib="Sensor_Audio:IM69D130", value="IM69D130", mpn="IM69D130V01XTSA1",
-         fp="Sensor_Audio:Infineon_PG-LLGA-5-1",
-         nets={"1": "MIC_DATA", "2": "+3V3", "3": "MIC_CLK", "4": "GND", "5": "GND"}),
+    # PDM microphone: ST MP34DT06J (JLCPCB C503097), top port, on the front next to the SHT40 so one chamber vented
+    # through the case's left wall serves both (no board hole, no part on the back). AOP 122.5 dB SPL. LR to GND: left
+    # channel, the mic drives DOUT while CLK is low.
+    dict(ref="MK1", lib="logger:MP34DT06J", value="MP34DT06J", mpn="MP34DT06JTR",
+         fp="logger:ST_HCLGA-4_3x4mm_MP34DT06J",
+         nets={"1": "+3V3", "2": "GND", "3": "MIC_CLK", "4": "MIC_DATA", "5": "GND", "6": "GND", "7": "GND", "8": "GND"}),
     C("C53", "100n", "+3V3", "GND"), R("R42", "33R", "MIC_CLK_SRC", "MIC_CLK"),
 ], notes=[
     "IMU: TDK ICM-45686 on SPI. RESV pins 2, 3, 7, 10, 11 left open (datasheet: NC, VDDIO or GND); keep their internal pull-ups on.",
     "INT2 can also take an external clock (CLKIN) or FSYNC if the firmware wants it.",
     "BMM350 I2C address 0x14 (ADSEL low). BYPASS (C3) to GND, CRST 2.2 uF to GND per the datasheet pin table.",
     "SHT40-AD1B: I2C address 0x44, shares I2C1 and its 2.2k pull-ups with the BMM350. Centre pad left unsoldered (Sensirion allows it).",
-    "IM69D130: PDM, 1.62-3.6 V, clock 0.4-3.3 MHz from DFSDM1_CKOUT (PB0) through 33R; DFSDM1 channel 1 (PB1) samples on the falling edge (SELECT low).",
+    "MP34DT06J (ST DS12698 rev 3): PDM, 1.6-3.6 V, clock 1.2-3.25 MHz from DFSDM1_CKOUT (PB0) through 33R into DFSDM1 channel 1 (PB1). LR to GND = left channel: DOUT valid while CLK is low (table 6), so DFSDM samples on the rising edge.",
 ])
 
 # ---------------------------------------------------------------- GNSS

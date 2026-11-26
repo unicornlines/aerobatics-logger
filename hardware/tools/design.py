@@ -24,7 +24,7 @@ def FLAG(ref, net):
 
 
 # ---------------------------------------------------------------- power
-POWER = dict(file="power.kicad_sch", title="Power: USB-C, Li-ion charger, hold-up, 3.3 V", paper="A2", parts=[
+POWER = dict(file="power.kicad_sch", title="Power: USB-C, Li-ion charger, cell protection, 3.3 V", paper="A2", parts=[
     dict(ref="J1", lib="Connector:USB_C_Receptacle_USB2.0_16P", value="USB-C",
          fp="Connector_USB:USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal",
          nets={"A4": "VBUS", "A9": "VBUS", "B4": "VBUS", "B9": "VBUS",
@@ -73,11 +73,10 @@ POWER = dict(file="power.kicad_sch", title="Power: USB-C, Li-ion charger, hold-u
     dict(ref="D22", lib="Device:LED", value="orange", fp="LED_SMD:LED_0603_1608Metric",
          nets={"2": "CHG_LED_A", "1": "CHG_STAT_N"}),
     R("R118", "100k", "CHG_STAT_N", "+3V3"),
-    # Soft power latch on the 3.3 V buck's EN: any of the power button, the MCU's hold line or USB power turns it on.
+    # Soft power latch on the 3.3 V buck's EN: the OK key (SW2, on the IO sheet, from VSYS to PWR_KEY), the MCU's hold
+    # line or USB power turns it on.
     # 1M / 1u keeps EN up for about 2 s, so a firmware reset never drops power. USB enters through 100k so EN
     # stays below VSYS (about 4.3 V).
-    dict(ref="SW4", lib="Switch:SW_Push", value="PWR", mpn="SKRTLAE010",
-         fp="Button_Switch_SMD:SW_Push_1P1T-MP_NO_Horizontal_Alps_SKRTLAE010", nets={"1": "VSYS", "2": "PWR_KEY"}),
     dict(ref="D23", lib="Diode:BAT54C", value="BAT54C", mpn="BAT54C", fp="Package_TO_SOT_SMD:SOT-23",
          nets={"1": "PWR_KEY", "2": "PWR_HOLD", "3": "PWR_EN"}),
     R("R119", "100k", "VBUS", "PWR_VBUS"),
@@ -115,16 +114,6 @@ POWER = dict(file="power.kicad_sch", title="Power: USB-C, Li-ion charger, hold-u
     # One ADC pin for both CC lines: the open one sits at 0 V on its 5.1k, so the node reads about half the active one
     # (0.51 x Vcc). 2 x 100k loads Rd by 2.5 %, inside the USB-C vRd windows for Default, 1.5 A and 3 A.
     R("R108", "100k", "USB_CC1", "CC_SENSE"), R("R109", "100k", "USB_CC2", "CC_SENSE"), C("C108", "100n", "CC_SENSE", "GND"),
-    # Hold-up: 2 x 1 F / 2.7 V in series = 0.5 F (5.4 V across 4.4 V), charged through R4, discharged through D2.
-    R("R4", "10R 0.5W", "VSYS", "HOLD_TOP", fp="Resistor_SMD:R_1206_3216Metric"),
-    dict(ref="D2", lib="Device:D_Schottky", value="B5819W", mpn="B5819W", fp="Diode_SMD:D_SOD-123",
-         nets={"2": "HOLD_TOP", "1": "VSYS"}),
-    dict(ref="C3", lib="Device:C_Polarized", value="1F 2.7V", fp="Capacitor_THT:CP_Radial_D8.0mm_P3.50mm",
-         nets={"1": "HOLD_TOP", "2": "HOLD_MID"}),
-    dict(ref="C4", lib="Device:C_Polarized", value="1F 2.7V", fp="Capacitor_THT:CP_Radial_D8.0mm_P3.50mm",
-         nets={"1": "HOLD_MID", "2": "GND"}),
-    R("R5", "100k", "HOLD_TOP", "HOLD_MID"),
-    R("R6", "100k", "HOLD_MID", "GND"),
     # 3.3 V buck, TPS62130 adjustable: Vout = 0.8 V x (1 + R7/R8) = 3.33 V
     dict(ref="U3", lib="Regulator_Switching:TPS62130", value="TPS62130", fp="Package_DFN_QFN:VQFN-16-1EP_3x3mm_P0.5mm_EP1.68x1.68mm",
          nets={"10": "VSYS", "11": "VSYS", "12": "VSYS", "13": "PWR_EN",
@@ -162,9 +151,9 @@ POWER = dict(file="power.kicad_sch", title="Power: USB-C, Li-ion charger, hold-u
     "Three independent layers: charger (4.2 V, resistor-set current, 0-50 C window from the pack NTC, safety timer), BQ29700 + 2 FETs (OV 4.275 V, UV 2.8 V, OC about 2 A, short), 3 A fuse.",
     "Charge current: 0.25 A by hardware; firmware turns on Q5 (1.0 A) only for a cell of 1000 mAh or more as entered in setup. No NTC: no charging.",
     "Input limit: 0.44 A by hardware; Q6 raises it to 1.39 A when CC_SENSE shows a 1.5 A or 3 A source.",
-    "Hold-up with no cell: VSYS 4.4 V down to 3.0 V gives the 0.5 F about 2.6 J, about 2 s at 1.2 W with the radio off.",
+    "No supercap hold-up (owner decision 2026-11-26): with a cell fitted the cell rides through USB loss. Without one, a pulled cable loses only the log not yet flushed (the log is written power-loss-safe, flushed every 0.1 s).",
     "PWR_FAIL_N goes low when VBUS falls below about 4.3 V. With a cell fitted the firmware keeps logging and watches VBAT_SENSE instead.",
-    "On: press PWR, or plug in USB. The MCU then drives PWR_HOLD high. Off: long press (read on PWR_BTN), firmware releases PWR_HOLD.",
+    "On: hold OK (it is also the power key), or plug in USB. The MCU then drives PWR_HOLD high. Off: hold OK about 3 s (read on PWR_BTN), firmware releases PWR_HOLD; ignored while logging.",
 ])
 
 # ---------------------------------------------------------------- MCU
@@ -185,15 +174,17 @@ MCU_NETS = {
     "24": "GNSS_RXD", "25": "GNSS_TXD", "15": "GNSS_RESET_N",
     # microSD on SDMMC1
     "65": "SD_D0", "66": "SD_D1", "78": "SD_D2", "79": "SD_D3", "80": "SD_CLK", "83": "SD_CMD", "84": "SD_DET",
-    # SPI4: e-paper display and the radio share SCK/MOSI, each with its own CS; MISO (PE13) is the radio's only
-    "42": "SPI4_SCK", "5": "SPI4_MOSI", "3": "EPD_CS", "2": "EPD_DC", "4": "EPD_BUSY", "57": "EPD_RST",
+    # SPI4: memory LCD and the radio share SCK/MOSI; LCD chip select is active high (SCS). MISO (PE13) is the radio's only.
+    # EXTCOMIN on PE5 = TIM15_CH1, so a timer toggles the LCD's VCOM with no CPU; DISP on PD10.
+    "42": "SPI4_SCK", "5": "SPI4_MOSI", "3": "LCD_SCS", "4": "LCD_EXTCOMIN", "57": "LCD_DISP",
     "43": "RADIO_MISO", "62": "RADIO_CS", "44": "RADIO_IRQ",
     # log flash on OCTOSPI1 in quad mode: CLK PB2, NCS PE11, IO0 PD11, IO1 PD12, IO2 PE2, IO3 PD13
     "36": "FLASH_CLK", "41": "FLASH_CS", "58": "FLASH_IO0", "59": "FLASH_IO1", "1": "FLASH_IO2", "60": "FLASH_IO3",
     # radio control and its UART0 (USART3: bootloader, console); names from the module's side
     "45": "RADIO_EN_MCU", "61": "RADIO_BOOT", "55": "RADIO_RXD", "56": "RADIO_TXD",
     # buttons, power fail, camera sync, LED
-    "37": "BTN_1", "38": "BTN_2", "39": "BTN_3", "34": "PWR_FAIL_N",
+    # keys: UP on PE7, DOWN on PE9; OK is the power key and is read on PD7 (PWR_BTN)
+    "37": "BTN_UP", "39": "BTN_DOWN", "34": "PWR_FAIL_N",
     # power latch and charger: PD4 hold, PD7 button sense, PD6 CHG status, PD5 / PD0 charge and input current steps
     "85": "PWR_HOLD", "88": "PWR_BTN", "87": "CHG_STAT_N", "86": "ISET_HI", "81": "ILIM_HI",
     # ADC: battery voltage (PC1, ADC1_INP11) and the USB-C CC level (PC5, ADC12_INP8)
@@ -226,8 +217,9 @@ MCU = dict(file="mcu.kicad_sch", title="MCU: STM32H723", paper="A2", parts=[
     dict(ref="C34", lib="Device:C_Polarized", value="0.1F 3.3V", fp="Capacitor_SMD:CP_Elec_5x5.4",
          nets={"1": "VBAT_BKP", "2": "GND"}),
     FLAG("#FLG20", "VBAT_BKP"), FLAG("#FLG21", "VCAP_CORE"),
-    dict(ref="J20", lib="Connector_Generic:Conn_01x06", value="SWD", fp="Connector_PinHeader_1.27mm:PinHeader_1x06_P1.27mm_Vertical",
-         nets={"1": "+3V3", "2": "SWDIO", "3": "SWCLK", "4": "SWO", "5": "NRST", "6": "GND"}),
+    # SWD on a Tag-Connect TC2030-NL pad set (ARM Cortex pin-out of the TC2030-CTX cable): no part height under the display
+    dict(ref="J20", lib="Connector_Generic:Conn_02x03_Odd_Even", value="SWD (TC2030)", fp="Connector:Tag-Connect_TC2030-IDC-NL_2x03_P1.27mm_Vertical",
+         nets={"1": "+3V3", "2": "SWDIO", "3": "NRST", "4": "SWCLK", "5": "GND", "6": "SWO"}, dnp=False),
     R("R22", "1k", "LED_STATUS", "LED_A"),
     dict(ref="D21", lib="Device:LED", value="green", fp="LED_SMD:LED_0603_1608Metric",
          nets={"2": "LED_A", "1": "GND"}),
@@ -293,7 +285,7 @@ GNSS = dict(file="gnss.kicad_sch", title="GNSS: NEO-M9N", parts=[
 ])
 
 # ---------------------------------------------------------------- IO
-IO = dict(file="io.kicad_sch", title="IO: log flash, microSD, e-paper display, buttons, camera sync", parts=[
+IO = dict(file="io.kicad_sch", title="IO: log flash, microSD, memory LCD, keys, camera sync", parts=[
     # Main flight log: 4 Gbit (512 MB) SPI NAND on OCTOSPI1 (quad), 3.3 V, -40 to 85 C. Stocked at JLCPCB (C41420154). The microSD is the backup copy, update and export path.
     dict(ref="U12", lib="logger:GD5F4GM8UE", value="GD5F4GM8UEYIG", mpn="GD5F4GM8UEYIG", fp="Package_SON:WSON-8-1EP_8x6mm_P1.27mm_EP3.4x4.3mm",
          nets={"1": "FLASH_CS", "2": "FLASH_IO1", "3": "FLASH_IO2", "4": "GND", "5": "FLASH_IO0", "6": "FLASH_CLK",
@@ -307,50 +299,39 @@ IO = dict(file="io.kicad_sch", title="IO: log flash, microSD, e-paper display, b
     R("R60", "47k", "SD_CMD", "+3V3"), R("R61", "47k", "SD_D0", "+3V3"), R("R62", "47k", "SD_D1", "+3V3"),
     R("R63", "47k", "SD_D2", "+3V3"), R("R64", "47k", "SD_D3", "+3V3"), R("R65", "100k", "SD_DET", "+3V3"),
     C("C60", "10u", "+3V3", "GND", fp=C0805), C("C61", "100n", "+3V3", "GND"),
-    # Good Display GDEY0213B74 2.13" e-paper (SSD1680) on a 24-pin 0.5 mm FPC, 4-wire SPI (BS1 low).
-    # Booster per the Good Display reference circuit (datasheet section 12): values to verify.
-    dict(ref="J61", lib="Connector_Generic:Conn_01x24", value="GDEY0213B74",
-         fp="Connector_FFC-FPC:Hirose_FH12-24S-0.5SH_1x24-1MP_P0.50mm_Horizontal",
-         nets={"1": "NC", "2": "EPD_GDR", "3": "EPD_RESE", "4": "NC", "5": "EPD_VSH2", "6": "NC", "7": "NC",
-               "8": "GND", "9": "EPD_BUSY", "10": "EPD_RST", "11": "EPD_DC", "12": "EPD_CS",
-               "13": "SPI4_SCK", "14": "SPI4_MOSI", "15": "+3V3", "16": "+3V3", "17": "GND",
-               "18": "EPD_VDD", "19": "NC", "20": "EPD_VSH1", "21": "EPD_VGH", "22": "EPD_VSL",
-               "23": "EPD_VGL", "24": "EPD_VCOM"}),
-    C("C62", "1u", "+3V3", "GND"),
-    C("C63", "1u 50V", "EPD_VDD", "GND", fp=C0603), C("C64", "1u 50V", "EPD_VSH1", "GND", fp=C0603),
-    C("C65", "1u 50V", "EPD_VSH2", "GND", fp=C0603), C("C66", "1u 50V", "EPD_VGH", "GND", fp=C0603),
-    C("C67", "1u 50V", "EPD_VSL", "GND", fp=C0603), C("C68", "1u 50V", "EPD_VGL", "GND", fp=C0603),
-    C("C69", "1u 50V", "EPD_VCOM", "GND", fp=C0603),
-    dict(ref="L60", lib="Device:L", value="47u", fp="Inductor_SMD:L_Changjiang_FNR4020S", mpn="FNR4020S470MT",
-         nets={"1": "+3V3", "2": "EPD_SW"}),
-    C("C70", "4.7u", "+3V3", "GND", fp=C0603),
-    dict(ref="Q60", lib="Device:Q_NMOS_GSD", value="AO3400A", mpn="AO3400A", fp="Package_TO_SOT_SMD:SOT-23",
-         nets={"1": "EPD_GDR", "2": "EPD_RESE", "3": "EPD_SW"}),
-    R("R67", "2.2R", "EPD_RESE", "GND"),
-    dict(ref="D60", lib="Device:D_Schottky", value="MBR0530", fp="Diode_SMD:D_SOD-123",
-         nets={"2": "EPD_SW", "1": "EPD_VGH"}),
-    C("C71", "1u 50V", "EPD_SW", "EPD_PUMP", fp=C0603),
-    dict(ref="D61", lib="Device:D_Schottky", value="MBR0530", fp="Diode_SMD:D_SOD-123",
-         nets={"2": "EPD_PUMP", "1": "GND"}),
-    dict(ref="D62", lib="Device:D_Schottky", value="MBR0530", fp="Diode_SMD:D_SOD-123",
-         nets={"2": "EPD_VGL", "1": "EPD_PUMP"}),
-    dict(ref="SW1", lib="Switch:SW_Push", value="UP", mpn="SKRTLAE010",
-         fp="Button_Switch_SMD:SW_Push_1P1T-MP_NO_Horizontal_Alps_SKRTLAE010",
-         nets={"1": "BTN_1", "2": "GND"}),
-    dict(ref="SW2", lib="Switch:SW_Push", value="OK", mpn="SKRTLAE010",
-         fp="Button_Switch_SMD:SW_Push_1P1T-MP_NO_Horizontal_Alps_SKRTLAE010",
-         nets={"1": "BTN_2", "2": "GND"}),
-    dict(ref="SW3", lib="Switch:SW_Push", value="DOWN", mpn="SKRTLAE010",
-         fp="Button_Switch_SMD:SW_Push_1P1T-MP_NO_Horizontal_Alps_SKRTLAE010",
-         nets={"1": "BTN_3", "2": "GND"}),
+    # Sharp LS027B7DH01 2.7" memory LCD (400 x 240, -20 to +70 C) on Sharp's recommended socket, Panasonic Y5B AYF531035
+    # (10 pins, 0.5 mm, top and bottom contact). Pin table from Sharp LD-28305A table 4-1; EXTMODE high = VCOM from EXTCOMIN.
+    dict(ref="J61", lib="Connector_Generic:Conn_01x10", value="LS027B7DH01", mpn="AYF531035",
+         fp="logger:Panasonic_AYF531035_1x10-1MP_P0.50mm_Horizontal",
+         nets={"1": "SPI4_SCK", "2": "SPI4_MOSI", "3": "LCD_SCS", "4": "LCD_EXTCOMIN", "5": "LCD_DISP",
+               "6": "+5V_LCD", "7": "+5V_LCD", "8": "+5V_LCD", "9": "GND", "10": "GND"}),
+    C("C64", "1u", "+5V_LCD", "GND"), C("C65", "100n", "+5V_LCD", "GND"),
+    # SCS and DISP held low (panel deselected and blank) until firmware drives them
+    R("R67", "100k", "LCD_SCS", "GND"), R("R72", "100k", "LCD_DISP", "GND"),
+    # 5 V for the panel (VDD/VDDA 4.8-5.5 V, 50-350 uW): TPS61222 fixed 5 V boost from 3.3 V, as on TI's BOOSTXL-SHARP128.
+    # FB to VOUT for the fixed version, EN tied high, 4.7 uH and 10 uF in/out per the datasheet (SLVS776B section 11.2).
+    dict(ref="U16", lib="Regulator_Switching:TPS61222DCK", value="TPS61222", mpn="TPS61222DCKR", fp="Package_TO_SOT_SMD:Texas_R-PDSO-G6",
+         nets={"1": "+3V3", "2": "+5V_LCD", "3": "GND", "4": "+5V_LCD", "5": "LCD_SW", "6": "+3V3"}),
+    dict(ref="L60", lib="Device:L", value="4.7u", fp="Inductor_SMD:L_Changjiang_FNR4020S", mpn="FNR4020S4R7MT",
+         nets={"1": "+3V3", "2": "LCD_SW"}),
+    FLAG("#FLG60", "LCD_SW"),   # KiCad's symbol calls the L pin a power input; the inductor drives it
+    C("C62", "10u", "+3V3", "GND", fp=C0603), C("C63", "10u", "+5V_LCD", "GND", fp=C0603),
+    # Keys: three Kailh Choc V1 tactile switches (brown, CPG135001D02) with printed caps, pressed from the front. The board
+    # carries only the Kailh hotswap sockets (CPG135001S30, JLCPCB C5333465, SMD on the back); the switches are pressed in at
+    # case assembly and the case front holds them as the plate.
+    # OK is also the power key: it pulls PWR_KEY to VSYS (latch on the power sheet) and is read on PWR_BTN.
+    dict(ref="SW1", lib="Switch:SW_Push", value="UP", mpn="CPG135001S30",
+         fp="logger:SW_Kailh_Choc_V1_Hotswap", nets={"1": "BTN_UP", "2": "GND"}),
+    dict(ref="SW2", lib="Switch:SW_Push", value="OK / PWR", mpn="CPG135001S30",
+         fp="logger:SW_Kailh_Choc_V1_Hotswap", nets={"1": "VSYS", "2": "PWR_KEY"}),
+    dict(ref="SW3", lib="Switch:SW_Push", value="DOWN", mpn="CPG135001S30",
+         fp="logger:SW_Kailh_Choc_V1_Hotswap", nets={"1": "BTN_DOWN", "2": "GND"}),
     R("R66", "100R", "CAM_SYNC", "CAM_SYNC_OUT"),
-    # Camera sync out and the pilot's marker button share one header: 1 sync out, 2 GND, 3 marker (button to GND)
-    dict(ref="J62", lib="Connector_Generic:Conn_01x03", value="CAM / MARK",
-         fp="Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
+    # Camera sync out and the pilot's marker button share one socket: 1 sync out, 2 GND, 3 marker (button to GND).
+    # JST SUR, 0.8 mm pitch, side entry, 1.75 mm high (JLCPCB C265338): the lead stays inside the case.
+    dict(ref="J62", lib="Connector_Generic:Conn_01x03", value="CAM / MARK", mpn="SM03B-SURS-TF(LF)(SN)",
+         fp="logger:JST_SUR_SM03B-SURS-TF_1x03-1MP_P0.80mm_Horizontal",
          nets={"1": "CAM_SYNC_OUT", "2": "GND", "3": "MARKER_IN"}),
-    # On-unit marker button, in parallel with the external one (same 1k / 100n filter)
-    dict(ref="SW5", lib="Switch:SW_Push", value="MARKER", mpn="SKRTLAE010",
-         fp="Button_Switch_SMD:SW_Push_1P1T-MP_NO_Horizontal_Alps_SKRTLAE010", nets={"1": "MARKER_IN", "2": "GND"}),
     R("R68", "1k", "MARKER_IN", "MARKER"), R("R69", "10k", "MARKER", "+3V3"), C("C72", "100n", "MARKER", "GND"),
     # Expansion: Qwiic / STEMMA QT pin order (1 GND, 2 3V3, 3 SDA, 4 SCL) on I2C4, e.g. for an airspeed sensor
     dict(ref="J63", lib="Connector_Generic:Conn_01x04", value="I2C EXP (Qwiic)",
@@ -363,11 +344,12 @@ IO = dict(file="io.kicad_sch", title="IO: log flash, microSD, e-paper display, b
     dict(ref="U14", lib="Power_Protection:SRV05-4", value="SRV05-4", mpn="SRV05-4", fp="Package_TO_SOT_SMD:SOT-23-6",
          nets={"1": "CAM_SYNC_OUT", "2": "GND", "3": "MARKER_IN", "4": "EXP_SDA", "5": "+3V3_EXP", "6": "EXP_SCL"}),
 ], notes=[
-    "E-paper pin table from the GDEY0213B74 datasheet, section 5 (pin 8 is BS1, tied low for 4-wire SPI; 6/7 TSCL/TSDA and 19 VPP unused, open).",
-    "Booster as Good Display's reference: 47 uH, 30 V N-MOSFET, 2.2 ohm sense, MBR0530 diodes, 1 uF 50 V on the gate and source rails.",
-    "Panel operating range is 0 to 50 C: firmware skips refreshes outside it (BMP390 temperature).",
-    "Buttons: five Alps SKRTLAE010 side-push switches on one long edge (UP, OK, DOWN, MARKER, PWR); the case carries the caps and the seal.",
-    "UP / OK / DOWN use the MCU's internal pull-ups; debounce in firmware.",
+    "LCD: Sharp LS027B7DH01, 2.7 in, 400 x 240, reflective, -20 to +70 C. SPI write-only, LSB first, SCS active high, up to 1-2 MHz (LD-28305A table 6-3-1).",
+    "LCD VCOM: EXTMODE high, TIM15_CH1 toggles EXTCOMIN at 1-20 Hz, below the frame rate (remark 6-3). Logic from 3.3 V (VIH min 2.7 V).",
+    "LCD 5 V from a TPS61222 boost (4.82-5.13 V); the panel draws 50-350 uW. EN low would still leave 3.3 V on VOUT (body diode), so EN stays high.",
+    "LCD FPC: 9.5 mm wide, about 12.9 mm long, centred on the panel; it folds 180 deg under the glass (never toward the front polariser) into J61.",
+    "Keys: three Kailh Choc V1 tactile switches (3 mm travel, 1.5 mm to actuation, 50 gf) with printed caps, in SMD hotswap sockets on the back; the case front is the switch plate (13.8 mm square cut-outs). UP / DOWN use the MCU's internal pull-ups; debounce in firmware.",
+    "OK doubles as the power key (latch on the power sheet). While logging, any key is a marker; the external marker on J62 stays.",
     "Marker input: 1k series, 10k pull-up, 100 nF (1 ms) against cable noise; EXTI15 on PA15, timestamped from TIM2.",
     "Expansion 3V3 goes through a 100 mA PTC so a shorted cable cannot pull down the logger.",
 ])

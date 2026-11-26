@@ -17,20 +17,28 @@ STANDINS = {
     "U9": (1.28, 1.28, 0.6, "#1b1b1d", "BMM350"),
     "Y2": (2.0, 1.2, 0.6, "#cfd2d6", "32.768 kHz"),
     "U12": (8.0, 6.0, 0.75, "#1b1b1d", "GD5F4GM8"),                # log flash, WSON-8 8x6
-    "L60": (4.0, 4.0, 2.0, "#2a2a2c", "470"),                     # e-paper booster inductor, FNR4020S
+    "L60": (4.0, 4.0, 2.0, "#2a2a2c", "4R7"),                     # LCD boost inductor, FNR4020S
     "J63": [(6.0, 4.4, 2.9, "#ece6d4", "", 0.0, 0.3, 0.0)],       # JST-SH 4-pin side entry (Qwiic)
+    "J62": [(4.6, 2.7, 1.75, "#ece6d4", "", 0.0, -0.05, 0.0)],    # JST-SUR 3-pin side entry (camera / marker)
+    "J61": [(7.0, 3.2, 1.0, "#e8e2cf", "", 0.0, 1.9, 0.0)],       # Panasonic AYF531035 FPC socket
+    "U16": (2.0, 1.25, 0.9, "#1b1b1d", ""),                       # TPS61222 LCD boost, SC-70-6
     "U13": (3.0, 3.0, 0.9, "#1b1b1d", "BQ24074"),                 # charger, VQFN-16 3x3
     "J2": [(9.9, 6.0, 4.8, "#ece6d4", "", 0.0, 1.4, 0.0)],        # JST-PH 3-pin side entry (battery)
     "U15": (1.5, 1.5, 0.75, "#1b1b1d", ""),                       # cell protector, WSON-6 1.5x1.5
     "F2": (3.2, 1.6, 0.6, "#ece6d4", "3A"),                       # battery fuse, 1206
-    # Alps SKRT side-push switches: body behind the bosses, plunger out over the board edge
-    **{f"SW{i}": [(4.5, 2.56, 3.3, "#2a2a2c", "", 0.0, -0.07, 0.0), (2.0, 0.85, 1.4, "#1b1b1d", "", 0.0, 1.63, 0.95)]
-       for i in range(1, 6)},
+    # Kailh Choc V1 switches without caps (the hotswap sockets are on the back: see SOCKET)
+    **{f"SW{i}": [(15.0, 15.0, 2.2, "#2a2a2c", "", 0.0, 0.0, 0.0), (13.8, 13.8, 0.8, "#3a3a3d", "", 0.0, 0.0, 2.2),
+                  (1.2, 3.0, 2.8, "#8a5a3c", "", -2.85, 0.0, 3.0), (1.2, 3.0, 2.8, "#8a5a3c", "", 2.85, 0.0, 3.0)]
+       for i in (1, 2, 3)},                                       # brown twin-prong stem
+    "F1": (1.6, 0.8, 0.5, "#ece6d4", ""),                         # expansion PTC, 0603
+    "D24": (2.0, 1.25, 0.9, "#1b1b1d", ""),                       # BAT54W, SOT-323
     # radio module: its own 0.8 mm PCB (antenna end bare, over the board edge) with the shield can on it.
     # Several boxes per part: (w, l, h, colour, label, dx, dy, dz) relative to the footprint origin.
     "U11": [(13.2, 16.6, 0.8, "#1b1b1d", "", 0.0, 0.0, 0.0),
             (12.4, 10.6, 1.6, "#c9ccd0", "ESP32-C6", 0.0, 2.75, 0.8)],
 }
+# Kailh hotswap sockets on the back of each key footprint, as two lobes around the switch pins (footprint coordinates)
+SOCKET = [(4.85, 5.0, 1.85, "#1b1b1d", "", -0.03, -5.95, 0.0), (5.15, 4.85, 1.85, "#1b1b1d", "", 5.18, -3.68, 0.0)]
 
 
 def main():
@@ -39,6 +47,12 @@ def main():
     parts = []
     for f in board.GetFootprints():
         ref = f.GetReference()
+        p = f.GetPosition()
+        if ref in ("SW1", "SW2", "SW3"):
+            for w, l, h, col, label, dx, dy, dz in SOCKET:   # flipped: the bottom group mirrors y
+                parts.append(dict(ref=ref, x=pcbnew.ToMM(p.x) - layout.OX, y=pcbnew.ToMM(p.y) - layout.OY,
+                                  rot=f.GetOrientationDegrees(), w=w, l=l, h=h, color=col, label=label,
+                                  dx=dx, dy=-dy, dz=dz, bottom=True))
         if ref not in STANDINS:
             continue
         boxes = STANDINS[ref] if isinstance(STANDINS[ref], list) else [STANDINS[ref] + (0.0, 0.0, 0.0)]

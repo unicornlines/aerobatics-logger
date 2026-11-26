@@ -57,7 +57,7 @@ Brass inserts and A4 stainless or titanium screws: the magnetometer is on the bo
 - 3 x M3 x 12 countersunk (ISO 10642), A4 or titanium, through the front into the corner inserts
 - 1 x M3 PA66 (nylon) thread-forming screw for the corner next to the radio antenna (H1): no metal near the antenna
 - 1 x clear polycarbonate cover, 1.0 mm, laser cut (size printed by OpenSCAD as `cover`), glued into the face pocket
-- foam: 0.3 mm gasket between glass and face; 1 mm VHB foam pad under the cell
+- foam: 0.5 mm closed-cell gasket between glass and face (compressed to 0.3 mm); 1 mm VHB foam pad under the cell
 - Qwiic and camera leads to the outside: cut out the 0.6 mm knock-out next to each socket in the top wall
 - optional: SMA bulkhead to U.FL pigtail (100 mm) for the GNSS antenna; ePTFE vent sticker (6 mm) under the barometer vent
 - mount: 4 x M4 countersunk (or the AMPS pattern, or one 1/4"-20 nut), 25 mm webbing / hook-and-loop strap
@@ -93,6 +93,12 @@ the left wall.
 - Bridge feet and display posts are placed automatically on free spots of the board (nearest to their
   ideal place); the build prints where they went and echoes `CHECK:` for any clearance problem.
 - The display carrier's lip is 0.2 mm above the tallest part under it (J63, 2.9 mm), on eight posts.
+- Display under load (panel under 9 g, checked at 15 g x 1.5 = 22.5 g, about 2 N): towards the board the
+  panel bears on the lip and eight posts (36 mm2, about 0.06 MPa); towards the face it bears on the face round
+  the window through the 0.3 mm gasket (about 0.1 MPa); sideways the carrier walls hold it and six lugs on the
+  face hold the carrier (about 0.3 MPa wall bending). PETG takes about 50 MPa, layer bonds about 25 MPa.
+  The flex never carries the panel. Rattle is what matters in flight: use a gasket that is compressed when
+  closed (0.5 mm foam in the 0.3 mm gap).
 
 <details><summary>Easter eggs (spoilers)</summary>
 

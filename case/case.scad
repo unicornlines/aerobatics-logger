@@ -188,6 +188,7 @@ module front() {
         cylinder(d = boss_d, h = z_face_in + 0.01);
         translate([0, 0, -1]) cylinder(d = screw_d, h = 20);
     }
+    if (lcd) carrier_lugs();
     // tongue-and-groove: the front shell's groove is cut below; tray carries the tongue
     if (baro_mode == "static") static_cup();
 }
@@ -291,6 +292,15 @@ module lcd_frame() {
         }
     }
 }
+// Locating lugs: hang from the face just outside the carrier walls, so the carrier (and the panel in it)
+// is held in the plane by the case itself, not by friction on the board. The key bridge locates the fourth side.
+carrier_lug = [6, 1.2];                      // length along the wall, thickness
+carrier_lug_z = lcd_back + 0.3;              // lug tips, well clear of the parts under the panel border (2.9 mm)
+function carrier_lug_rects() = let(o = lcd_bb, g = carrier_fit + carrier_wall + fit / 2, l = carrier_lug.x, t = carrier_lug.y, h = o[3] - o[1])
+    concat([for (y = [o[1] + h * 0.25, o[1] + h * 0.75]) each [[o[0] - g - t, y - l / 2, o[0] - g, y + l / 2], [o[2] + g, y - l / 2, o[2] + g + t, y + l / 2]]],
+           [for (x = [lcd_c.x - 20, lcd_c.x + 20]) [x - l / 2, o[3] + g, x + l / 2, o[3] + g + t]]);
+module carrier_lugs() translate([0, 0, carrier_lug_z]) linear_extrude(z_face_in - carrier_lug_z + 0.01)
+    for (r = carrier_lug_rects()) translate([r[0], r[1]]) square([r[2] - r[0], r[3] - r[1]]);
 // nearest point on the ring's centre line
 function ring_pt(p) = let(o = lcd_bb, c = 1.2, d = [p.x - o[0], o[2] - p.x, p.y - o[1], o[3] - p.y], m = min(d))
     m == d[0] ? [o[0] + c, p.y] : m == d[1] ? [o[2] - c, p.y] : m == d[2] ? [p.x, o[1] + c] : [p.x, o[3] - c];
@@ -606,6 +616,8 @@ echo(str("CASE: outer ", W + 2 * (board_gap + wall), " x ", H + 2 * (board_gap +
 for (p = board_parts) if (p[1] == "F" && p[3] + 0.4 > z_face - 0.8) echo(str("CHECK: ", p[0], " is ", p[3], " mm tall, too close to the face"));
 for (q = board_parts) if (lcd && q[1] == "F" && q[3] > lcd_back - ring_t - 0.15) let(o = lcd_bb, b = q[2])
     if (b[2] > o[0] && b[0] < o[2] && b[3] > o[1] && b[1] < o[3]) echo(str("CHECK: ", q[0], " (", q[3], " mm) under the display ring"));
+for (q = board_parts, r = lcd ? carrier_lug_rects() : []) let(b = q[2]) if (q[1] == "F" && q[3] > carrier_lug_z - 0.3 && b[2] > r[0] && b[0] < r[2] && b[3] > r[1] && b[1] < r[3])
+    echo(str("CHECK: display carrier lug lands on ", q[0]));
 if (lcd && len(lcd_posts) < 4) echo("CHECK: fewer than 4 free spots for display posts");
 for (p = kb_feet()) for (q = board_parts) if (q[1] == "F" && p.x > q[2][0] - 1.2 && p.x < q[2][2] + 1.2 && p.y > q[2][1] - 1.2 && p.y < q[2][3] + 1.2)
     echo(str("CHECK: key bridge foot at ", p, " lands on ", q[0]));

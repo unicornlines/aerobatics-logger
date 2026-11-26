@@ -4,7 +4,7 @@ Nets come straight from design.py, so the board and schematic share one source.
 Placement is by hand, block by block, on a 0.5 mm grid. A few fanouts are placed by hand and locked
 (MCU and IMU ground pins, crystal load caps, every R/C ground pad), then route.py autoroutes the rest.
 
-Board: 124 x 62 mm, 4 layers: F.Cu signal, In1 GND plane, In2 +3V3 pour with some signal routing, B.Cu signal.
+Board: 138 x 62 mm, 4 layers: F.Cu signal, In1 GND plane, In2 +3V3 pour with some signal routing, B.Cu signal.
 """
 import math, os, sys
 import pcbnew
@@ -14,26 +14,34 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 KICAD = os.path.join(HERE, "..", "kicad")
 SYSFP = "/usr/share/kicad/footprints"
 OX, OY = 100.0, 100.0          # board top-left on the page
-W, H = 124.0, 62.0
+W, H = 138.0, 62.0
 MM = pcbnew.FromMM
+# The board grew 14 mm at its left end for the built-in GNSS patch (owner, 2026-11-26). Placements right of the old
+# left column are still written in the old 124 mm frame (W0) and shifted by X(); the new left-column parts are
+# placed in board coordinates (fixed=True).
+W0, SHIFT, SPLIT = 124.0, 14.0, 29.0
+def X(x):
+    return x if x < SPLIT else x + SHIFT
+def XY(pt):
+    return (X(pt[0]), pt[1])
 
 # Extra pads the footprint has but the symbol doesn't.
 EXTRA_PADS = {("J60", "11"): "GND", ("J61", "MP"): "GND", ("J62", "MP"): "GND", ("J63", "MP"): "GND", ("J2", "MP"): "GND"}
 
 # ref: (x, y, rotation, side)  -- board coordinates in mm from the top-left corner; side "F" or "B"
 P = {}
-def at(ref, x, y, rot=0, side="F"):
-    P[ref] = (x, y, rot, side)
-def row(refs, x, y, dx, dy, rot=0, side="F"):
+def at(ref, x, y, rot=0, side="F", fixed=False):
+    P[ref] = (x if fixed else X(x), y, rot, side)
+def row(refs, x, y, dx, dy, rot=0, side="F", fixed=False):
     for i, r in enumerate(refs):
-        at(r, x + i * dx, y + i * dy, rot, side)
+        at(r, x + i * dx, y + i * dy, rot, side, fixed)
 
 # Floor plan. Front face: the Sharp 2.7" memory LCD centred at the top (rotated 180 deg so its FPC leaves at the top edge
 # and folds back under the glass into J61), and the three Choc keys centred under it. Only low parts (<= 3 mm) sit under the
-# panel. Left of the panel: radio (top-left corner, antenna up) and GNSS, sensors below them. Right of the panel: USB-C
+# panel. Left of the panel: radio (top-left corner, antenna up), GNSS module and its 18 mm patch, sensors below them. Right of the panel: USB-C
 # and microSD flush on the right short edge, charger and USB protection; battery and its protection in the
 # bottom-right corner. MCU, log flash, 3.3 V buck and LCD supply under the panel.
-DX = W / 2                       # panel and key centre line
+DX = W0 / 2                      # panel and key centre line (old frame; X(DX) on the board)
 LCD = (DX - 31.4, 2.5, DX + 31.4, 2.5 + 42.82)        # LS027B7DH01 module outline on the board (x0, y0, x1, y1)
 KEYS = {"SW1": DX - 22.0, "SW2": DX, "SW3": DX + 22.0}  # UP, OK / PWR, DOWN
 KY = 53.9
@@ -53,7 +61,7 @@ at("Y2", MX - 14.0, MY - 7.1, 90); at("C32", MX - 14.0, MY - 9.3, 0); at("C33", 
 at("D20", 30.3, 30.2, 90); at("R21", 30.3, 32.9, 90); at("C34", 14.0, 54.5, 0)
 # SWD (Tag-Connect pads, no height) right of the MCU; status LED bottom-left, visible beside the keys
 at("J20", MX + 17.0, MY - 6.0, 0)
-at("D21", 28.0, 59.2, 0); at("R22", 24.8, 59.2, 0)
+at("D21", 28.0 + SHIFT, 59.2, 0, fixed=True); at("R22", 24.8 + SHIFT, 59.2, 0, fixed=True)   # moves with the keys
 
 # --- Log flash (bottom-right of the MCU, next to its OCTOSPI pins); decoupling and pull-ups in a row on top
 at("U12", MX + 16.2, MY + 5.9, 90)
@@ -70,13 +78,50 @@ row(["TP81", "TP80"], 12.0, 19.0, 2.4, 0, 0)                      # USB-Serial-J
 row(["R83", "R82", "R81"], 17.4, 19.0, 1.6, 0, 90)                # strapping pull-ups (IO15, IO8, IO9)
 at("R85", 25.6, 10.2, 0)                                          # U0TXD series resistor, next to pin 31
 
-# --- GNSS (left edge, under the radio) -------------------------------------------
-GX, GY = 16.0, 31.0
-at("U10", GX, GY, 0)
-at("J50", GX - 12.0, GY - 4.0, 0)                     # U.FL; pigtail to the SMA bulkhead in the case wall
-at("R50", GX - 8.5, GY - 10.5, 0); at("FB51", GX - 8.5, GY - 8.5, 0); at("C52", GX - 8.5, GY - 6.5, 0); at("L50", GX - 8.5, GY - 4.0, 0)
-at("FB2", GX + 9.0, GY - 6.0, 90); at("C50", GX + 9.0, GY - 2.0, 90); at("C51", GX + 9.0, GY + 1.0, 90)
-at("TP50", GX + 9.0, GY + 3.0, 0)
+# --- GNSS (left end, under the radio), board coordinates ----------------------------------
+# NEO-M9N at the left edge (rotated: RF_IN top-right), the 18 x 18 mm Taoglas patch right of it (feed facing the
+# module, part-free and with the ground plane all round it), the RF switch in the channel between them. The edge SMA
+# for an external antenna sits on the left edge under the radio; its line runs round the module's top (50 ohm
+# grounded CPW on F.Cu, hand-routed in RF_TRACKS) with ESD and the bias tee next to the jack. The bias switch and
+# current sense sit in a row along the top edge right of the radio; the module's supply filter in the strip at the left edge.
+NEO = (9.6, 31.0)
+at("U10", *NEO, 180, fixed=True)
+PATCH = (32.5, 27.5)
+at("AE1", *PATCH, 270, fixed=True)                    # feed pad 7.6 mm left of the centre, at (24.9, 27.5)
+SMA_Y = 13.0
+at("J50", 2.1, SMA_Y, 270, fixed=True)                # edge-mount SMA, board edge at x 0
+at("D50", 5.3, SMA_Y + 0.75, 270, fixed=True)          # ESD, on the line at the jack
+at("L50", 5.45, 17.8, 0, fixed=True); at("C52", 4.97, 19.3, 270, fixed=True); at("FB51", 3.8, 18.9, 90, fixed=True)   # bias tee
+SW = (19.2, 25.1)
+at("U18", *SW, 180, fixed=True)                       # RFIN left (to the module), RF1 up (SMA), RF2 down (patch)
+at("C55", 19.4, 22.9, 90, fixed=True)                  # DC block on the SMA branch
+at("C58", 17.3, 23.3, 90, fixed=True); at("R53", 17.3, 26.9, 90, fixed=True)
+at("TP50", 17.8, 36.0, 0, fixed=True)
+at("FB2", 1.5, 26.0, 90, fixed=True); at("C50", 1.5, 30.0, 90, fixed=True); at("C51", 1.5, 37.6, 90, fixed=True)
+# antenna feed switch and current sense: a row along the top edge right of the radio, out of the busy corridor
+# under the patch (sensors to MCU) and close to the MCU's top-left pins (PE0 / PE1)
+at("Q50", 28.6, 3.0, 0, fixed=True)
+row(["R54", "R51"], 31.4, 3.0, 1.4, 0, 90, fixed=True)
+at("U19", 35.6, 3.0, 0, fixed=True)
+row(["C56", "R52", "C57"], 38.6, 3.0, 1.4, 0, 90, fixed=True)
+at("R50", 30.6, 7.2, 0, fixed=True)
+# Taoglas: no copper on any layer within 3 x 4 mm of the feed pad (the feed line itself on F.Cu only)
+FEED_KEEPOUT = (PATCH[0] - 9.7, PATCH[1] - 2.0, PATCH[0] - 6.1, PATCH[1] + 2.0)
+# RF lines, board coordinates: (net, points, width). Corners at 45 deg; 0.2 mm where they meet the 0.4 mm-pitch switch.
+RF_TRACKS = [
+    ("GNSS_EXT_RF", [(1.9, SMA_Y), (5.9, SMA_Y), (6.4, SMA_Y + 0.5), (6.4, 20.9), (6.9, 21.4), (18.9, 21.4), (19.4, 21.9), (19.4, 22.42)], 0.34),
+    ("GNSS_EXT_RF", [(5.3, SMA_Y), (5.3, SMA_Y + 0.27)], 0.3), ("GNSS_EXT_RF", [(5.93, 17.8), (6.4, 17.8)], 0.3),
+    ("ANT_EXT_SW", [(19.4, 23.38), (19.4, 24.7)], 0.2),
+    ("GNSS_RF_IN", [(NEO[0] + 6.0, 25.1), (18.4, 25.1)], 0.34), ("GNSS_RF_IN", [(18.4, 25.1), (19.0, 25.1)], 0.2),
+    ("ANT_INT", [(19.4, 25.5), (19.4, 25.9), (21.0, 27.5)], 0.2), ("ANT_INT", [(21.0, 27.5), (PATCH[0] - 7.6, 27.5)], 0.34),
+]
+# Switch and bias-tee hand wiring (net, points, side, width): supply and select to vias left of the switch, ground out
+# to the right between the two RF ports.
+GNSS_TRACKS = [("+3V3", [(19.0, 24.7), (19.0, 24.35), (18.1, 24.35)], "F", 0.15), ("+3V3", [(17.3, 23.78), (18.1, 24.35)], "F", 0.2),
+               ("ANT_SEL", [(19.0, 25.5), (19.0, 25.85), (18.1, 25.85)], "F", 0.15), ("ANT_SEL", [(17.3, 26.42), (18.1, 25.85)], "F", 0.15),
+               ("GND", [(19.4, 25.1), (20.1, 25.1)], "F", 0.2),
+               ("ANT_BIAS", [(4.97, 17.8), (4.97, 18.82)], "F", 0.25), ("ANT_BIAS", [(3.8, 18.42), (4.97, 18.42)], "F", 0.25)]
+GNSS_VIAS = [("+3V3", 18.1, 24.35), ("ANT_SEL", 18.1, 25.85), ("GND", 20.1, 25.1)]
 
 # --- Sensors (bottom-left, outside the panel and keys) ----------------------------
 at("U9", 20.0, 45.0, 0)                               # magnetometer, far from the buck and the battery currents
@@ -139,7 +184,7 @@ at("R100", CX + 1.2, CY - 3.2, 0)                        # EN2 pull-up
 at("D22", CX - 2.0, CY - 5.2, 0); row(["R118", "R104"], CX + 1.2, CY - 5.2, 1.6, 0, 90)   # CHG LED
 
 # --- USB-C (right edge, top) and its protection ------------------------------------
-JX = W - 3.5
+JX = W0 - 3.5
 at("J1", JX, 14.0, 90)
 at("U1", JX - 8.0, 14.0, 0); at("D1", JX - 8.0, 9.6, 0)
 row(["R2", "R1"], JX - 8.9, 17.6, 2.0, 0, 0)
@@ -150,9 +195,9 @@ at("U4", 101.0, 26.2, 90); row(["C12", "C13"], 98.0, 24.8, 0, 1.6, 0)
 row(["R10", "R11", "R12", "R106", "R107", "C107"], 101.0, 29.4, 0, 1.5, 0)
 
 # --- microSD (right edge, under the USB-C), card in through the case wall --------
-at("J60", W - 9.2, 31.5, 90)
-row(["R60", "R61", "R62", "R63", "R64", "R65"], W - 19.4, 24.5, 0, 1.6, 0)
-at("C60", W - 19.4, 35.0, 90); at("C61", W - 19.4, 37.8, 90)
+at("J60", W0 - 9.2, 31.5, 90)
+row(["R60", "R61", "R62", "R63", "R64", "R65"], W0 - 19.4, 24.5, 0, 1.6, 0)
+at("C60", W0 - 19.4, 35.0, 90); at("C61", W0 - 19.4, 37.8, 90)
 
 # --- Battery and cell protection (bottom-right corner) ---------
 # JST PH side entry, plug in from the right edge (opening at x 115): the free strip x 115-124, y 43-49 in front of it
@@ -167,7 +212,7 @@ at("Q1", 92.0, 40.6, 0); at("R105", 92.0, 43.8, 0)        # reverse-polarity PMO
 # Hand fanouts, placed before autorouting and locked: (ref, pad or net, dx, dy) -> GND via at pad + (dx, dy) mm.
 # U9 C3 is a corner ball the router boxes in; the crystal load caps get their own GND via on the far side from
 # the crystal so the oscillator loop can't enclose them; the barometer's GND pins are walled in by its 3V3 pair.
-FANOUT = [("U9", "C3", 0.55, 0.55), ("C30", "GND", 0.0, -0.95), ("C31", "GND", 0.0, 0.95),
+FANOUT = [("U9", "C3", 0.55, 0.55), ("C58", "2", -0.7, 0.0), ("D50", "2", 0.0, 0.65), ("C30", "GND", 0.0, -0.95), ("C31", "GND", 0.0, 0.95),
           ("U6", "6", 0.0, 0.9),            # IMU GND, straight down between VDDIO and a reserved pin
           ("U7", "9", 0.75, 0.0),           # baro GND (right side, middle pad), straight out to a via
           ("U11", "51", 0.6, 0.75),
@@ -200,10 +245,9 @@ HAND_VIAS = [("I2C1_SDA", 7.0, 43.4), ("I2C1_SDA", *SDA_VIA), ("I2C1_SDA", 42.03
 FANOUT_INWARD = ["U5"]
 FANOUT_AXIAL = [("U1", "2", +1), ("U10", "24", -1)]
 PREROUTE = [("U16", "1", "U16", "6", "F", 0.25)]   # LCD boost: VIN and EN tied straight across the package
-PREROUTE_PATH = [("J50", "1", [(GX - 13.05, GY - 1.74), (GX - 13.05, GY + 0.5), (GX - 9.0, GY + 4.55), (GX - 7.65, GY + 5.9)], "U10", "11", "F", 0.25),
-                 ("L50", "2", [(GX - 10.28, GY - 1.74), (GX - 13.05, GY - 1.74)], None, None, "F", 0.15)]
+PREROUTE_PATH = []
 
-HOLES = [(4.0, 4.0), (W - 4.0, 4.0), (4.0, H - 4.0), (W - 4.0, H - 4.0)]   # corners only: the cell lies behind the middle
+HOLES = [(4.0, 4.0), (W - 4.0, 4.0), (4.0, H - 4.0), (W - 4.0, H - 4.0)]   # board coordinates   # corners only: the cell lies behind the middle
 HOLE_KEEPOUT = 7.0             # mm: hole pad diameter (0.5 mm from the edge at the corners), so parts, tracks and vias stay off it on every layer; the case bosses clamp here
 
 
@@ -245,11 +289,12 @@ def outline(board, r=2.0):
     edge_arc(board, r, H - r, r, H, 90); edge_arc(board, r, r, 0, r, 90)
 
 
-def island(board, x0, y0, x1, y1):
-    """Copper-free island round the humidity sensor: no pour on any layer, tracks allowed (its own thin ones)."""
+def island(board, x0, y0, x1, y1, layers=None, tracks=True):
+    """Copper-free island round the humidity sensor: no pour on any layer, tracks allowed (its own thin ones).
+    Also the patch antenna's feed keep-out (layers and tracks given)."""
     z = pcbnew.ZONE(board)
-    z.SetIsRuleArea(True); z.SetLayerSet(pcbnew.LSET.AllCuMask(4))
-    z.SetDoNotAllowCopperPour(True); z.SetDoNotAllowTracks(False); z.SetDoNotAllowVias(False)
+    z.SetIsRuleArea(True); z.SetLayerSet(layers or pcbnew.LSET.AllCuMask(4))
+    z.SetDoNotAllowCopperPour(True); z.SetDoNotAllowTracks(not tracks); z.SetDoNotAllowVias(not tracks)
     z.SetDoNotAllowPads(False); z.SetDoNotAllowFootprints(False)
     ol = z.Outline(); ol.NewOutline()
     for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1)):
@@ -273,15 +318,16 @@ def zone(board, net, layer, inset=0.3):
 
 SILK_REF_PREFIXES = ("U", "J")          # ICs and connectors keep their reference on the silkscreen
 LABELLED = {"J2", "J20", "J50", "J60", "J61", "J62", "J63"}   # ...unless a function label replaces it (see LABELS)
-REF_POS = {"U16": (DX + 9.0, 10.4), "U5": (MX, MY), "U4": (98.0, 28.0), "U13": (103.0, 11.0), "U15": (99.2, 45.2, 90), "U10": (19.5, 21.3)}            # reference centred in the MCU outline
+REF_FIXED = {"U19"}   # REF_POS entries already in board coordinates (no X() shift)
+REF_POS = {"U16": (DX + 9.0, 10.4), "U5": (MX, MY), "U4": (98.0, 28.0), "U13": (103.0, 11.0), "U15": (99.2, 45.2, 90), "U10": (9.6, 39.9), "U18": (21.9, 22.7), "U19": (35.6, 5.6)}            # reference centred in the MCU outline
 
 # Silkscreen labels: (text, x, y, rotation, size_mm, layer)
 LABELS = [
     ("UP", KEYS["SW1"], KY + 4.6, 0, 0.8, "F"), ("OK / PWR", KEYS["SW2"], KY + 4.6, 0, 0.8, "F"),
     ("DOWN", KEYS["SW3"], KY + 4.6, 0, 0.8, "F"),
-    ("CHG", CX - 4.7, CY - 5.2, 0, 0.8, "F"), ("SWD", MX + 17.0, MY - 3.2, 0, 0.8, "F"), ("ANT", 4.0, 30.7, 0, 0.8, "F"),
+    ("CHG", CX - 4.7, CY - 5.2, 0, 0.8, "F"), ("SWD", MX + 17.0, MY - 3.2, 0, 0.8, "F"),
     ("I2C", 29.6, 4.0, 0, 0.8, "F"), ("CAM/MRK", 52.0, 3.4, 0, 0.8, "F"), ("LCD", DX, 11.9, 0, 0.8, "F"),
-    ("D+", 12.0, 21.2, 0, 0.8, "F"), ("D-", 14.4, 21.2, 0, 0.8, "F"),
+    ("D+", 12.0, 17.7, 0, 0.8, "F"), ("D-", 14.4, 17.7, 0, 0.8, "F"),
     ("+", 115.9, 43.5, 0, 0.8, "F"), ("\u2212", 115.9, 47.5, 0, 0.8, "F"), ("BAT 1S", 117.4, 45.5, 90, 0.8, "F"),
     ("UNICORNLINES\u00ae", 99.8, 58.7, 0, 1.0, "F"), ("Never Stop Dreaming", 99.8, 60.3, 0, 0.8, "F", True),
     ("AEROBATICS LOGGER", DX, 24.0, 0, 2.0, "B"), ("rev A  2026-11", DX, 27.5, 0, 1.2, "B"),
@@ -296,7 +342,7 @@ def tidy_refs(f, ref):
     t = f.Reference()
     t.SetTextSize(pcbnew.VECTOR2I(MM(0.8), MM(0.8))); t.SetTextThickness(MM(0.12))
     if ref in REF_POS:
-        t.SetPosition(pcbnew.VECTOR2I(MM(OX + REF_POS[ref][0]), MM(OY + REF_POS[ref][1])))
+        t.SetPosition(pcbnew.VECTOR2I(MM(OX + (REF_POS[ref][0] if ref in REF_FIXED else X(REF_POS[ref][0]))), MM(OY + REF_POS[ref][1])))
         t.SetTextAngle(pcbnew.EDA_ANGLE(REF_POS[ref][2] if len(REF_POS[ref]) > 2 else 0, pcbnew.DEGREES_T))
         if ref == "U5":
             t.SetTextSize(pcbnew.VECTOR2I(MM(1.2), MM(1.2)))
@@ -343,11 +389,12 @@ def drawings(board):
             sh.SetStart(pcbnew.VECTOR2I(MM(OX + a[0]), MM(OY + a[1]))); sh.SetEnd(pcbnew.VECTOR2I(MM(OX + b[0]), MM(OY + b[1])))
             board.Add(sh)
     x0, y0, x1, y1 = LCD
+    x0, x1, dx = X(x0), X(x1), X(DX)
     rect(x0, y0, x1, y1)                                        # module 62.8 x 42.82
-    rect(DX - 29.4, y1 - 2.0 - 35.28, DX + 29.4, y1 - 2.0)      # active area 58.8 x 35.28 (2.0 mm from the far edge)
-    rect(DX - 4.74, y0 - 3.0, DX + 4.74, y0)                    # FPC root, 9.48 wide (folds under the glass)
+    rect(dx - 29.4, y1 - 2.0 - 35.28, dx + 29.4, y1 - 2.0)      # active area 58.8 x 35.28 (2.0 mm from the far edge)
+    rect(dx - 4.74, y0 - 3.0, dx + 4.74, y0)                    # FPC root, 9.48 wide (folds under the glass)
     for x in KEYS.values():
-        rect(x - 9.0, KY - 7.6, x + 9.0, KY + 7.6)              # 18 x 15.2 mm printed caps (case design)
+        rect(X(x) - 9.0, KY - 7.6, X(x) + 9.0, KY + 7.6)        # 18 x 15.2 mm printed caps (case design)
 
 
 def passive_gnd_vias(board, taken):
@@ -386,6 +433,64 @@ def passive_gnd_vias(board, taken):
             vias.append(c); out.append((ref, gp.GetNumber(), vx, vy)); break
     print("passive GND vias:", len(out))
     return out
+
+
+def snap_to_pads(board, r=0.06):
+    """Hand track ends meant for a pad centre land exactly on it (pad positions carry um offsets; a um gap gives
+    Freerouting a degenerate polyline)."""
+    cs = [p.GetPosition() for f in board.GetFootprints() for p in f.Pads()]
+    for t in board.GetTracks():
+        if t.GetClass() != "PCB_TRACK":
+            continue
+        for get, put in ((t.GetStart, t.SetStart), (t.GetEnd, t.SetEnd)):
+            q = get()
+            for c in cs:
+                if 0 < (c - q).EuclideanNorm() < MM(r):
+                    put(c); break
+
+
+def rf_fence(board, pitch=2.0, off=0.85):
+    """GND vias along both sides of every RF line (RF_TRACKS), skipped where they would touch other copper,
+    the feed keep-out or a part's body."""
+    pads = [p for f in board.GetFootprints() for p in f.Pads()]
+    tracks = [t for t in board.GetTracks()]
+    keep = FEED_KEEPOUT
+    placed = []
+    for n, pts, w in RF_TRACKS:
+        if w < 0.34:
+            continue
+        for (ax, ay), (bx, by) in zip(pts, pts[1:]):
+            L = math.hypot(bx - ax, by - ay)
+            if L < 0.9:
+                continue
+            ux, uy = (bx - ax) / L, (by - ay) / L
+            k = 0.5
+            while k < L - 0.3:
+                for sgn in (1, -1):
+                    x, y = ax + ux * k - uy * off * sgn, ay + uy * k + ux * off * sgn
+                    if keep[0] - 0.4 < x < keep[2] + 0.4 and keep[1] - 0.4 < y < keep[3] + 0.4:
+                        continue
+                    if not (0.8 < x < W - 0.8 and 0.8 < y < H - 0.8):
+                        continue
+                    c = pcbnew.VECTOR2I(MM(OX + x), MM(OY + y))
+                    circ = pcbnew.SHAPE_CIRCLE(c, MM(0.25))
+                    if any(p.GetEffectiveShape(l).Collide(circ, MM(0.15) if p.GetNetname() == "GND" else MM(0.3))
+                           for p in pads for l in (pcbnew.F_Cu, pcbnew.B_Cu) if p.IsOnLayer(l)):
+                        continue
+                    if any(t.GetEffectiveShape().Collide(circ, MM(0.2)) for t in tracks if t.GetNetname() != "GND"):
+                        continue
+                    if any((t.GetPosition() - c).EuclideanNorm() < MM(0.8) for t in tracks if t.GetClass() == "PCB_VIA"):
+                        continue
+                    if any(f.GetCourtyard(pcbnew.F_CrtYd).Collide(pcbnew.VECTOR2I(c.x, c.y), MM(0.25))
+                           for f in board.GetFootprints() if f.GetReference() in ("AE1", "J50", "U18")):
+                        continue
+                    if any(math.hypot(x - px, y - py) < 0.8 for px, py in placed):
+                        continue
+                    placed.append((x, y))
+                    v = pcbnew.PCB_VIA(board); v.SetPosition(c); v.SetWidth(MM(0.5)); v.SetDrill(MM(0.25))
+                    v.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu); v.SetNet(board.FindNet("GND")); v.SetLocked(True); board.Add(v)
+                k += pitch
+    print("RF fence vias:", len(placed))
 
 
 def main():
@@ -457,12 +562,14 @@ def main():
         for s, e in zip(path, path[1:]):
             t = pcbnew.PCB_TRACK(board); t.SetStart(s); t.SetEnd(e); t.SetWidth(MM(w))
             t.SetLayer(pcbnew.F_Cu if side == "F" else pcbnew.B_Cu); t.SetNet(a.GetNet()); t.SetLocked(True); board.Add(t)
-    for n, pts, side, w in TRACKS:
+    for n, pts, side, w in [(n, [XY(q) for q in pts], side, w) for n, pts, side, w in TRACKS] + GNSS_TRACKS + \
+            [(n, pts, "F", w) for n, pts, w in RF_TRACKS]:
         pp = [pcbnew.VECTOR2I(MM(OX + x), MM(OY + y)) for x, y in pts]
         for s_, e_ in zip(pp, pp[1:]):
             t = pcbnew.PCB_TRACK(board); t.SetStart(s_); t.SetEnd(e_); t.SetWidth(MM(w))
             t.SetLayer({"F": pcbnew.F_Cu, "B": pcbnew.B_Cu, "In2": pcbnew.In2_Cu}[side]); t.SetNet(net(n)); t.SetLocked(True); board.Add(t)
-    for n, x, y in HAND_VIAS:
+    snap_to_pads(board)
+    for n, x, y in [(n, X(x), y) for n, x, y in HAND_VIAS] + GNSS_VIAS:
         v = pcbnew.PCB_VIA(board); v.SetPosition(pcbnew.VECTOR2I(MM(OX + x), MM(OY + y))); v.SetWidth(MM(0.5)); v.SetDrill(MM(0.25))
         v.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu); v.SetNet(net(n)); v.SetLocked(True); board.Add(v)
     fan = list(FANOUT)
@@ -491,12 +598,17 @@ def main():
         v = pcbnew.PCB_VIA(board); v.SetPosition(c); v.SetWidth(MM(vd)); v.SetDrill(MM(vdr))
         v.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu); v.SetNet(pad.GetNet()); v.SetLocked(True); board.Add(v)   # GND or +3V3 plane
     logo = load("logger:" + LOGO[0]); logo.SetReference("LOGO1"); logo.Reference().SetVisible(False)
-    logo.SetPosition(pcbnew.VECTOR2I(MM(OX + LOGO[1]), MM(OY + LOGO[2]))); board.Add(logo)
+    logo.SetPosition(pcbnew.VECTOR2I(MM(OX + X(LOGO[1])), MM(OY + LOGO[2]))); board.Add(logo)
     outline(board)
     island(board, *SHT_ISLAND)
+    inner = pcbnew.LSET(); [inner.AddLayer(l) for l in (pcbnew.In1_Cu, pcbnew.In2_Cu, pcbnew.B_Cu)]
+    front = pcbnew.LSET(); front.AddLayer(pcbnew.F_Cu)
+    island(board, *FEED_KEEPOUT, layers=inner, tracks=False)    # nothing at all under the feed
+    island(board, *FEED_KEEPOUT, layers=front)                  # the feed line only on top
+    rf_fence(board)
     for lb in LABELS:
-        text(board, *lb)
-    axes(board, *IMU_AXES)
+        text(board, lb[0], X(lb[1]), *lb[2:])
+    axes(board, X(IMU_AXES[0]), IMU_AXES[1])
     drawings(board)
     zone(board, net("GND"), pcbnew.In1_Cu)
     zone(board, net("+3V3"), pcbnew.In2_Cu)

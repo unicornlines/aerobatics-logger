@@ -58,7 +58,6 @@ Brass inserts and A4 stainless or titanium screws: the magnetometer is on the bo
 - 1 x M3 PA66 (nylon) thread-forming screw for the corner next to the radio antenna (H1): no metal near the antenna
 - 1 x clear polycarbonate cover, 1.0 mm, laser cut (size printed by OpenSCAD as `cover`), glued into the face pocket
 - foam ring for the barometer hood: closed-cell, 1.0 mm thick (squeezed to 0.7 mm), cut to the recess (5.7 x 5.7 mm outside, 2.9 x 2.9 mm inside)
-- foam ring for the microphone: 1.6 mm ID, 4.0 mm OD, 1.0 mm thick closed-cell (squeezed to 0.7 mm), sits in the recess at the end of the mic tube
 - foam: 0.5 mm closed-cell gasket between glass and face (compressed to 0.3 mm); 1 mm VHB foam pad under the cell
 - Qwiic and camera leads to the outside: cut out the 0.6 mm knock-out next to each socket in the top wall
 - optional: SMA bulkhead to U.FL pigtail (100 mm) for the GNSS antenna; ePTFE vent sticker (6 mm) over the bottom-wall barometer outlet; for the static port instead: a 4 mm OD push-in hose barb (nylon)
@@ -66,15 +65,14 @@ Brass inserts and A4 stainless or titanium screws: the magnetometer is on the bo
 
 ## Humidity sensor and microphone
 
-- The SHT40 sits on a tongue the board cuts free with an L-shaped notch. Two slots in the left wall open
-  right in front of it, and baffles on both sides of the board (stopping 0.4 mm short of it) make a small
-  chamber, so it reads cockpit air and not the warm case. Nothing touches the tongue: no rib, foam or glue.
-- The microphone hears through a 0.8 mm hole in the board. A short tube seals onto the board front with a foam
-  ring; from its top a 1.2 mm duct inside the face runs sideways into the humidity chamber, so the mic hears the
-  cockpit through the left-wall vent and the face stays clean (no hole on top).
+- The SHT40 and the top-port microphone sit together at the left board edge. Two slots in the left wall open
+  right in front of them, and baffles on both sides of the board (stopping 0.4 mm short of it) make a small
+  chamber, so they read and hear cockpit air, not the warm case. No board cut-out, no holes on top.
 - The barometer sits under a hood sealed onto the board with a foam ring (the board keeps a 1.8 mm free ring
   round the sensor for it), with a 1.4 mm duct out through the bottom wall next to the keys.
-- `case-section-ducts` shows all three from above.
+- `case-section-ducts` shows the chamber and the barometer hood from above.
+- Battery: the cell lead plugs into J2 from the right, turns down a gully in the right wall of both shells and
+  runs under the board to the cell; a bridge clip in the tray holds it (`case-section-battery`).
 - `case-section-mic` shows both.
 
 ## How it holds the IMU still

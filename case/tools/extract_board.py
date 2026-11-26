@@ -41,7 +41,7 @@ ROLES = [
     ("mag",      r"WLCSP-9|BMM350", r"^U"),
     ("swd",      r"PinHeader_1x06", r"^J"),
     ("rh",       r"SHT4x|Sensirion_DFN", r"^U"),
-    ("mic",      r"Sensor_Audio|PG-LLGA-5", r"^(MK|U)"),
+    ("mic",      r"Sensor_Audio|PG-LLGA-5|MP34|HCLGA", r"^(MK|U)"),
 ]
 
 # Part heights above their copper side (mm). Used for clearance checks and for the

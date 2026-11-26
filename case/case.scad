@@ -166,7 +166,7 @@ module front() {
         // groove for the tray's tongue
         translate([0, 0, z_split - 0.01]) linear_extrude(1.2 + 0.3) offset(delta = fit / 2) tongue();
         // side openings
-        usb_cut(); sd_cut(); flex_relief(); battery_lead_gully(); knockouts();
+        usb_cut(); sd_cut(); flex_relief(); battery_lead_gully(); battery_plug_pocket(); knockouts();
         rh_vent(); baro_cut();
         // barometer
         if (has("baro")) translate([vent_xy().x, vent_xy().y, 0]) {
@@ -189,7 +189,7 @@ module front() {
         translate([0, 0, -1]) cylinder(d = screw_d, h = 20);
     }
     if (lcd) carrier_lugs();
-    difference() { union() { rh_baffles(rh_gap, z_face_in + 0.01); mic_solid(); baro_solid(); } mic_bore_cut(); baro_cut(); }
+    difference() { union() { rh_baffles(rh_gap, z_face_in + 0.01); baro_solid(); } baro_cut(); }
     // tongue-and-groove: the front shell's groove is cut below; tray carries the tongue
 }
 
@@ -234,8 +234,20 @@ module knockouts() for (r = ["qwiic", "camera"]) if (has(r)) let(f = feat(r), bb
         rotate([-90, 0, 0]) linear_extrude(wall - 0.6 + 0.01) translate([0, -1.6]) offset(r = 1.4) square([4, 0.4], center = true);
 module flex_relief() if (has("lcd_flex")) let(bb = fbb(feat("lcd_flex")))
     translate([bb[0] - 0.5, H + board_gap - 0.01, 0]) cube([bb[2] - bb[0] + 1, 1.2, z_face_in - 0.01]);   // the fold may stand 1 mm past the edge
-module battery_lead_gully() if (cell_on && has("battery")) let(f = feat("battery"))
-    let(right = fxy(f).x > W / 2) translate([right ? W + board_gap - 0.01 : -board_gap - 1.8, fxy(f).y - 3.5, z_split - 1]) cube([1.81, 7, 20]);
+// Battery: the JST PH plug enters J2 from the right; its lead turns down past the board edge in a gully in the
+// right (or left) wall of both shells and runs under the board to the cell. A bridge clip in the tray holds it.
+bat_gully = [1.2, 6.0];                       // depth into the wall, width
+function bat_side() = fxy(feat("battery")).x > W / 2;
+module battery_lead_gully(z0 = z_split - 1, z1 = z_face_in) if (cell_on && has("battery")) let(f = feat("battery"), r = bat_side())
+    translate([r ? W + board_gap - 0.01 : -board_gap - bat_gully.x, fxy(f).y - bat_gully.y / 2, z0]) cube([bat_gully.x + 0.01, bat_gully.y, z1 - z0]);
+// the plug past the socket opening: 4.85 mm tall leaves 0.25 mm under the face, so pocket it
+module battery_plug_pocket() if (has("battery")) let(b = fbb(feat("battery")), r = bat_side())
+    translate([r ? b[2] - 0.5 : -board_gap, fxy(feat("battery")).y - 3.4, z_face_in - 1]) cube([r ? W + board_gap - b[2] + 0.5 : b[0] + board_gap + 0.5, 6.8, 1 + 0.6]);
+module battery_clip() if (cell_on && has("battery")) let(f = feat("battery"), r = bat_side(), x = r ? W - 9 : 9, y = fxy(f).y)
+    translate([x, y, z_floor_in - 0.01]) {
+        for (sy = [-1, 1]) translate([-1, sy * 2.6 - 0.8, 0]) cube([2, 1.6, 3.2]);
+        translate([-1, -3.4, 2.2]) cube([2, 6.8, 1.0]);
+    }
 
 
 // ---------------------------------------------------------------- display spacer frame
@@ -306,36 +318,23 @@ function ring_pt(p) = let(o = lcd_bb, c = 1.2, d = [p.x - o[0], o[2] - p.x, p.y 
 // Nothing touches the tongue: no rib, foam or clamp.
 rh_gap = 0.4;                                 // baffles stop this far from the board
 rh_baffle = 1.2;
-function rh_box() = let(b = fbb(feat("rh"))) [-board_gap, b[1] - 6.0, b[2] + 3.0, b[3] + 4.8];  // [x0, y0, x1, y1] inside the baffles
+function env_bb() = let(bs = [for (r = ["rh", "mic"]) if (has(r)) fbb(feat(r))])
+    [min([for (b = bs) b[0]]), min([for (b = bs) b[1]]), max([for (b = bs) b[2]]), max([for (b = bs) b[3]])];
+// [x0, y0, x1, y1] inside the baffles: the board keeps a 1.2 mm part-free strip round this box
+function rh_box() = let(b = env_bb()) [-board_gap, b[1] - 0.9, b[2] + 1.9, b[3] + 1.45];
 module rh_baffles(z0, z1) if (has("rh")) let(r = rh_box(), t = rh_baffle)
     translate([0, 0, z0]) linear_extrude(z1 - z0) difference() {
         translate([-board_gap - 0.5, r[1] - t]) square([r[2] + t + board_gap + 0.5, r[3] - r[1] + 2 * t]);
         translate([-board_gap - 1, r[1]]) square([r[2] + board_gap + 1, r[3] - r[1]]);
     }
-module rh_vent() if (has("rh")) let(c = fxy(feat("rh")))
-    for (z = [1.1, 3.1]) translate([-board_gap - wall - 1, c.y, z]) rotate([0, 90, 0]) linear_extrude(wall + 1.5)
-        hull() for (dy = [-3.2, 3.2]) translate([0, dy]) circle(d = 1.1, $fn = 16);
+module rh_vent() if (has("rh")) let(r = rh_box(), yc = (r[1] + r[3]) / 2, l = r[3] - r[1] - 3.5)
+    for (z = [1.1, 3.1]) translate([-board_gap - wall - 1, yc, z]) rotate([0, 90, 0]) linear_extrude(wall + 1.5)
+        hull() for (dy = [-l / 2, l / 2]) translate([0, dy]) circle(d = 1.1, $fn = 16);
 
-// Bottom-port microphone: it hears through a hole in the board. A short tube seals onto the board front with a
-// foam ring; from its top a duct inside the face runs sideways into the humidity chamber, so the mic hears the
-// cockpit through the left-wall vent and the face stays clean.
-mic_tube_d = 4.6;
-mic_bore = 1.2;
-mic_seal = [1.6, 4.0, 1.0];                   // foam ring: inner, outer, free thickness (squeezed to 0.7)
-mic_tube_z = 0.4;                             // tube end above the board front; a 0.3 mm recess locates the ring
-mic_duct_z = 2.7;                             // duct underside: clears the parts it crosses (2.4 mm at most)
+// Microphone: a top-port part inside the humidity chamber, so it hears the cockpit through the same left-wall vent.
+mic_duct_z = 2.7;                             // barometer duct underside: clears the parts it crosses (2.4 mm at most)
 mic_duct_d = 2.6;
-function mic_duct_end() = has("rh") ? [rh_box()[2] - 0.6, rh_box()[3] - 1.2] : [-board_gap - wall - 1, fxy(feat("mic_port")).y];
 function mic_bore_z() = (mic_duct_z + z_face_in) / 2;
-module mic_solid() if (has("mic_port")) let(p = fxy(feat("mic_port")), e = mic_duct_end()) {
-    translate([p.x, p.y, mic_tube_z]) cylinder(d = mic_tube_d, h = z_face_in - mic_tube_z + 0.01, $fn = 32);
-    hull() for (q = [p, e]) translate([q.x, q.y, mic_duct_z]) cylinder(d = mic_duct_d, h = z_face_in - mic_duct_z + 0.01, $fn = 20);
-}
-module mic_bore_cut() if (has("mic_port")) let(p = fxy(feat("mic_port")), e = mic_duct_end(), zb = mic_bore_z()) {
-    translate([p.x, p.y, -1]) cylinder(d = mic_bore, h = zb + 1, $fn = 16);
-    hull() for (q = [p, e - [0.8, 0]]) translate([q.x, q.y, zb]) sphere(d = mic_bore, $fn = 16);
-    translate([p.x, p.y, mic_tube_z - 0.01]) cylinder(d = mic_seal[1] + 0.2, h = 0.3, $fn = 32);
-}
 
 // Barometer: one sealed hood for both modes. A foam ring seals it onto the free ring the board keeps round the
 // sensor; a duct runs out through the bottom wall. Left open (ePTFE sticker) it breathes cockpit air; with a
@@ -468,7 +467,8 @@ module tray() {
     translate([0, 0, z_split - 0.01]) linear_extrude(plate_bot - z_split + 0.01 - fit) kb_wall_strip();
     // the cell: a rib frame and four snap fingers over its long edges
     if (cell_on) cell_bay();
-    rh_baffles(z_floor_in - 0.01, z_split - rh_gap);   // the chamber's back half: still air under the tongue
+    rh_baffles(z_floor_in - 0.01, z_split - rh_gap);
+    battery_clip();   // the chamber's back half: still air under the tongue
     // the floor is thicker over the latch notch
     difference() {
         translate([latch_x - 5, H / 2 - latch_arm.y / 2 - 3, z_floor_in - 0.01]) cube([10, latch_arm.y + 6, latch_hook + 1.6 - floor_t]);
@@ -507,6 +507,7 @@ module cell_bay() {
     }
 }
 module tray_openings() {
+    battery_lead_gully(z_floor_in, z_split + 1.3);
     // SMA bulkhead for the external GNSS antenna, low in the wall so its nut is inside the tray
     if (sma && has("gnss_rf")) let(y = fxy(feat("gnss_rf")).y, z = (z_floor_in + z_split) / 2)
         translate([sma_wall == "left" ? -board_gap - wall - 1 : W + board_gap - 1, y, z]) rotate([0, 90, 0])
@@ -671,13 +672,11 @@ for (q = board_parts, r = lcd ? carrier_lug_rects() : []) let(b = q[2]) if (q[1]
     echo(str("CHECK: display carrier lug lands on ", q[0]));
 if (has("rh")) let(r = rh_box()) for (q = board_parts) let(b = q[2]) if (q[0] != feat("rh")[0] && b[2] > r[0] - rh_baffle && b[0] < r[2] + rh_baffle && b[3] > r[1] - rh_baffle && b[1] < r[3] + rh_baffle && !(b[0] >= r[0] && b[2] <= r[2] && b[1] >= r[1] && b[3] <= r[3]))
     echo(str("CHECK: humidity chamber baffle crosses ", q[0]));
-if (has("mic_port")) let(p = fxy(feat("mic_port"))) for (q = board_parts) let(b = q[2]) if (q[1] == "F" && b[2] > p.x - mic_tube_d / 2 && b[0] < p.x + mic_tube_d / 2 && b[3] > p.y - mic_tube_d / 2 && b[1] < p.y + mic_tube_d / 2)
-    echo(str("CHECK: microphone tube lands on ", q[0]));
 if (has("baro")) let(o = baro_out()) if (o[2] > kb0.x - 0.2) echo("CHECK: barometer hood touches the key bridge");
 if (has("baro")) let(o = baro_out()) for (q = board_parts) let(b = q[2]) if (q[1] == "F" && q[0] != feat("baro")[0] && b[2] > o[0] && b[0] < o[2] && b[3] > o[1] && b[1] < o[3])
     echo(str("CHECK: barometer seal ring lands on ", q[0]));
-if (has("mic_port")) let(p = fxy(feat("mic_port")), e = mic_duct_end()) for (q = board_parts) let(b = q[2]) if (q[1] == "F" && q[3] > mic_duct_z - 0.25 && b[2] > min(p.x, e.x) - 1.3 && b[0] < max(p.x, e.x) + 1.3 && b[3] > min(p.y, e.y) - 1.3 && b[1] < max(p.y, e.y) + 1.3)
-    echo(str("CHECK: microphone duct passes over ", q[0], " (", q[3], " mm)"));
+if (has("battery")) let(b = fbb(feat("battery")), r = bat_side(), y = fxy(feat("battery")).y) for (q = board_parts) let(c = q[2]) if (q[1] == "F" && q[0] != feat("battery")[0] && q[3] > z_face_in - 1.3 && (r ? c[2] > b[2] - 0.5 : c[0] < b[0] + 0.5) && c[3] > y - 3.4 && c[1] < y + 3.4)
+    echo(str("CHECK: battery plug pocket meets ", q[0]));
 if (lcd && len(lcd_posts) < 4) echo("CHECK: fewer than 4 free spots for display posts");
 for (p = kb_feet()) for (q = board_parts) if (q[1] == "F" && p.x > q[2][0] - 1.2 && p.x < q[2][2] + 1.2 && p.y > q[2][1] - 1.2 && p.y < q[2][3] + 1.2)
     echo(str("CHECK: key bridge foot at ", p, " lands on ", q[0]));

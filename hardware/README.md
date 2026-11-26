@@ -31,17 +31,17 @@ kicad-cli sch export pdf ../kicad/logger.kicad_sch -o ../kicad/logger.pdf
 - Storage: flights are logged to the soldered 512 MB GigaDevice GD5F4GM8UE flash next to the MCU (about 4.5 hours of raw logging; stocked at JLCPCB); the microSD keeps a backup copy and serves firmware updates and export.
 - GNSS antenna feed: hand-routed 0.25 mm on F.Cu from the U.FL to the module, short and direct over the In1 ground.
 - Radio: ESP32-C6-MINI-1 in the top-left corner, flush with the top edge. Its antenna sits over a cut-out in the board, as Espressif's guidelines ask, so there is no board material under it. The case wall in front of it must be plastic. It may stay on in flight (fine from an avionics point of view); bulk Wi-Fi transfers happen on the ground. Planned uses: camera start/stop over Bluetooth, wireless firmware updates for both chips, compressed flight download.
-- Silkscreen: references only for ICs, connectors with function labels instead (UP, OK / PWR, DOWN, CHG, BAT 1S +/−, SWD, CAM/MRK, I2C, LCD, ANT, D+/D-), IMU axes left of U6. Passive references are on F.Fab for assembly. Dwgs.User carries the LCD outline, its active area and FPC, and the 20 x 16 mm key caps for the case design.
+- Silkscreen: references only for ICs, connectors with function labels instead (UP, OK / PWR, DOWN, CHG, BAT 1S +/−, SWD, CAM/MRK, I2C, LCD, ANT, D+/D-), IMU axes left of U6. Passive references are on F.Fab for assembly. Dwgs.User carries the LCD outline, its active area and FPC, and the 18 x 15.2 mm key caps for the case design.
 - Top: the Unicornlines logo (9.5 mm, bottom-right, outside the panel) with "UNICORNLINES®" and "Never Stop Dreaming". Back: "AEROBATICS LOGGER", the revision, and *PER PERFECTIONEM AD FELICITATEM*.
 - The logo is `art/unicornlines-logo.svg`, turned into the `logger:Unicornlines_Logo` silkscreen footprint by `tools/mklogo.py` (strokes thickened to the 0.16 mm silk minimum). Re-run it only when the artwork changes: `python3 mklogo.py ../art/unicornlines-logo.svg Unicornlines_Logo 9.5`.
-- Five M3 holes, grounded: the corners, 4 mm in, and a fifth at (50, 41), 6 mm from the IMU, to hold the IMU's area rigid. Each has a 7 mm grounded copper ring on every layer, so no parts, tracks or vias come closer than 3.65 mm to its centre; the case bosses clamp on it. The fifth sits under the panel, so its boss comes from the back.
+- Four M3 holes in the corners, 4 mm in, grounded. Each has a 7 mm copper ring on every layer, so no parts, tracks or vias come closer than 3.65 mm to its centre; the case clamps the board there. (A fifth hole by the IMU was dropped on 2026-11-26: the cell lies behind the middle of the board.)
 
 Mechanical data for the case (mm from the board's top-left corner, y down; heights above F.Cu or below B.Cu):
 
 | Item | Position | Height | Notes |
 | --- | --- | --- | --- |
 | LCD module LS027B7DH01 | x 30.6-93.4, y 2.5-45.32 | glass back at 3.5, top about 4.8 | 62.8 x 42.82 x 1.3; active area 58.80 x 35.28, 2.0 mm from the FPC-far edge. Hold it on its border with a spacer frame and the bezel. FPC 9.5 mm wide, centred, leaves the top edge and folds 180° under the glass (never toward the front polariser) into J61 at (62, 6.5); the fold may stand 0-1 mm past the top board edge |
-| Keys SW1-3 | (40 / 62 / 84, 53.9) | Choc V1 switch on F.Cu; socket 1.85 below B.Cu | Kailh hotswap sockets on B.Cu (the only parts on the back); the case front is the switch plate (13.8 mm square cut-outs, Choc plate thickness 1.2 mm). Caps 20 x 16 |
+| Keys SW1-3 | (40 / 62 / 84, 53.9) | Choc V1 switch on F.Cu; socket 1.85 below B.Cu | Kailh hotswap sockets on B.Cu (the only parts on the back); the case front is the switch plate (13.8 mm square cut-outs, Choc plate thickness 1.2 mm). Caps 18 x 15.2 (case thread) |
 | Tallest front part outside the panel | C34 (14, 54.5) | 5.4 | RTC/GNSS backup cap |
 | USB-C J1 | right edge, centred y 14 | 3.3 | lip about 0.2 past the edge |
 | microSD J60 | right edge, centred y 31.5 | 1.7 | body ends about 1 mm inside the edge; an inserted card stands about 4.5 mm out |

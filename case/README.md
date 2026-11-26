@@ -72,8 +72,8 @@ hook fix the third. Same position every time, no wobble, no tools. To release, p
 tab at the right end down and slide the unit off to the right. The hook face is square, so
 vibration and g cannot walk it out; only the tab releases it.
 
-The board is clamped at the four corner holes. The fifth hole (next to the IMU) sits over the
-battery cell, so the case does not use it when a cell is fitted.
+The board is clamped at its four corner holes, the only mounting holes it has (the fifth hole
+over the battery cell was removed from the PCB).
 
 Mounting options from the plate: strap slots at both ends (25 mm webbing, e.g. round a tube or a
 thigh), 4 countersunk M4 holes, the AMPS 30 x 38 pattern used by RAM and most cockpit mounts, and

@@ -21,7 +21,7 @@ PCB = os.path.join(HERE, "..", "kicad", "logger.kicad_pcb")
 WORK = os.environ.get("ROUTE_WORK", "/tmp/logger-route")
 # High-current nets get a wider class. Plane nets (GND, +3V3) keep the default width so they
 # can fan out of 0.4-0.5 mm pitch pads.
-POWER_NETS = ["VBUS", "VSYS", "HOLD_TOP", "HOLD_MID", "BUCK_SW", "VBAT", "BAT_CONN", "BAT_CELL", "BAT_NEG", "PROT_MID"]
+POWER_NETS = ["VBUS", "VSYS", "BUCK_SW", "VBAT", "BAT_CONN", "BAT_CELL", "BAT_NEG", "PROT_MID"]
 POWER_WIDTH_UM = 400
 PASSES = os.environ.get("PASSES", "25")
 

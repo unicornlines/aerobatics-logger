@@ -19,7 +19,7 @@
     (fill
       (color 0 0 0 0))
     (uuid "1773213d-70a4-ee0a-f655-7563ffa4794e")
-    (property "Sheetname" "Power: USB-C, Li-ion charger, hold-up, 3.3 V"
+    (property "Sheetname" "Power: USB-C, Li-ion charger, cell protection, 3.3 V"
       (at 30 49.3 0)
       (effects
         (font
@@ -123,7 +123,7 @@
     (fill
       (color 0 0 0 0))
     (uuid "afd7b760-5d89-7cb6-fd34-3eeb70b42450")
-    (property "Sheetname" "IO: log flash, microSD, e-paper display, buttons, camera sync"
+    (property "Sheetname" "IO: log flash, microSD, memory LCD, keys, camera sync"
       (at 150 119.3 0)
       (effects
         (font

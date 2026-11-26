@@ -4,9 +4,9 @@ Nets come straight from design.py, so the board and schematic share one source.
 Placement is by hand, block by block, on a 0.5 mm grid. A few fanouts are placed by hand and locked
 (MCU and IMU ground pins, crystal load caps, every R/C ground pad), then route.py autoroutes the rest.
 
-Board: 112 x 54 mm, 4 layers: F.Cu signal, In1 GND plane, In2 +3V3 pour with some signal routing, B.Cu signal.
+Board: 124 x 62 mm, 4 layers: F.Cu signal, In1 GND plane, In2 +3V3 pour with some signal routing, B.Cu signal.
 """
-import os, sys
+import math, os, sys
 import pcbnew
 import design
 
@@ -14,12 +14,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 KICAD = os.path.join(HERE, "..", "kicad")
 SYSFP = "/usr/share/kicad/footprints"
 OX, OY = 100.0, 100.0          # board top-left on the page
-W, H = 112.0, 54.0
+W, H = 124.0, 62.0
 MM = pcbnew.FromMM
 
 # Extra pads the footprint has but the symbol doesn't.
-EXTRA_PADS = {("J60", "11"): "GND", ("J61", "MP"): "GND", ("J63", "MP"): "GND", ("J2", "MP"): "GND",
-              **{(f"SW{i}", "MP"): "GND" for i in range(1, 6)}}
+EXTRA_PADS = {("J60", "11"): "GND", ("J61", "MP"): "GND", ("J62", "MP"): "GND", ("J63", "MP"): "GND", ("J2", "MP"): "GND"}
 
 # ref: (x, y, rotation, side)  -- board coordinates in mm from the top-left corner; side "F" or "B"
 P = {}
@@ -29,13 +28,18 @@ def row(refs, x, y, dx, dy, rot=0, side="F"):
     for i, r in enumerate(refs):
         at(r, x + i * dx, y + i * dy, rot, side)
 
-# Floor plan, left to right: radio (top-left corner) and GNSS, then the MCU with its crystals and log flash,
-# then power (3.3 V buck, charger, USB protection) with USB-C and microSD flush on the right short edge.
-# Top edge: the radio antenna, the two cable sockets and the e-paper FPC. Bottom edge: the five side-push buttons,
-# MARKER at the left end, UP / OK / DOWN in the middle, PWR at the right; hold-up and battery in the bottom-right.
+# Floor plan. Front face: the Sharp 2.7" memory LCD centred at the top (rotated 180 deg so its FPC leaves at the top edge
+# and folds back under the glass into J61), and the three Choc keys centred under it. Only low parts (<= 3 mm) sit under the
+# panel. Left of the panel: radio (top-left corner, antenna up) and GNSS, sensors below them. Right of the panel: USB-C
+# and microSD flush on the right short edge, charger and USB protection; battery and its protection in the
+# bottom-right corner. MCU, log flash, 3.3 V buck and LCD supply under the panel.
+DX = W / 2                       # panel and key centre line
+LCD = (DX - 31.4, 2.5, DX + 31.4, 2.5 + 42.82)        # LS027B7DH01 module outline on the board (x0, y0, x1, y1)
+KEYS = {"SW1": DX - 22.0, "SW2": DX, "SW3": DX + 22.0}  # UP, OK / PWR, DOWN
+KY = 53.9
 
-# --- MCU block (centre) and its crystals, decoupling on every side
-MX, MY = 50.0, 32.0
+# --- MCU block (under the panel) and its crystals, decoupling on every side
+MX, MY = 50.0, 26.0
 at("U5", MX, MY)
 row(["C20", "C21"], MX - 10.5, MY - 7.5, 0, 2.0, 0)       # left side decoupling
 row(["C22", "C23"], MX + 10.5, MY + 5.0, 0, 2.0, 0)       # right side decoupling
@@ -45,15 +49,19 @@ at("C28", MX - 4.0, MY - 10.5, 90); at("C29", MX - 6.5, MY - 10.5, 90); at("R20"
 at("FB1", MX - 1.5, MY - 10.5, 0); at("C10", MX + 1.0, MY - 10.5, 90); at("C11", MX + 3.5, MY - 10.5, 90)
 at("Y1", MX - 14.0, MY, 90); at("C30", MX - 14.0, MY - 2.9, 0); at("C31", MX - 14.0, MY + 2.9, 0)
 at("Y2", MX - 14.0, MY - 7.1, 90); at("C32", MX - 14.0, MY - 9.3, 0); at("C33", MX - 14.0, MY - 4.9, 0)
-# RTC / GNSS backup: one column D20 - R21 - C34, between the GNSS and the crystals
-at("D20", 30.3, 24.2, 90); at("R21", 30.3, 26.9, 90); at("C34", 30.3, 31.5, 0)
-# SWD header and status LED, right of the MCU
-at("J20", 67.5, 19.5, 0)
-at("D21", 34.0, 44.5, 0); at("R22", 34.0, 46.5, 0)
+# RTC / GNSS backup: D20 - R21 by the crystals, the 0.1 F cap (5.4 mm tall) outside the panel, bottom-left
+at("D20", 30.3, 30.2, 90); at("R21", 30.3, 32.9, 90); at("C34", 14.0, 54.5, 0)
+# SWD (Tag-Connect pads, no height) right of the MCU; status LED bottom-left, visible beside the keys
+at("J20", MX + 17.0, MY - 6.0, 0)
+at("D21", 28.0, 59.2, 0); at("R22", 24.8, 59.2, 0)
 
 # --- Log flash (bottom-right of the MCU, next to its OCTOSPI pins); decoupling and pull-ups in a row on top
 at("U12", MX + 16.2, MY + 5.9, 90)
 row(["C90", "C91", "R90", "R91", "R92"], MX + 15.0, MY - 0.1, 1.6, 0, 90)
+
+# --- IMU under the MCU's SPI1 corner, near the board's middle
+at("U6", MX - 6.0, MY + 15.0, 0)
+at("C40", MX - 9.0, MY + 14.0, 90); at("C41", MX - 9.0, MY + 16.5, 90)
 
 # --- Radio (top-left corner). Module flush with the top edge, antenna over the notch in the board.
 at("U11", 17.0, 8.3, 0)
@@ -70,47 +78,44 @@ at("R50", GX - 8.5, GY - 10.5, 0); at("FB51", GX - 8.5, GY - 8.5, 0); at("C52", 
 at("FB2", GX + 9.0, GY - 6.0, 90); at("C50", GX + 9.0, GY - 2.0, 90); at("C51", GX + 9.0, GY + 1.0, 90)
 at("TP50", GX + 9.0, GY + 3.0, 0)
 
-# --- Sensors (bottom band, between the GNSS and the buttons) -------------------
-at("U6", 44.0, 45.0, 0)                               # IMU, under the MCU's SPI1 corner
-at("C40", 41.0, 44.0, 90); at("C41", 41.0, 46.5, 90)
-at("U7", 58.0, 46.2, 0)                               # barometer, under the MCU's SPI2 corner; hose chamber over it
-at("C42", 55.5, 46.2, 90); at("C43", 60.5, 46.2, 90)
-at("U9", 20.0, 45.0, 0)                               # magnetometer, far from the buck, supercaps and battery
+# --- Sensors (bottom-left, outside the panel and keys) ----------------------------
+at("U9", 20.0, 45.0, 0)                               # magnetometer, far from the buck and the battery currents
 at("C46", 18.0, 47.5, 0); at("C47", 20.5, 47.5, 0); at("C48", 23.0, 47.5, 0)
 row(["R40", "R41"], 18.0, 42.0, 2.0, 0, 90)
 at("U8", 12.5, 44.5, 90); at("C44", 12.5, 41.0, 0); at("C45", 12.5, 48.0, 90)
+at("U7", 24.5, 53.5, 0)                               # barometer: hose chamber over it, barb out of the bottom wall
+at("C42", 22.0, 53.5, 90); at("C43", 27.0, 53.5, 90)
 
-# --- Top edge: Qwiic and camera/marker sockets, e-paper FPC with its booster ------
-at("J63", 31.0, 3.4, 180)                              # I2C expansion (Qwiic), cable out of the top edge
-row(["F1", "R70", "R71"], 28.8, 9.0, 1.6, 0, 90)
-at("U14", 37.3, 3.6, 0)                                # ESD array for J62 and J63, between the two
-at("J62", 41.5, 3.0, 90)                               # 1 sync out, 2 GND, 3 marker in (pin 1 left)
-row(["R66", "R68", "R69", "C72"], 41.5, 7.6, 1.6, 0, 90)
-EX = 59.0                                              # e-paper FPC centre
-at("J61", EX, 5.5, 180)
-row(["C63", "C64", "C65", "C66", "C67", "C68", "C69"], EX - 7.5, 10.5, 2.0, 0, 90)
-at("C62", EX + 6.5, 10.5, 90); at("C70", EX + 8.5, 10.5, 90)
-at("L60", EX - 6.8, 14.3, 0); at("Q60", EX - 2.4, 14.3, 0); at("R67", EX + 0.5, 14.3, 90); at("C71", EX + 2.5, 14.3, 90)
-row(["D60", "D61", "D62"], EX - 5.5, 18.2, 5.0, 0, 0)
+# --- Top edge, under the panel: Qwiic and camera/marker sockets (cables out of the top) ------
+at("J63", 35.0, 3.4, 180)                              # I2C expansion (Qwiic)
+row(["F1", "R70", "R71"], 32.8, 9.0, 1.6, 0, 90)
+at("U14", 41.0, 3.6, 0)                                # ESD array for J62 and J63, between the two
+at("J62", 46.5, 2.9, 180)                              # JST SUR 3: 1 sync out, 2 GND, 3 marker in
+row(["R66", "R68", "R69", "C72"], 44.3, 9.0, 1.6, 0, 90)
 
-# --- Buttons: five side-push switches on the bottom edge, actuators flush with it ----
-BY = H - 2.1
-at("SW5", 14.0, BY, 0)                                 # MARKER (large cap in the case)
-row(["SW1", "SW2", "SW3"], 28.0, BY, 10.0, 0, 0)       # UP, OK, DOWN
-at("SW4", 62.0, BY, 0)                                 # PWR (recessed in the case)
+# --- LCD: FPC socket under the panel's top edge (the FPC enters from the top), 5 V boost beside it ----
+at("J61", DX, 6.5, 0)
+row(["R67", "R72"], DX - 5.2, 6.4, 0, 1.6, 0)          # SCS and DISP pull-downs
+row(["C64", "C65"], DX + 5.0, 6.4, 0, 1.6, 0)          # at VDD / VDDA
+at("U16", DX + 9.0, 8.0, 0); at("L60", DX + 9.0, 3.6, 90)
+at("C62", DX + 12.2, 6.3, 90); at("C63", DX + 12.2, 9.9, 90)
 
-# --- Power: 3.3 V buck (top band) -----------------------------------------------
-UX = 78.0
+# --- Keys: three Choc switches centred under the panel ------------------------------
+for r, x in KEYS.items():
+    at(r, x, KY, 0)
+
+# --- Power: 3.3 V buck (top band, under the panel) ------------------------------
+UX = 84.0
 at("U3", UX, 12.0, 0); at("L1", UX, 6.5, 0)
 row(["C5", "C6"], UX + 5.5, 10.0, 0, 3.6, 90)
 row(["C8", "C9"], UX - 5.5, 4.0, 0, 2.5, 0)
 row(["C7", "R7", "R8", "R9"], UX - 4.5, 11.9, 0, 1.6, 0)
-# soft power latch, under the buck: USB diode + 100k, button/hold diode pair, 1M || 1u on EN, button divider
-row(["R119", "D24"], 70.5, 20.5, 2.5, 0, 90)
-at("D23", 76.6, 20.5, 0); row(["R120", "C110", "R121", "R122"], 79.4, 20.5, 1.6, 0, 90)
+# soft power latch, under the buck: USB diode + 100k, key/hold diode pair, 1M || 1u on EN, key divider
+row(["R119", "D24"], UX - 7.5, 20.5, 2.5, 0, 90)
+at("D23", UX - 1.4, 20.5, 0); row(["R120", "C110", "R121", "R122"], UX + 1.4, 20.5, 1.6, 0, 90)
 
 # --- Charger (BQ24074, rotated: OUT pins face the buck, BAT pins face the USB side, IN bottom-left) ----
-CX, CY = 93.0, 14.0
+CX, CY = 105.0, 14.0
 at("U13", CX, CY, 180)
 row(["C105", "C104"], CX - 5.4, CY, 2.1, 0, 90)          # OUT 2 x 10u
 at("C106", CX + 3.4, CY, 90)                             # BAT 10u
@@ -125,29 +130,26 @@ at("D22", CX - 2.0, CY - 5.2, 0); row(["R118", "R104"], CX + 1.2, CY - 5.2, 1.6,
 # --- USB-C (right edge, top) and its protection ------------------------------------
 JX = W - 3.5
 at("J1", JX, 14.0, 90)
-at("U1", 100.5, 14.0, 0); at("D1", 100.5, 9.6, 0)
-row(["R2", "R1"], 99.6, 17.6, 2.0, 0, 0)
-row(["R3", "C1"], 105.0, 21.6, 1.6, 0, 90)
-row(["R108", "R109", "C108"], 99.8, 21.6, 1.6, 0, 90)     # CC level to the ADC
+at("U1", JX - 8.0, 14.0, 0); at("D1", JX - 8.0, 9.6, 0)
+row(["R2", "R1"], JX - 8.9, 17.6, 2.0, 0, 0)
+row(["R3", "C1"], JX - 3.5, 21.6, 1.6, 0, 90)
+row(["R108", "R109", "C108"], JX - 8.7, 21.6, 1.6, 0, 90)     # CC level to the ADC
 # power-fail comparator, then the VBAT/2 divider: one column left of the microSD pull-ups
-at("U4", 89.0, 26.2, 90); row(["C12", "C13"], 86.0, 24.8, 0, 1.6, 0)
-row(["R10", "R11", "R12", "R106", "R107", "C107"], 89.0, 29.4, 0, 1.5, 0)
+at("U4", 101.0, 26.2, 90); row(["C12", "C13"], 98.0, 24.8, 0, 1.6, 0)
+row(["R10", "R11", "R12", "R106", "R107", "C107"], 101.0, 29.4, 0, 1.5, 0)
 
 # --- microSD (right edge, under the USB-C), card in through the case wall --------
 at("J60", W - 9.2, 31.5, 90)
-row(["R60", "R61", "R62", "R63", "R64", "R65"], 92.6, 24.5, 0, 1.6, 0)
-at("C60", 92.6, 35.0, 90); at("C61", 92.6, 37.8, 90)
+row(["R60", "R61", "R62", "R63", "R64", "R65"], W - 19.4, 24.5, 0, 1.6, 0)
+at("C60", W - 19.4, 35.0, 90); at("C61", W - 19.4, 37.8, 90)
 
-# --- Hold-up supercaps and battery (bottom-right) -----------------------------------
-at("C3", 69.25, 47.0, 0); at("C4", 79.25, 47.0, 0)       # origin is pin 1: bodies centred on x 71 and 81
-row(["R5", "R6"], 76.0, 44.8, 0, 4.4, 90)                 # balancing pair between the two, clear of the mid-point bar
-at("R4", 72.5, 41.3, 0); at("D2", 79.5, 41.3, 0)           # charge resistor and discharge diode above them
-at("J2", 97.0, 48.3, 0)                                   # JST PH, cable out towards the bottom edge
-at("Q3", 88.6, 45.8, 0); at("Q4", 88.6, 49.6, 0)          # discharge / charge FETs, left of the socket
-row(["R113", "R112", "C109"], 91.0, 41.0, 1.4, 0, 90)
-at("U15", 96.0, 41.0, 0); row(["R111", "R110"], 98.2, 41.0, 1.4, 0, 90)
-at("F2", 102.5, 41.0, 0)                                 # fuse right at the cell's + pin
-at("Q1", 88.0, 39.4, 0); at("R105", 88.0, 42.6, 0)        # reverse-polarity PMOS
+# --- Battery and cell protection (bottom-right corner) ---------
+at("J2", 116.0, 46.0, 0)                                  # JST PH, cable towards the bottom edge
+at("Q3", 97.0, 42.5, 0); at("Q4", 97.0, 45.9, 0)          # discharge / charge FETs
+row(["R113", "R112", "C109"], 100.2, 42.0, 1.4, 0, 90)
+at("U15", 104.9, 43.2, 0); row(["R111", "R110"], 107.2, 42.0, 1.4, 0, 90)
+at("F2", 108.6, 45.6, 90)                                # fuse right at the cell's + pin
+at("Q1", 92.0, 40.6, 0); at("R105", 92.0, 43.8, 0)        # reverse-polarity PMOS
 
 # Hand fanouts, placed before autorouting and locked: (ref, pad or net, dx, dy) -> GND via at pad + (dx, dy) mm.
 # U9 C3 is a corner ball the router boxes in; the crystal load caps get their own GND via on the far side from
@@ -159,11 +161,13 @@ FANOUT = [("U9", "C3", 0.55, 0.55), ("C30", "GND", 0.0, -0.95), ("C31", "GND", 0
 TRACKS = []
 FANOUT_INWARD = ["U5"]
 FANOUT_AXIAL = [("U1", "2", +1), ("U10", "24", -1)]
-PREROUTE = [("C3", "2", "C4", "1", "B", 0.6)]
+PREROUTE = []
 PREROUTE_PATH = [("J50", "1", [(GX - 13.05, GY - 1.74), (GX - 13.05, GY + 0.5), (GX - 9.0, GY + 4.55), (GX - 7.65, GY + 5.9)], "U10", "11", "F", 0.25),
                  ("L50", "2", [(GX - 10.28, GY - 1.74), (GX - 13.05, GY - 1.74)], None, None, "F", 0.15)]
 
-HOLES = [(4.0, 4.0), (W - 4.0, 4.0), (4.0, H - 4.0), (W - 4.0, H - 4.0)]
+HOLES = [(4.0, 4.0), (W - 4.0, 4.0), (4.0, H - 4.0), (W - 4.0, H - 4.0),
+         (50.0, 41.0)]          # fifth, 6 mm from the IMU, under the panel: case boss from the back only
+HOLE_KEEPOUT = 7.0             # mm: hole pad diameter (0.5 mm from the edge at the corners), so parts, tracks and vias stay off it on every layer; the case bosses clamp here
 
 
 def load(fp):
@@ -226,23 +230,22 @@ def zone(board, net, layer, inset=0.3):
 
 SILK_REF_PREFIXES = ("U", "J")          # ICs and connectors keep their reference on the silkscreen
 LABELLED = {"J2", "J20", "J50", "J60", "J61", "J62", "J63"}   # ...unless a function label replaces it (see LABELS)
-REF_POS = {"U5": (MX, MY), "U4": (86.0, 28.0), "U13": (91.0, 11.0), "U15": (93.0, 39.6), "U10": (19.5, 21.3)}            # reference centred in the MCU outline
+REF_POS = {"U16": (DX + 9.0, 10.4), "U5": (MX, MY), "U4": (98.0, 28.0), "U13": (103.0, 11.0), "U15": (104.3, 40.6), "U10": (19.5, 21.3)}            # reference centred in the MCU outline
 
 # Silkscreen labels: (text, x, y, rotation, size_mm, layer)
 LABELS = [
-    ("MARKER", 14.0, 49.3, 0, 0.8, "F"), ("UP", 28.0, 49.3, 0, 0.8, "F"), ("OK", 38.0, 49.3, 0, 0.8, "F"),
-    ("DOWN", 48.0, 49.3, 0, 0.8, "F"), ("PWR", 62.0, 49.3, 0, 0.8, "F"),
-    ("CHG", 88.3, 8.8, 0, 0.8, "F"), ("SWD", 67.5, 27.6, 0, 0.8, "F"), ("ANT", 4.0, 30.7, 0, 0.8, "F"),
-    ("CAM", 41.5, 5.6, 0, 0.8, "F"), ("MRK", 46.58, 5.6, 0, 0.8, "F"), ("I2C", 25.6, 4.0, 0, 0.8, "F"),
-    ("E-PAPER", 47.4, 9.7, 0, 0.8, "F"),
+    ("UP", KEYS["SW1"], KY + 4.6, 0, 0.8, "F"), ("OK / PWR", KEYS["SW2"], KY + 4.6, 0, 0.8, "F"),
+    ("DOWN", KEYS["SW3"], KY + 4.6, 0, 0.8, "F"),
+    ("CHG", CX - 4.7, CY - 5.2, 0, 0.8, "F"), ("SWD", MX + 17.0, MY - 3.2, 0, 0.8, "F"), ("ANT", 4.0, 30.7, 0, 0.8, "F"),
+    ("I2C", 29.6, 4.0, 0, 0.8, "F"), ("CAM/MRK", 52.0, 3.4, 0, 0.8, "F"), ("LCD", DX, 11.9, 0, 0.8, "F"),
     ("D+", 12.0, 21.2, 0, 0.8, "F"), ("D-", 14.4, 21.2, 0, 0.8, "F"),
-    ("BAT 1S", 103.7, 44.0, 90, 0.8, "F"), ("+", 100.6, 45.2, 0, 0.8, "F"), ("\u2212", 93.4, 45.2, 0, 0.8, "F"),
-    ("UNICORNLINES\u00ae", 78.5, 37.6, 0, 1.2, "F"), ("Never Stop Dreaming", 78.5, 39.3, 0, 0.85, "F", True),
-    ("AEROBATICS LOGGER", 56.0, 24.0, 0, 2.0, "B"), ("rev A  2026-11", 56.0, 27.5, 0, 1.2, "B"),
-    ("PER PERFECTIONEM AD FELICITATEM", 56.0, 31.5, 0, 1.1, "B", True),
+    ("BAT 1S", 122.7, 41.7, 90, 0.8, "F"), ("+", 119.6, 41.2, 0, 0.8, "F"), ("\u2212", 112.4, 41.2, 0, 0.8, "F"),
+    ("UNICORNLINES\u00ae", 101.5, 58.7, 0, 1.0, "F"), ("Never Stop Dreaming", 101.5, 60.3, 0, 0.8, "F", True),
+    ("AEROBATICS LOGGER", DX, 24.0, 0, 2.0, "B"), ("rev A  2026-11", DX, 27.5, 0, 1.2, "B"),
+    ("PER PERFECTIONEM AD FELICITATEM", DX, 31.5, 0, 1.1, "B", True),
 ]
-LOGO = ("Unicornlines_Logo", 78.5, 29.7)   # tools/mklogo.py, from art/unicornlines-logo.svg
-IMU_AXES = (48.0, 47.0)   # origin of the IMU axis arrows (ICM-45686, pin 1 top-left: +X right, +Y up, +Z out of the top; as TDK fig. 14 and CogniPilot's footprint)
+LOGO = ("Unicornlines_Logo", 101.5, 52.4)   # 9.5 mm, bottom-right beside DOWN, outside the panel (tools/mklogo.py)
+IMU_AXES = (35.8, 44.2)   # left of the IMU, clear of the H5 boss; origin of the IMU axis arrows (ICM-45686, pin 1 top-left: +X right, +Y up, +Z out of the top; as TDK fig. 14 and CogniPilot's footprint)
 
 
 def tidy_refs(f, ref):
@@ -287,6 +290,21 @@ def axes(board, x, y, L=3.0, a=0.6):
     board.Add(c)
     silk_line(board, x - 0.05, y, x + 0.05, y, 0.25)          # dot: Z points out of the board
     text(board, "Z", x - 1.3, y, 0, 0.8, "F")
+
+
+def drawings(board):
+    """Dwgs.User: the LCD module, its active area and FPC, and the printed key caps, for the case design."""
+    def rect(x0, y0, x1, y1):
+        for a, b in (((x0, y0), (x1, y0)), ((x1, y0), (x1, y1)), ((x1, y1), (x0, y1)), ((x0, y1), (x0, y0))):
+            sh = pcbnew.PCB_SHAPE(board); sh.SetShape(pcbnew.SHAPE_T_SEGMENT); sh.SetLayer(pcbnew.Dwgs_User); sh.SetWidth(MM(0.1))
+            sh.SetStart(pcbnew.VECTOR2I(MM(OX + a[0]), MM(OY + a[1]))); sh.SetEnd(pcbnew.VECTOR2I(MM(OX + b[0]), MM(OY + b[1])))
+            board.Add(sh)
+    x0, y0, x1, y1 = LCD
+    rect(x0, y0, x1, y1)                                        # module 62.8 x 42.82
+    rect(DX - 29.4, y1 - 2.0 - 35.28, DX + 29.4, y1 - 2.0)      # active area 58.8 x 35.28 (2.0 mm from the far edge)
+    rect(DX - 4.74, y0 - 3.0, DX + 4.74, y0)                    # FPC root, 9.48 wide (folds under the glass)
+    for x in KEYS.values():
+        rect(x - 10.0, KY - 8.0, x + 10.0, KY + 8.0)            # 20 x 16 mm printed caps
 
 
 def passive_gnd_vias(board, taken):
@@ -379,6 +397,9 @@ def main():
         board.Add(h)
         for pad in h.Pads():
             pad.SetNet(net("GND"))
+        for pad in h.Pads():          # the grounded ring is the keep-out: the router and the via stitcher stay off it
+            if pad.GetSize().x > MM(3):
+                pad.SetSize(pcbnew.VECTOR2I(MM(HOLE_KEEPOUT), MM(HOLE_KEEPOUT)))
 
     for ra, pa, rb, pb, side, w in PREROUTE:
         a = next(p for p in board.FindFootprintByReference(ra).Pads() if p.GetNumber() == pa)
@@ -428,6 +449,7 @@ def main():
     for lb in LABELS:
         text(board, *lb)
     axes(board, *IMU_AXES)
+    drawings(board)
     zone(board, net("GND"), pcbnew.In1_Cu)
     zone(board, net("+3V3"), pcbnew.In2_Cu)
     zone(board, net("GND"), pcbnew.F_Cu).SetAssignedPriority(0)

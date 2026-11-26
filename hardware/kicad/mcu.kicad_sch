@@ -2766,18 +2766,18 @@
             (type default))
           (fill
             (type none)))))
-    (symbol "Connector_Generic:Conn_01x06"
+    (symbol "Connector_Generic:Conn_02x03_Odd_Even"
       (pin_names
         (offset 1.016) hide)
       (in_bom yes)
       (on_board yes)
       (property "Reference" "J"
-        (at 0 7.62 0)
+        (at 1.27 5.08 0)
         (effects
           (font
             (size 1.27 1.27))))
-      (property "Value" "Conn_01x06"
-        (at 0 -10.16 0)
+      (property "Value" "Conn_02x03_Odd_Even"
+        (at 1.27 -5.08 0)
         (effects
           (font
             (size 1.27 1.27))))
@@ -2796,33 +2796,17 @@
         (effects
           (font
             (size 1.27 1.27)) hide))
-      (property "ki_description" "Generic connector, single row, 01x06, script generated (kicad-library-utils/schlib/autogen/connector/)"
+      (property "ki_description" "Generic connector, double row, 02x03, odd/even pin numbering scheme (row 1 odd numbers, row 2 even numbers), script generated (kicad-library-utils/schlib/autogen/connector/)"
         (at 0 0 0)
         (effects
           (font
             (size 1.27 1.27)) hide))
-      (property "ki_fp_filters" "Connector*:*_1x??_*"
+      (property "ki_fp_filters" "Connector*:*_2x??_*"
         (at 0 0 0)
         (effects
           (font
             (size 1.27 1.27)) hide))
-      (symbol "Conn_01x06_1_1"
-        (rectangle
-          (start -1.27 -7.493)
-          (end 0 -7.747)
-          (stroke
-            (width 0.1524)
-            (type default))
-          (fill
-            (type none)))
-        (rectangle
-          (start -1.27 -4.953)
-          (end 0 -5.207)
-          (stroke
-            (width 0.1524)
-            (type default))
-          (fill
-            (type none)))
+      (symbol "Conn_02x03_Odd_Even_1_1"
         (rectangle
           (start -1.27 -2.413)
           (end 0 -2.667)
@@ -2848,23 +2832,39 @@
           (fill
             (type none)))
         (rectangle
-          (start -1.27 5.207)
-          (end 0 4.953)
+          (start -1.27 3.81)
+          (end 3.81 -3.81)
+          (stroke
+            (width 0.254)
+            (type default))
+          (fill
+            (type background)))
+        (rectangle
+          (start 3.81 -2.413)
+          (end 2.54 -2.667)
           (stroke
             (width 0.1524)
             (type default))
           (fill
             (type none)))
         (rectangle
-          (start -1.27 6.35)
-          (end 1.27 -8.89)
+          (start 3.81 0.127)
+          (end 2.54 -0.127)
           (stroke
-            (width 0.254)
+            (width 0.1524)
             (type default))
           (fill
-            (type background)))
+            (type none)))
+        (rectangle
+          (start 3.81 2.667)
+          (end 2.54 2.413)
+          (stroke
+            (width 0.1524)
+            (type default))
+          (fill
+            (type none)))
         (pin passive line
-          (at -5.08 5.08 0)
+          (at -5.08 2.54 0)
           (length 3.81)
           (name "Pin_1"
             (effects
@@ -2875,7 +2875,7 @@
               (font
                 (size 1.27 1.27)))))
         (pin passive line
-          (at -5.08 2.54 0)
+          (at 7.62 2.54 180)
           (length 3.81)
           (name "Pin_2"
             (effects
@@ -2897,7 +2897,7 @@
               (font
                 (size 1.27 1.27)))))
         (pin passive line
-          (at -5.08 -2.54 0)
+          (at 7.62 0 180)
           (length 3.81)
           (name "Pin_4"
             (effects
@@ -2908,7 +2908,7 @@
               (font
                 (size 1.27 1.27)))))
         (pin passive line
-          (at -5.08 -5.08 0)
+          (at -5.08 -2.54 0)
           (length 3.81)
           (name "Pin_5"
             (effects
@@ -2919,7 +2919,7 @@
               (font
                 (size 1.27 1.27)))))
         (pin passive line
-          (at -5.08 -7.62 0)
+          (at 7.62 -2.54 180)
           (length 3.81)
           (name "Pin_6"
             (effects
@@ -3430,20 +3430,9 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (global_label "EPD_DC"
-    (shape passive)
-    (at 43.18 81.28 180)
-    (fields_autoplaced)
-    (effects
-      (font
-        (size 1.27 1.27))
-      (justify right))
-    (uuid "8a9c2b5f-4f3f-5b30-b668-40a61a7ede0d")
-    (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 43.18 81.28 0)
-      (effects
-        (font
-          (size 1.27 1.27)) hide)))
+  (no_connect
+    (at 43.18 81.28)
+    (uuid "8a9c2b5f-4f3f-5b30-b668-40a61a7ede0d"))
   (global_label "+3V3A"
     (shape passive)
     (at 43.18 60.96 180)
@@ -3570,7 +3559,7 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (global_label "EPD_CS"
+  (global_label "LCD_SCS"
     (shape passive)
     (at 43.18 83.82 180)
     (fields_autoplaced)
@@ -3682,7 +3671,7 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (global_label "BTN_1"
+  (global_label "BTN_UP"
     (shape passive)
     (at 43.18 91.44 180)
     (fields_autoplaced)
@@ -3696,21 +3685,10 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (global_label "BTN_2"
-    (shape passive)
-    (at 43.18 93.98 180)
-    (fields_autoplaced)
-    (effects
-      (font
-        (size 1.27 1.27))
-      (justify right))
-    (uuid "6c961883-7f29-b3d1-c91b-9ed2e113ac6f")
-    (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 43.18 93.98 0)
-      (effects
-        (font
-          (size 1.27 1.27)) hide)))
-  (global_label "BTN_3"
+  (no_connect
+    (at 43.18 93.98)
+    (uuid "6c961883-7f29-b3d1-c91b-9ed2e113ac6f"))
+  (global_label "BTN_DOWN"
     (shape passive)
     (at 43.18 96.52 180)
     (fields_autoplaced)
@@ -3724,7 +3702,7 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (global_label "EPD_BUSY"
+  (global_label "LCD_EXTCOMIN"
     (shape passive)
     (at 43.18 86.36 180)
     (fields_autoplaced)
@@ -3976,7 +3954,7 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (global_label "EPD_RST"
+  (global_label "LCD_DISP"
     (shape passive)
     (at 43.18 142.24 180)
     (fields_autoplaced)
@@ -6004,33 +5982,33 @@
         (font
           (size 1.27 1.27)) hide)))
   (symbol
-    (lib_id "Connector_Generic:Conn_01x06")
-    (at 490.22 43.18 0)
+    (lib_id "Connector_Generic:Conn_02x03_Odd_Even")
+    (at 487.68 40.64 0)
     (unit 1)
     (in_bom yes)
     (on_board yes)
     (dnp no)
     (uuid "4e6c9fa6-6e3f-4bdf-ed87-11cb199ac8b0")
     (property "Reference" "J20"
-      (at 486.64 36.6 0)
+      (at 496.8 36.6 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
-    (property "Value" "SWD"
-      (at 486.64 39.1 0)
+    (property "Value" "SWD (TC2030)"
+      (at 496.8 39.1 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
-    (property "Footprint" "Connector_PinHeader_1.27mm:PinHeader_1x06_P1.27mm_Vertical"
-      (at 490.22 43.18 0)
+    (property "Footprint" "Connector:Tag-Connect_TC2030-IDC-NL_2x03_P1.27mm_Vertical"
+      (at 487.68 40.64 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left) hide))
     (property "Datasheet" ""
-      (at 490.22 43.18 0)
+      (at 487.68 40.64 0)
       (effects
         (font
           (size 1.27 1.27))
@@ -6054,7 +6032,7 @@
           (unit 1)))))
   (global_label "+3V3"
     (shape passive)
-    (at 485.14 38.1 180)
+    (at 482.6 38.1 180)
     (fields_autoplaced)
     (effects
       (font
@@ -6062,27 +6040,27 @@
       (justify right))
     (uuid "b0e36b6b-fa4c-5061-16b1-044ed4106571")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 485.14 38.1 0)
+      (at 482.6 38.1 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
   (global_label "SWDIO"
     (shape passive)
-    (at 485.14 40.64 180)
+    (at 495.3 38.1 0)
     (fields_autoplaced)
     (effects
       (font
         (size 1.27 1.27))
-      (justify right))
+      (justify left))
     (uuid "4855fd7e-5d91-c1da-902f-9f0aa6d1c0be")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 485.14 40.64 0)
+      (at 495.3 38.1 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (global_label "SWCLK"
+  (global_label "NRST"
     (shape passive)
-    (at 485.14 43.18 180)
+    (at 482.6 40.64 180)
     (fields_autoplaced)
     (effects
       (font
@@ -6090,27 +6068,27 @@
       (justify right))
     (uuid "de83c69c-aae7-4fe5-49ec-7c805a12813b")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 485.14 43.18 0)
+      (at 482.6 40.64 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (global_label "SWO"
+  (global_label "SWCLK"
     (shape passive)
-    (at 485.14 45.72 180)
+    (at 495.3 40.64 0)
     (fields_autoplaced)
     (effects
       (font
         (size 1.27 1.27))
-      (justify right))
+      (justify left))
     (uuid "ae8e80ae-a9a0-294e-b984-125c46f40fc4")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 485.14 45.72 0)
+      (at 495.3 40.64 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (global_label "NRST"
+  (global_label "GND"
     (shape passive)
-    (at 485.14 48.26 180)
+    (at 482.6 43.18 180)
     (fields_autoplaced)
     (effects
       (font
@@ -6118,52 +6096,52 @@
       (justify right))
     (uuid "2d91c6e0-90dd-1499-5026-81b05ba93944")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 485.14 48.26 0)
+      (at 482.6 43.18 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (global_label "GND"
+  (global_label "SWO"
     (shape passive)
-    (at 485.14 50.8 180)
+    (at 495.3 43.18 0)
     (fields_autoplaced)
     (effects
       (font
         (size 1.27 1.27))
-      (justify right))
+      (justify left))
     (uuid "fc42c15f-6d20-2ac4-13c6-7687231384f9")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 485.14 50.8 0)
+      (at 495.3 43.18 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
   (symbol
     (lib_id "Device:R")
-    (at 495.3 50.8 0)
+    (at 518.16 50.8 0)
     (unit 1)
     (in_bom yes)
     (on_board yes)
     (dnp no)
     (uuid "b1cf65d9-4827-3efe-d40f-06576e80d235")
     (property "Reference" "R22"
-      (at 496.8 45.49 0)
+      (at 519.66 45.49 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
     (property "Value" "1k"
-      (at 496.8 47.99 0)
+      (at 519.66 47.99 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
     (property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-      (at 495.3 50.8 0)
+      (at 518.16 50.8 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left) hide))
     (property "Datasheet" ""
-      (at 495.3 50.8 0)
+      (at 518.16 50.8 0)
       (effects
         (font
           (size 1.27 1.27))
@@ -6179,7 +6157,7 @@
           (unit 1)))))
   (global_label "LED_STATUS"
     (shape passive)
-    (at 495.3 46.99 90)
+    (at 518.16 46.99 90)
     (fields_autoplaced)
     (effects
       (font
@@ -6187,13 +6165,13 @@
       (justify left))
     (uuid "26d19b3e-589e-1038-e535-c4d12a5fe9ca")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 495.3 46.99 0)
+      (at 518.16 46.99 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
   (global_label "LED_A"
     (shape passive)
-    (at 495.3 54.61 270)
+    (at 518.16 54.61 270)
     (fields_autoplaced)
     (effects
       (font
@@ -6201,38 +6179,38 @@
       (justify right))
     (uuid "60f6148b-fcb0-2bce-1f08-e5cf0383a234")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 495.3 54.61 0)
+      (at 518.16 54.61 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
   (symbol
     (lib_id "Device:LED")
-    (at 518.16 38.1 0)
+    (at 541.02 38.1 0)
     (unit 1)
     (in_bom yes)
     (on_board yes)
     (dnp no)
     (uuid "88f09eed-323f-7d1f-ebe1-324217a69373")
     (property "Reference" "D21"
-      (at 523.47 36.6 0)
+      (at 546.33 36.6 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
     (property "Value" "green"
-      (at 523.47 39.1 0)
+      (at 546.33 39.1 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
     (property "Footprint" "LED_SMD:LED_0603_1608Metric"
-      (at 518.16 38.1 0)
+      (at 541.02 38.1 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left) hide))
     (property "Datasheet" ""
-      (at 518.16 38.1 0)
+      (at 541.02 38.1 0)
       (effects
         (font
           (size 1.27 1.27))
@@ -6248,7 +6226,7 @@
           (unit 1)))))
   (global_label "GND"
     (shape passive)
-    (at 514.35 38.1 180)
+    (at 537.21 38.1 180)
     (fields_autoplaced)
     (effects
       (font
@@ -6256,13 +6234,13 @@
       (justify right))
     (uuid "73402c23-0358-fa26-faf4-7e1f50d0c320")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 514.35 38.1 0)
+      (at 537.21 38.1 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
   (global_label "LED_A"
     (shape passive)
-    (at 521.97 38.1 0)
+    (at 544.83 38.1 0)
     (fields_autoplaced)
     (effects
       (font
@@ -6270,7 +6248,7 @@
       (justify left))
     (uuid "37132acd-c3ab-28f2-775a-2508ee580eb1")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 521.97 38.1 0)
+      (at 544.83 38.1 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))

@@ -57,10 +57,11 @@ Brass inserts and A4 stainless or titanium screws: the magnetometer is on the bo
 - 3 x M3 x 12 countersunk (ISO 10642), A4 or titanium, through the front into the corner inserts
 - 1 x M3 PA66 (nylon) thread-forming screw for the corner next to the radio antenna (H1): no metal near the antenna
 - 1 x clear polycarbonate cover, 1.0 mm, laser cut (size printed by OpenSCAD as `cover`), glued into the face pocket
+- foam ring for the barometer hood: closed-cell, 1.0 mm thick (squeezed to 0.7 mm), cut to the recess (6.1 x 6.1 mm outside, 2.9 x 2.9 mm inside)
 - foam ring for the microphone: 1.6 mm ID, 4.0 mm OD, 1.0 mm thick closed-cell (squeezed to 0.7 mm), sits in the recess at the end of the mic tube
 - foam: 0.5 mm closed-cell gasket between glass and face (compressed to 0.3 mm); 1 mm VHB foam pad under the cell
 - Qwiic and camera leads to the outside: cut out the 0.6 mm knock-out next to each socket in the top wall
-- optional: SMA bulkhead to U.FL pigtail (100 mm) for the GNSS antenna; ePTFE vent sticker (4 mm) inside the bottom-wall barometer port
+- optional: SMA bulkhead to U.FL pigtail (100 mm) for the GNSS antenna; ePTFE vent sticker (6 mm) over the bottom-wall barometer outlet; for the static port instead: a 4 mm OD push-in hose barb (nylon)
 - mount: 4 x M4 countersunk (or the AMPS pattern, or one 1/4"-20 nut), 25 mm webbing / hook-and-loop strap
 
 ## Humidity sensor and microphone
@@ -71,8 +72,8 @@ Brass inserts and A4 stainless or titanium screws: the magnetometer is on the bo
 - The microphone hears through a 0.8 mm hole in the board. A short tube seals onto the board front with a foam
   ring; from its top a 1.2 mm duct inside the face runs sideways into the humidity chamber, so the mic hears the
   cockpit through the left-wall vent and the face stays clean (no hole on top).
-- The barometer sits under a hood (0.35 mm over the parts round it, not sealed) with a 1.4 mm duct out through
-  the bottom wall, next to the keys. It keeps light, draughts and warm case air off the sensor.
+- The barometer sits under a hood sealed onto the board with a foam ring (the board keeps a 1.8 mm free ring
+  round the sensor for it), with a 1.4 mm duct out through the bottom wall next to the keys.
 - `case-section-ducts` shows all three from above.
 - `case-section-mic` shows both.
 
@@ -96,9 +97,14 @@ off for charging and the SD card stays reachable on the right edge in either cas
 
 ## Barometer
 
-`baro_mode = "cockpit"` (default): a hood over the sensor, ported to cabin air through the bottom wall. `"static"` is prepared but needs
-approval before it is used on an aircraft: a sealed cup over the sensor, fed from a hose barb in
-the left wall.
+One sealed hood serves both modes; the print is the same. The outlet in the bottom wall (next to the keys)
+has a 4.2 mm counterbore:
+
+- cockpit air (default): leave it open, an ePTFE vent sticker over it keeps dust out.
+- static port: press a 4 mm hose barb into the outlet and connect the aircraft's static line. This needs
+  approval before it is used on an aircraft.
+
+`baro_mode` in `params.scad` only records which one a unit is built for.
 
 ## Things to check on the first print
 

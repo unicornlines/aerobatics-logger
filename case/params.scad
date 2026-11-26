@@ -44,7 +44,7 @@ cell_gap      = 0.5;    // cell top to the board's back, where no part is under 
 cell_at       = [56, 34.6]; // cell centre in board coordinates: between the key sockets and the upper rail
 
 /* [Barometer] */
-baro_mode     = "cockpit";  // "cockpit": vented to cabin air; "static": sealed cup + 4 mm hose barb (needs approval)
+baro_mode     = "cockpit";  // documentation only: the same sealed hood serves both; "static" = fit the 4 mm barb (needs approval)
 
 /* [Antenna] */
 sma           = true;   // SMA bulkhead for the external GNSS antenna (U.FL pigtail inside)

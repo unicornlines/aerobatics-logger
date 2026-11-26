@@ -52,6 +52,9 @@ VIEWS = {
     "exploded": {"set": "exploded", "dir": [-0.75, -1.0, 0.55], "dist": 2.9, "fov": 22, "gap": 4},
     "back":     {"set": "assembled", "dir": [0.35, 0.8, -1.0], "dist": 3.0, "fov": 20, "gap": 60, "under": True},
     "right":    {"set": "assembled", "dir": [1.0, -0.35, 0.3], "dist": 3.4, "fov": 20},
+    # sections: keep x < cut, look from +x (through the middle key, and through USB-C / microSD)
+    "section-key": {"set": "assembled", "dir": [1.0, -0.12, 0.12], "dist": 2.6, "fov": 20, "clip": [-1, 0, 0, 62.2]},
+    "section-sd":  {"set": "assembled", "dir": [0.12, -1.0, 0.15], "dist": 2.4, "fov": 20, "clip": [0, 1, 0, -30.5], "shift": [30, 0, 0]},
     "released": {"set": "released", "dir": [-0.45, -1.0, 0.5], "dist": 2.9, "fov": 20},
 }
 

@@ -33,7 +33,7 @@ function is_corner(h) = (fxy(h).x < 10 || fxy(h).x > W - 10) && (fxy(h).y < 10 |
 
 // ---------------------------------------------------------------- levels (z)
 lcd = has("lcd") ? feat("lcd") : undef;
-lcd_top   = lcd ? fh(lcd) : 4.8;
+lcd_top   = lcd_back_z + lcd_module.z;
 z_face_in = lcd_top + lcd_gasket;            // underside of the face
 z_face    = z_face_in + face_t;               // the front surface
 z_split   = -board_t;                         // front shell meets tray at the board's back
@@ -63,11 +63,12 @@ module bb2d(bb, grow = 0) translate([bb[0] - grow, bb[1] - grow]) square([bb[2] 
 // ---------------------------------------------------------------- key geometry
 // Plan shapes say what a key does without looking: UP points up, DOWN points down, OK is round.
 module cap_shape(kind, s = cap_size) {
-    if (kind == "ok") circle(d = s, $fn = 96);
+    w = s.x; h = s.y;
+    if (kind == "ok") scale([w / h, 1]) circle(d = h, $fn = 96);
     else {
         flip = kind == "dn" ? -1 : 1;
         scale([1, flip]) offset(r = 2.2) offset(delta = -2.2)
-            polygon([[-s/2, -s/2], [s/2, -s/2], [s/2, s/2 - 4.2], [0, s/2 + 0.2], [-s/2, s/2 - 4.2]]);
+            polygon([[-w/2, -h/2], [w/2, -h/2], [w/2, h/2 - 4.2], [0, h/2 + 0.2], [-w/2, h/2 - 4.2]]);
     }
 }
 module key_at(i) translate([fxy(keys[i]).x, fxy(keys[i]).y]) children();
@@ -75,17 +76,21 @@ function key_kind(i) = key_kinds[min(i, len(key_kinds) - 1)];
 
 // key bridge footprint: around the wells with room for the fences and a flange under the face
 kb_margin = 3.2;
-kb_lo = min([for (k = keys) fxy(k).y]) - cap_size/2 - cap_clear - 1.6;
+kb_lo = min([for (k = keys) fxy(k).y]) - cap_size.y/2 - cap_clear - 1.6;
 // keys close to the bottom edge: the bridge runs out through the wall, so the wells open to the edge
 kb_edge = kb_lo < 4;
-kb0 = [min([for (k = keys) fxy(k).x]) - cap_size/2 - cap_clear - kb_margin, kb_edge ? -board_gap - wall - 2 : kb_lo];
-kb1 = [max([for (k = keys) fxy(k).x]) + cap_size/2 + cap_clear + kb_margin, max([for (k = keys) fxy(k).y]) + cap_size/2 + cap_clear + 1.6];
+kb0 = [min([for (k = keys) fxy(k).x]) - cap_size.x/2 - cap_clear - kb_margin, kb_edge ? -board_gap - wall - 2 : kb_lo];
+kb_hi = max([for (k = keys) fxy(k).y]) + cap_size.y/2 + cap_clear + 1.6;
+// the display sits right above the keys: the bridge stops short of the panel and has no flange there
+kb_lcd = has("lcd") && kb_hi > fbb(feat("lcd"))[1] - 0.3;
+kb1 = [max([for (k = keys) fxy(k).x]) + cap_size.x/2 + cap_clear + kb_margin, kb_lcd ? fbb(feat("lcd"))[1] - 0.3 : kb_hi];
 kb_flange = 2.4;
 module kb_open() rrect(kb0, kb1, 2.5);                      // hole in the face (and wall, at the edge)
 module kb_body() intersection() { offset(delta = -fit/2) kb_open(); plan_outer(); }
 module kb_flange_plan() difference() {
     offset(r = kb_flange) kb_open();
     if (kb_edge) translate([-500, -500]) square([1000, 500 - board_gap + 0.01]);  // no flange in the wall
+    if (kb_lcd) translate([-500, kb1.y - 0.01]) square([1000, 500]);                // nor under the display
 }
 // at the edge, the tray carries a strip of wall up to the plate, the bridge sits on it
 module kb_wall_strip() if (kb_edge) intersection() {
@@ -111,11 +116,18 @@ module horn(h = 7) polygon([[-1.1, 0], [1.1, 0], [0.15, h], [-0.15, h]]);       
 module star(r = 1.6) polygon([for (i = [0:9]) let(a = 90 + i * 36, rr = i % 2 ? r * 0.45 : r) [rr * cos(a), rr * sin(a)]]);
 
 // ---------------------------------------------------------------- front shell
+// the vent sits over the barometer unless the key bridge or the window is there; then it moves left
+function vent_xy() = let(b = fxy(feat("baro"))) [min(b.x, kb0.x - 5.5), b.y + (b.x > kb0.x - 5.5 ? 0 : 0)];
 lcd_bb = lcd ? fbb(lcd) : [30.6, 16.68, 93.4, 59.5];
 lcd_c  = [(lcd_bb[0] + lcd_bb[2]) / 2, (lcd_bb[1] + lcd_bb[3]) / 2];
 win    = [lcd_active.x + 2 * window_margin, lcd_active.y + 2 * window_margin];
-win_c  = lcd_c + lcd_active_off;
+win_c  = has("lcd_active") ? [(fbb(feat("lcd_active"))[0] + fbb(feat("lcd_active"))[2]) / 2, (fbb(feat("lcd_active"))[1] + fbb(feat("lcd_active"))[3]) / 2] : lcd_c + lcd_active_off;
 cover  = [win.x + 2 * cover_border, win.y + 2 * cover_border];
+
+// clear cover: overlaps the window by cover_border, less on the key side if the bridge is close
+cover_lo = kb_lcd ? min(cover_border, win_c.y - win.y / 2 - kb1.y - 0.6) : cover_border;
+module cover_plan(shrink = 0) translate([win_c.x - win.x / 2 - cover_border + shrink, win_c.y - win.y / 2 - cover_lo + shrink])
+    offset(r = 1) offset(delta = -1) square([win.x + 2 * cover_border - 2 * shrink, win.y + cover_border + cover_lo - 2 * shrink]);
 
 module front() {
     difference() {
@@ -126,10 +138,12 @@ module front() {
         // cavity
         translate([0, 0, z_split - 1]) linear_extrude(z_face_in - z_split + 1) plan_inner();
         // display window: chamfered so the reflective panel is not shaded, pocket for the clear cover
-        translate([win_c.x, win_c.y, z_face_in - 0.01])
-            linear_extrude(face_t + 0.02, scale = [(win.x + 2 * face_t) / win.x, (win.y + 2 * face_t) / win.y])
-                square(win, center = true);
-        translate([win_c.x, win_c.y, z_face - cover_t]) linear_extrude(cover_t + 1) offset(r = 1) offset(delta = -1) square(cover, center = true);
+        // (no chamfer on the side that meets the key bridge)
+        hull() {
+            translate([win_c.x, win_c.y, z_face_in - 0.01]) linear_extrude(0.01) square(win, center = true);
+            translate([win_c.x, win_c.y + (kb_lcd ? face_t / 2 : 0), z_face]) linear_extrude(0.02) square(win + [2 * face_t, kb_lcd ? face_t : 2 * face_t], center = true);
+        }
+        translate([0, 0, z_face - cover_t]) linear_extrude(cover_t + 1) cover_plan();
         // key bridge opening (through the wall too, when the keys sit at the edge)
         translate([0, 0, z_face_in - 1]) linear_extrude(face_t + 2) kb_open();
         if (kb_edge) translate([0, 0, z_split - 1]) linear_extrude(z_face - z_split + 2) intersection() { kb_open(); translate([-500, -500]) square([1000, 500 - board_gap + 0.01]); }
@@ -140,14 +154,14 @@ module front() {
             translate([0, 0, z_face - 0.4]) cylinder(d = screw_head_d + 0.2, h = 1);
         }
         // tall parts outside the panel: pockets in the underside of the face
-        for (p = board_parts) if (p[1] == "F" && p[3] > z_face_in - 0.3)
+        for (p = board_parts) if (p[1] == "F" && p[3] > z_face_in - 0.3 && !in_list(p[0], [for (k = keys) k[0]]))
             translate([0, 0, z_face_in - 1]) linear_extrude(p[3] + 0.4 - z_face_in + 1) bb2d(p[2], 0.5);
         // groove for the tray's tongue
         translate([0, 0, z_split - 0.01]) linear_extrude(1.2 + 0.3) offset(delta = fit / 2) tongue();
         // side openings
-        usb_cut(); sd_cut(); flex_relief(); battery_lead_gully();
+        usb_cut(); sd_cut(); flex_relief(); battery_lead_gully(); knockouts();
         // barometer
-        if (has("baro")) translate([fxy(feat("baro")).x, fxy(feat("baro")).y, 0]) {
+        if (has("baro")) translate([vent_xy().x, vent_xy().y, 0]) {
             if (baro_mode == "cockpit") translate([0, 0, z_face_in - 1]) linear_extrude(face_t + 2) aresti_loop();
             else translate([0, 0, z_face - first_colour_t]) linear_extrude(1) aresti_loop();  // the mark stays, as an inlay
         }
@@ -177,8 +191,9 @@ module face_inlays() {
     translate([(lcd_bb[2] + W + board_gap) / 2, (lcd_bb[1] + lcd_bb[3]) / 2 - 2, zt]) linear_extrude(1) logo(18);
     translate([(kb1.x + W + board_gap) / 2, fxy(keys[0]).y, zt]) linear_extrude(1) label("UNICORNLINES®", 2.3);
     // left of the keys: the tagline
-    translate([(kb0.x - board_gap) / 2, fxy(keys[0]).y, zt]) linear_extrude(1) {
-        translate([0, 1.7]) label("NEVER STOP", 2.2, font_reg); translate([0, -1.7]) label("DREAMING", 2.2, font_reg); }
+    // the tagline runs up the free strip left of the display, clear of the vent and the radio corner
+    translate([(lcd_bb[0] - board_gap) / 2 + 4, (kb1.y + (has("radio") ? fbb(feat("radio"))[1] : H)) / 2 + 2, zt]) linear_extrude(1)
+        rotate(90) label("NEVER STOP DREAMING", 2.2, font_reg);
     // IMU origin and axes, exactly over the sensor, when the window does not cover it
     if (has("imu")) let(p = fxy(feat("imu"))) if (!(p.x > win_c.x - cover.x/2 - 6 && p.x < win_c.x + cover.x/2 + 6
               && p.y > win_c.y - cover.y/2 - 6 && p.y < win_c.y + cover.y/2 + 6))
@@ -204,8 +219,13 @@ module sd_cut() if (has("microsd")) let(f = feat("microsd"), y = fxy(f).y) {
     translate([W, y, sd_z]) cube([10, 12.2, 1.5], center = true);
     translate([W + board_gap + wall + 3.2, y, sd_z]) scale([1, 1, 0.55]) rotate([90, 0, 0]) cylinder(r = 4.6, h = 15, center = true, $fn = 64);
 }
+// Qwiic and camera sockets are for leads inside the case; a lead to the outside breaks out a
+// 0.6 mm skin in the wall next to the socket (cut it with a knife, no drilling near the board)
+module knockouts() for (r = ["qwiic", "camera"]) if (has(r)) let(f = feat(r), bb = fbb(f), top = fxy(f).y > H / 2)
+    translate([fxy(f).x, top ? H + board_gap - 0.01 : -board_gap - wall + 0.6, 0.4])
+        rotate([-90, 0, 0]) linear_extrude(wall - 0.6 + 0.01) translate([0, -1.6]) offset(r = 1.4) square([4, 0.4], center = true);
 module flex_relief() if (has("lcd_flex")) let(bb = fbb(feat("lcd_flex")))
-    translate([bb[0] - 0.5, H + board_gap - 0.01, 0]) cube([bb[2] - bb[0] + 1, (bb[3] - H) + 0.5, z_face_in - 0.01]);
+    translate([bb[0] - 0.5, H + board_gap - 0.01, 0]) cube([bb[2] - bb[0] + 1, 1.2, z_face_in - 0.01]);   // the fold may stand 1 mm past the edge
 module battery_lead_gully() if (cell_on && has("battery")) let(f = feat("battery"))
     let(right = fxy(f).x > W / 2) translate([right ? W + board_gap - 0.01 : -board_gap - 1.8, fxy(f).y - 3.5, z_split - 1]) cube([1.81, 7, 20]);
 
@@ -216,14 +236,43 @@ module static_cup() let(b = feat("baro")) translate([fxy(b).x, fxy(b).y, 0]) dif
 }
 
 // ---------------------------------------------------------------- display spacer frame
+// Free spots on the board: where a post or a foot of radius r touches no front-side part.
+function hits(p, r) = [for (q = board_parts) if (q[1] == "F" && q[3] > 0.05 && p.x + r > q[2][0] - 0.3 && p.x - r < q[2][2] + 0.3
+                                                 && p.y + r > q[2][1] - 0.3 && p.y - r < q[2][3] + 0.3) q[0]];
+function nearest_free(t, r, cands) = let(f = [for (c = cands) if (len(hits(c, r)) == 0) c], d = [for (c = f) norm(c - t)])
+    len(f) == 0 ? undef : f[search(min(d), d)[0]];
+
+// The display rests on a thin ring just above the parts under it (they are 2.9 mm at most),
+// carried by posts that stand on the board wherever it is free. Printed ring-side down.
+lcd_back = lcd_back_z;
+ring_t = 0.4;
+lcd_post_r = 1.2;
+function lcd_post_targets() = let(o = lcd_bb, m = 2.5)
+    [[o[0] + m, o[1] + m], [o[2] - m, o[1] + m], [o[0] + m, o[3] - m], [o[2] - m, o[3] - m],
+     [(o[0] + o[2]) / 2 - 14, o[1] + m], [(o[0] + o[2]) / 2 + 14, o[1] + m], [o[0] + m, (o[1] + o[3]) / 2], [o[2] - m, (o[1] + o[3]) / 2]];
+function lcd_post_cands() = let(o = lcd_bb) [for (x = [o[0] + 1.5 : 0.5 : o[2] - 1.5], y = [o[1] + 1.5 : 0.5 : o[3] - 1.5])
+    if (x < o[0] + 9 || x > o[2] - 9 || y < o[1] + 9 || y > o[3] - 9) [x, y]];
+lcd_posts = lcd ? [for (t = lcd_post_targets()) let(p = nearest_free(t, lcd_post_r, lcd_post_cands())) if (p != undef) p] : [];
+
 module lcd_frame() {
-    h = lcd_top - lcd_module.z;               // glass back above F.Cu
-    difference() {
-        linear_extrude(h) difference() { bb2d(lcd_bb, -0.1); bb2d(lcd_bb, -1.4); }
-        // the flex leaves the top edge and folds under: leave it free
-        if (has("lcd_flex")) let(fb = fbb(feat("lcd_flex"))) translate([fb[0] - 0.5, lcd_bb[3] - 3, -1]) cube([fb[2] - fb[0] + 1, 4, h + 2]);
+    // ring under the glass border (the flex side stays open for the fold)
+    translate([0, 0, lcd_back - ring_t]) linear_extrude(ring_t) difference() {
+        bb2d(lcd_bb, -0.2);
+        bb2d(lcd_bb, -2.2);
+        if (has("lcd_flex")) let(fb = fbb(feat("lcd_flex"))) translate([fb[0] - 1, lcd_bb[3] - 4]) square([fb[2] - fb[0] + 2, 6]);
+    }
+    // posts from the board to the ring, with a web to the ring where they stand inside it
+    for (p = lcd_posts) {
+        translate([p.x, p.y, 0]) cylinder(r = lcd_post_r, h = lcd_back, $fn = 24);
+        translate([0, 0, lcd_back - ring_t]) linear_extrude(ring_t) hull() {
+            translate(p) circle(r = lcd_post_r, $fn = 24);
+            translate(ring_pt(p)) circle(r = 0.8, $fn = 12);
+        }
     }
 }
+// nearest point on the ring's centre line
+function ring_pt(p) = let(o = lcd_bb, c = 1.2, d = [p.x - o[0], o[2] - p.x, p.y - o[1], o[3] - p.y], m = min(d))
+    m == d[0] ? [o[0] + c, p.y] : m == d[1] ? [o[2] - c, p.y] : m == d[2] ? [p.x, o[1] + c] : [p.x, o[3] - c];
 
 // ---------------------------------------------------------------- key bridge (also the switch plate)
 plate_bot = choc_plate_top - choc_plate_t;
@@ -245,13 +294,20 @@ module keybridge() {
             translate([0, 0, choc_plate_top]) linear_extrude(20) offset(r = cap_clear) cap_shape(key_kind(i));
             translate([0, 0, choc_plate_top]) linear_extrude(20) square(choc_cut + 1.2, center = true);  // housing top flange
         }
+        // an LED under the bridge glows through a thin skin
+        for (l = feats("led")) if (fxy(l).x > kb0.x && fxy(l).x < kb1.x && fxy(l).y > kb0.y && fxy(l).y < kb1.y)
+            translate([fxy(l).x, fxy(l).y, plate_bot - 1]) linear_extrude(1 + z_face - plate_bot - 0.6) offset(r = 0.6) star(2);
         // relief under the flange so the clips can open
         for (i = [0:len(keys) - 1]) key_at(i) translate([0, 0, plate_bot - 1]) linear_extrude(1 + 0.01) square([choc_cut + 1.2, 6], center = true);
     }
     // feet onto the board at the four corners of the bridge (keep these spots free of parts)
     for (p = kb_feet()) translate([p.x, p.y, 0]) cylinder(d = 2.2, h = plate_bot + 0.01, $fn = 24);
 }
-function kb_feet() = [[kb0.x + 2, kb0.y + 2], [kb1.x - 2, kb0.y + 2], [kb0.x + 2, kb1.y - 2], [kb1.x - 2, kb1.y - 2]];
+// feet at free spots near the bridge corners, outside the switch cut-outs and on the board
+function kb_feet_cands() = [for (x = [max(kb0.x, 0) + 1.5 : 0.5 : kb1.x - 1.5], y = [max(kb0.y, 0) + 1.5 : 0.5 : kb1.y - 1.5])
+    if (len([for (k = keys) if (abs(x - fxy(k).x) < choc_cut / 2 + 2.6 && abs(y - fxy(k).y) < choc_cut / 2 + 2.6) 1]) == 0) [x, y]];
+kb_feet_list = [for (t = [[kb0.x, kb0.y], [kb1.x, kb0.y], [kb0.x, kb1.y], [kb1.x, kb1.y]]) let(p = nearest_free(t, 1.1, kb_feet_cands())) if (p != undef) p];
+function kb_feet() = kb_feet_list;
 module fence(len, h) {
     // a rounded rail, highest in the middle, so it guides rather than snags
     rotate([90, 0, 0]) linear_extrude(len, center = true) hull() {
@@ -305,7 +361,7 @@ module tray() {
         // side openings continue below the split
         tray_openings();
         // thumbscrew insert, left end
-        translate([-board_gap - wall - 1, H / 2, z_bot + thumb_z]) rotate([0, 90, 0]) cylinder(d = insert_d, h = insert_l + wall + 1.5);
+        translate([-board_gap - wall - 1, thumb_y, z_bot + thumb_z]) rotate([0, 90, 0]) cylinder(d = insert_d, h = insert_l + wall + 1.5);
         // under the board: nothing of the tongue where the openings are
         if (has("usb_c")) translate([W, fxy(feat("usb_c")).y - 7, z_split - 0.5]) cube([10, 14, 3]);
         if (has("microsd")) translate([W, fxy(feat("microsd")).y - 7, z_split - 0.5]) cube([10, 14, 3]);
@@ -330,9 +386,10 @@ module tray() {
     // the cell: a rib frame and four snap fingers over its long edges
     if (cell_on) cell_bay();
     // block behind the thumbscrew insert
-    translate([-board_gap - 0.01, H / 2 - 4.5, z_floor_in - 0.01]) cube([insert_l + 1.2, 9, max(0.01, z_bot + thumb_z + 3.5 - z_floor_in)]);
+    translate([-board_gap - 0.01, thumb_y - 4.5, z_floor_in - 0.01]) cube([insert_l + 1.2, 9, max(0.01, z_bot + thumb_z + 3.5 - z_floor_in)]);
 }
 module rail_strips() for (y = rail_ys()) translate([-500, y - (rail_w + 2 * rail_h * tan(rail_angle) + 3.2) / 2]) square([1000, rail_w + 2 * rail_h * tan(rail_angle) + 3.2]);
+thumb_y = H / 2 + ((sma && has("gnss_rf") && sma_wall == "left" && fxy(feat("gnss_rf")).y >= H / 2) ? -thumb_dy : thumb_dy) * ((sma && has("gnss_rf") && abs(fxy(feat("gnss_rf")).y - H / 2) < thumb_dy) ? 1 : 0);
 function rail_ys() = [-board_gap - wall + rail_inset, H + board_gap + wall - rail_inset];
 
 module dovetail(len, grow = 0) {
@@ -398,7 +455,7 @@ module plate() {
             translate([0, 0, -plate_t + 1.2]) cylinder(d = quarter_inch_nut, h = plate_t, $fn = 6);
         }
         // thumbscrew through the stop
-        translate([plate_x0 - 1, H / 2, thumb_z]) rotate([0, 90, 0]) cylinder(d = screw_d, h = stop_t + 2);
+        translate([plate_x0 - 1, thumb_y, thumb_z]) rotate([0, 90, 0]) cylinder(d = screw_d, h = stop_t + 2);
         // lighter: pockets from below between the rails (keeps the rails and the edges solid)
         // (a grid of pockets, 1.2 mm skin on top, ribs between; the screw bosses stay solid)
         translate([0, 0, -plate_t - 0.01]) linear_extrude(plate_t - 1.2) difference() {
@@ -409,7 +466,7 @@ module plate() {
             translate([W / 2, H / 2]) { circle(d = 18); for (sx = [-1, 1], sy = [-1, 1]) translate([sx * amps.y / 2, sy * amps.x / 2]) circle(d = 10); }
         }
         // easter egg: hidden where only the unit covers it
-        translate([W / 2, H / 2 + 20, -0.4]) linear_extrude(1) label("YOU FOUND IT. NOW FLY IT.", 2.2, font_reg);
+        translate([W / 2 - 4, H / 2 + 9, -0.4]) linear_extrude(1) label("YOU FOUND IT. NOW FLY IT.", 2.0, font_reg);
         translate([W / 2 + 36, H / 2, -0.4]) linear_extrude(1) logo(16);
     }
 }
@@ -487,8 +544,8 @@ pieces = [  // name, colour, alpha
 ];
 module piece(n, e = explode) {
     function dz(k) = k * 13 * e;
-    if (n == "plate") translate([-45 * e - 75 * release, 0, dz(-2.2)]) plate();
-    if (n == "knob") translate([plate_x0 - 9 - 70 * e - 75 * release - 14 * release, H / 2, z_bot + thumb_z + dz(-2.2)]) rotate([0, 90, 0]) knob();
+    if (n == "plate") translate([-45 * e - 75 * release, 0, z_bot + dz(-2.2)]) plate();
+    if (n == "knob") translate([plate_x0 - 9 - 70 * e - 75 * release - 14 * release, thumb_y, z_bot + thumb_z + dz(-2.2)]) rotate([0, 90, 0]) knob();
     if (n == "tray") tray();
     if (n == "cell") translate([0, 0, dz(1)]) cell_model();
     if (in_list(n, ["pcb", "parts", "metal", "white", "led", "switch", "stem"])) translate([0, 0, dz(2.2)]) board_model(n);
@@ -497,8 +554,8 @@ module piece(n, e = explode) {
     if (n == "keybridge") translate([0, 0, dz(4.8)]) keybridge();
     if (n == "caps_body" || n == "caps_first") for (i = [0:len(keys) - 1]) key_at(i) translate([0, 0, choc_cap_z + dz(5.8)]) cap_split(key_kind(i), n == "caps_first");
     if (n == "front_body" || n == "front_first") translate([0, 0, dz(7.0)]) front_split(n == "front_first");
-    if (n == "cover" && has("lcd")) translate([win_c.x, win_c.y, z_face - cover_t + dz(8.0)])
-        linear_extrude(cover_t) offset(r = 1) offset(delta = -1) square(cover - [0.3, 0.3], center = true);
+    if (n == "cover" && has("lcd")) translate([0, 0, z_face - cover_t + dz(8.0)])
+        linear_extrude(cover_t) cover_plan(0.15);
 }
 module assembly(e = explode) for (p = pieces) if (show_board || !in_list(p[0], ["pcb", "parts", "metal", "white", "led", "switch", "stem", "lcd", "lcd_active"]))
     color(p[1], p[2]) piece(p[0], e);
@@ -517,8 +574,12 @@ else if (part == "cap_ok") translate([0, 0, cap_t]) rotate([0, 180, 0]) keycap("
 else if (part == "cap_dn") translate([0, 0, cap_t]) rotate([0, 180, 0]) keycap("dn");
 
 // ---------------------------------------------------------------- checks (echoed on every run)
+echo(str("CASE: display posts ", lcd_posts, ", bridge feet ", kb_feet()));
 echo(str("CASE: outer ", W + 2 * (board_gap + wall), " x ", H + 2 * (board_gap + wall), " x ", z_face - z_bot,
          " mm (face ", z_face, ", bottom ", z_bot, "), key bridge ", kb1 - kb0));
 for (p = board_parts) if (p[1] == "F" && p[3] + 0.4 > z_face - 0.8) echo(str("CHECK: ", p[0], " is ", p[3], " mm tall, too close to the face"));
+for (q = board_parts) if (lcd && q[1] == "F" && q[3] > lcd_back - ring_t - 0.15) let(o = lcd_bb, b = q[2])
+    if (b[2] > o[0] && b[0] < o[2] && b[3] > o[1] && b[1] < o[3]) echo(str("CHECK: ", q[0], " (", q[3], " mm) under the display ring"));
+if (lcd && len(lcd_posts) < 4) echo("CHECK: fewer than 4 free spots for display posts");
 for (p = kb_feet()) for (q = board_parts) if (q[1] == "F" && p.x > q[2][0] - 1.2 && p.x < q[2][2] + 1.2 && p.y > q[2][1] - 1.2 && p.y < q[2][3] + 1.2)
     echo(str("CHECK: key bridge foot at ", p, " lands on ", q[0]));

@@ -45,8 +45,8 @@ ROLES = [
 # Part heights above their copper side (mm). Used for clearance checks and for the
 # stand-in boxes in the renders. Matched against the footprint name, first match wins.
 HEIGHTS = [
-    (r"CP_Radial_D8", 11.5), (r"CP_Elec_5x5", 5.8), (r"USB_C", 3.31), (r"microSD", 1.98),
-    (r"JST_PH", 6.0), (r"JST_SH", 2.9), (r"JST_SUR|SUR_", 1.75), (r"PinHeader_1x03", 8.5),
+    (r"CP_Radial_D8", 11.5), (r"CP_Elec_5x5", 5.4), (r"USB_C", 3.31), (r"microSD", 1.98),
+    (r"JST_PH", 4.85), (r"JST_SH", 2.9), (r"JST_SUR|SUR_", 1.75), (r"PinHeader_1x03", 8.5),
     (r"PinHeader_1x06", 4.5), (r"FFC|FPC|AYF53", 1.0), (r"ESP32", 2.55), (r"ublox_NEO", 2.4),
     (r"U\.FL", 1.25), (r"LQFP", 1.6), (r"WSON-8", 0.8), (r"Hotswap|hotswap|CPG1350", 1.85),
     (r"Choc|PG1350|Kailh", 5.0), (r"SW_Push", 1.9), (r"L_Changjiang|FNR4020", 2.0),
@@ -54,6 +54,10 @@ HEIGHTS = [
     (r"MountingHole", 0.0), (r"Logo|TestPoint", 0.0),
 ]
 DEFAULT_H = 1.0
+HOTSWAP_H = 1.85   # Kailh CPG135001S30 below B.Cu (hardware/README.md)
+
+# Mechanical drawings on Dwgs.User (closed rectangles), recognised by size in mm (w, h, tolerance).
+DRAWINGS = [("lcd", (62.8, 42.82), 0.3), ("lcd_active", (58.8, 35.28), 0.3), ("lcd_flex", (9.48, 3.0), 0.6)]
 
 
 def kids(node, tag):
@@ -133,6 +137,34 @@ def main():
     if area < 0:
         pts.reverse()
 
+    # Dwgs.User rectangles drawn from lines: group line ends into closed loops, keep the boxes
+    dl = []
+    for e in root:
+        if isinstance(e, list) and e and e[0] in ("gr_line", "gr_rect") and kid(e, "layer")[1] == "Dwgs.User":
+            a, b = xy(kid(e, "start")), xy(kid(e, "end"))
+            if e[0] == "gr_rect":
+                dl += [[a, (b[0], a[1])], [(b[0], a[1]), b], [b, (a[0], b[1])], [(a[0], b[1]), a]]
+            else:
+                dl.append([a, b])
+    rects = []
+    while dl:
+        loop, rest = [dl.pop(0)], []
+        grown = True
+        while grown:
+            grown = False
+            for seg in dl:
+                pts_ = [p for s_ in loop for p in s_]
+                if any(math.hypot(seg[i][0] - q[0], seg[i][1] - q[1]) < 0.01 for i in (0, 1) for q in pts_):
+                    loop.append(seg); dl.remove(seg); grown = True; break
+        xs_ = [p[0] for s_ in loop for p in s_]; ys_ = [p[1] for s_ in loop for p in s_]
+        rects.append((min(xs_), min(ys_), max(xs_), max(ys_)))
+    drawings = []
+    for x0, y0, x1, y1 in rects:
+        for role, (dw, dh), tol in DRAWINGS:
+            if abs((x1 - x0) - dw) < tol and abs((y1 - y0) - dh) < tol:
+                a, b = tx(x0, y1), tx(x1, y0)
+                drawings.append((role.upper(), role, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, 0.0, "F", [a[0], a[1], b[0], b[1]], 0.0, 0.0))
+
     feats, parts = [], []
     for fp in kids(root, "footprint"):
         lib = fp[1]
@@ -173,6 +205,9 @@ def main():
         h = next((v for pat, v in HEIGHTS if re.search(pat, name)), DEFAULT_H)
         cx, cy = tx(fx, fy)
         parts.append((ref, name, side, bb, h))
+        if re.search(r"Hotswap|hotswap", name):        # Choc switch on the front, socket on the back
+            parts[-1] = (ref, name, "F", bb, 5.0)
+            parts.append((ref + "_skt", name, "B", bb, HOTSWAP_H))
         role = next((r for r, lp, rp in ROLES if re.search(lp, name) and re.search(rp, ref)), None)
         if role:
             extra = 0.0
@@ -180,6 +215,8 @@ def main():
                 pad = kid(fp, "pad")
                 extra = float(kid(pad, "drill")[1]) if pad and kid(pad, "drill") else 3.2
             feats.append((ref, role, cx, cy, rot, side, bb, h, extra))
+
+    feats += drawings
 
     def v(p):
         return "[" + ", ".join(f"{x:g}" for x in p) + "]"

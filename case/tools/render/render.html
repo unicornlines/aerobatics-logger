@@ -17,7 +17,7 @@ const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffe
 renderer.setSize(W, H); renderer.setPixelRatio(1);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled = true; renderer.localClippingEnabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
@@ -34,7 +34,8 @@ for (const p of cfg.pieces) {
   try { geo = await loader.loadAsync(`scene/${view.set}/${p.name}.stl`); } catch (e) { continue; }
   if (!geo.attributes.position || geo.attributes.position.count === 0) continue;
   geo.computeVertexNormals();
-  const m = new THREE.MeshPhysicalMaterial({
+  const clip = view.clip ? [new THREE.Plane(new THREE.Vector3(...view.clip.slice(0, 3)), view.clip[3])] : [];
+  const m = new THREE.MeshPhysicalMaterial({ clippingPlanes: clip, clipShadows: true,
     color: new THREE.Color(p.colour), roughness: p.roughness ?? 0.55, metalness: p.metal ?? 0,
     transparent: p.alpha < 1, opacity: p.alpha, transmission: p.glass ? 0.6 : 0, clearcoat: p.clearcoat ?? 0,
     side: THREE.DoubleSide, flatShading: false,
@@ -45,7 +46,7 @@ for (const p of cfg.pieces) {
   // print-layer feel: edges where faces meet at an angle
   if (p.edges !== false) {
     const eg = new THREE.EdgesGeometry(geo, 35);
-    root.add(new THREE.LineSegments(eg, new THREE.LineBasicMaterial({ color: new THREE.Color(p.colour).multiplyScalar(0.55), transparent: true, opacity: 0.35 })));
+    root.add(new THREE.LineSegments(eg, new THREE.LineBasicMaterial({ clippingPlanes: clip, color: new THREE.Color(p.colour).multiplyScalar(0.55), transparent: true, opacity: 0.35 })));
   }
   box.expandByObject(mesh);
 }

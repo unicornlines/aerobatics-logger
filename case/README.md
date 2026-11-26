@@ -15,9 +15,10 @@ Needs OpenSCAD 2021.01 or newer, the Inter font, and for renders node with Playw
 |---|---|
 | ![hero](renders/case-hero.png) | ![exploded](renders/case-exploded.png) |
 | ![released](renders/case-released.png) | ![right](renders/case-right.png) |
+| ![section through a key](renders/case-section-key.png) | ![section through the SD card](renders/case-section-sd.png) |
 
-> **Status:** `board.scad` is still a stand-in built from the board thread's numbers for the
-> 124 x 62 mm board. Run `build.py --extract` as soon as that board is committed.
+Built from the routed 124 x 62 mm board (commit 719651d). The extractor also reads the display
+outline, active area and flex from Dwgs.User, and adds the hotswap sockets on the back.
 
 ## Files
 
@@ -43,7 +44,7 @@ One colour change per part at most; the change is always at a layer height:
 | `cap_up`, `cap_ok`, `cap_dn` | face down | PETG | first 0.6 mm natural, then accent: the debossed mark shows accent. |
 | `tray` | bottom down, no supports (dovetail flanks are 30° overhangs) | PETG | none |
 | `plate` | bottom down | PETG | none |
-| `lcd_frame` | flat | PETG | none |
+| `lcd_frame` | ring side down | PETG | none |
 | `knob` | flat | PETG | none (accent) |
 
 Mass (PETG, `tools/mass.py`): about 50 g for the unit's plastic, about 38 g for the plate.
@@ -59,6 +60,7 @@ Brass inserts and A4 stainless or titanium screws: the magnetometer is on the bo
 - 1 x M3 x 12 socket head pressed into the knob (thumbscrew)
 - 1 x clear polycarbonate cover, 1.0 mm, laser cut (size printed by OpenSCAD as `cover`), glued into the face pocket
 - foam: 0.3 mm gasket between glass and face; 1 mm VHB foam pad under the cell
+- Qwiic and camera leads to the outside: cut out the 0.6 mm knock-out next to each socket in the top wall
 - optional: SMA bulkhead to U.FL pigtail (100 mm) for the GNSS antenna; ePTFE vent sticker (6 mm) under the barometer vent
 - mount: 4 x M4 countersunk (or the AMPS pattern, or one 1/4"-20 nut), 25 mm webbing / hook-and-loop strap
 
@@ -85,8 +87,10 @@ the left wall.
 
 - Choc cap stem fit (`choc_peg`): PETG shrinks differently per printer; print one cap first.
 - Dovetail fit (`fit`): should slide by hand with no play when the thumbscrew is tight.
-- Sharp LCD active-area offset (`lcd_active_off`): still to be checked against Sharp's outline drawing.
-- Bridge feet: four 2.2 mm feet stand on the board at the bridge corners; the build echoes `CHECK:` if a part is there.
+- Bridge feet and display posts are placed automatically on free spots of the board (nearest to their
+  ideal place); the build prints where they went and echoes `CHECK:` for any clearance problem.
+- The display sits on a 0.4 mm ring 0.2 mm above the tallest part under it (J63, 2.9 mm), carried by
+  eight posts. Glue the glass border to the bezel with thin VHB as well.
 
 <details><summary>Easter eggs (spoilers)</summary>
 

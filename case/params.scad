@@ -11,9 +11,10 @@ floor_t    = 1.8;    // tray floor
 first_colour_t = 0.6; // first colour of the front face (printed face-down): inlays are this deep
 
 /* [Display: Sharp LS027B7DH01] */
-lcd_module    = [62.8, 42.82, 1.6];  // outline and glass thickness (datasheet)
+lcd_module    = [62.8, 42.82, 1.3];  // outline and glass stack (board README)
+lcd_back_z    = 3.5;                 // glass back above F.Cu, on the spacer frame (board README)
 lcd_active    = [58.8, 35.28];       // 400 x 240 dots at 0.147 mm
-lcd_active_off = [0, 0];             // active-area centre relative to the outline centre. TODO: check against Sharp's outline drawing
+lcd_active_off = [0, -1.77];         // only used without the Dwgs.User drawing: 2.0 mm from the FPC-far edge
 lcd_gasket    = 0.3;                 // foam between the glass and the face
 window_margin = 0.8;                 // visible border around the active area
 cover_t       = 1.0;                 // clear PC or PMMA cover, laser cut, sits flush in the face
@@ -29,7 +30,7 @@ choc_stem_pitch = 5.7;  // the two stem slots, centre to centre
 choc_peg      = [1.2, 3.0, 3.2];   // peg cross-section and length (slot is 1.2 x 3.0, see Kailh drawing)
 cap_t         = 2.4;    // cap thickness (solid, printed face-down)
 cap_clear     = 0.6;    // cap to well wall
-cap_size      = 15.4;   // cap envelope; arrow tips stay inside this square
+cap_size      = [18, 15.2]; // cap envelope (w, h); 22 mm key pitch leaves 2.8 mm fences
 fence_drop    = 2.0;    // fence tops sit this far below the resting cap tops
 fence_w       = 1.8;
 
@@ -70,6 +71,7 @@ strap_slot    = 3.6;
 wing          = 13;     // plate overhang at each end for the strap slots
 stop_t        = 6;      // the stop block at the left end
 thumb_z       = 2.6;    // thumbscrew axis above the tray bottom
+thumb_dy      = 12;     // thumbscrew offset from the middle, away from the SMA
 plate_screw   = 4.3;    // M4 / #8 countersunk
 amps          = [30, 38];  // AMPS hole pattern (RAM and most cockpit mounts)
 quarter_inch_nut = 11.2;   // 1/4"-20 hex nut across corners (+ fit)

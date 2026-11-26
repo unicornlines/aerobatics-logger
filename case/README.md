@@ -57,10 +57,20 @@ Brass inserts and A4 stainless or titanium screws: the magnetometer is on the bo
 - 3 x M3 x 12 countersunk (ISO 10642), A4 or titanium, through the front into the corner inserts
 - 1 x M3 PA66 (nylon) thread-forming screw for the corner next to the radio antenna (H1): no metal near the antenna
 - 1 x clear polycarbonate cover, 1.0 mm, laser cut (size printed by OpenSCAD as `cover`), glued into the face pocket
+- foam ring for the microphone: 1.6 mm ID, 4.0 mm OD, 1.0 mm thick closed-cell (squeezed to 0.7 mm), sits in the recess at the end of the mic tube
 - foam: 0.5 mm closed-cell gasket between glass and face (compressed to 0.3 mm); 1 mm VHB foam pad under the cell
 - Qwiic and camera leads to the outside: cut out the 0.6 mm knock-out next to each socket in the top wall
 - optional: SMA bulkhead to U.FL pigtail (100 mm) for the GNSS antenna; ePTFE vent sticker (6 mm) under the barometer vent
 - mount: 4 x M4 countersunk (or the AMPS pattern, or one 1/4"-20 nut), 25 mm webbing / hook-and-loop strap
+
+## Humidity sensor and microphone
+
+- The SHT40 sits on a tongue the board cuts free with an L-shaped notch. Two slots in the left wall open
+  right in front of it, and baffles on both sides of the board (stopping 0.4 mm short of it) make a small
+  chamber, so it reads cockpit air and not the warm case. Nothing touches the tongue: no rib, foam or glue.
+- The microphone hears through a 0.8 mm hole in the board. A tube from the face (1.2 mm bore) seals onto the
+  board front with a foam ring, so it hears the cockpit, not the case cavity. Outside, a small ring marks the port.
+- `case-section-mic` shows both.
 
 ## How it holds the IMU still
 

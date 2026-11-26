@@ -40,6 +40,8 @@ ROLES = [
     ("imu",      r"LGA-14|ICM-4568", r"^U"),
     ("mag",      r"WLCSP-9|BMM350", r"^U"),
     ("swd",      r"PinHeader_1x06", r"^J"),
+    ("rh",       r"SHT4x|Sensirion_DFN", r"^U"),
+    ("mic",      r"Sensor_Audio|PG-LLGA-5", r"^(MK|U)"),
 ]
 
 # Part heights above their copper side (mm). Used for clearance checks and for the
@@ -51,6 +53,7 @@ HEIGHTS = [
     (r"U\.FL", 1.25), (r"LQFP", 1.6), (r"WSON-8", 0.8), (r"Hotswap|hotswap|CPG1350", 1.85),
     (r"Choc|PG1350|Kailh", 5.0), (r"SW_Push", 1.9), (r"L_Changjiang|FNR4020", 2.0),
     (r"L_1210", 2.2), (r"Crystal", 0.8), (r"0805|1206|SOT-23|SOD-123", 1.2),
+    (r"PG-LLGA-5", 1.2), (r"SHT4x|Sensirion_DFN", 0.6),
     (r"MountingHole", 0.0), (r"Logo|TestPoint", 0.0),
 ]
 DEFAULT_H = 1.0
@@ -215,6 +218,13 @@ def main():
                 pad = kid(fp, "pad")
                 extra = float(kid(pad, "drill")[1]) if pad and kid(pad, "drill") else 3.2
             feats.append((ref, role, cx, cy, rot, side, bb, h, extra))
+            if role == "mic":                          # bottom-port mic: its sound hole through the board
+                for pad in kids(fp, "pad"):
+                    if len(pad) > 2 and pad[2] == "np_thru_hole":
+                        px, py = xy(kid(pad, "at"))
+                        hx, hy = tx(fx + px * c + py * s_, fy - px * s_ + py * c)
+                        d = float(kid(pad, "drill")[1])
+                        feats.append((ref + "_port", "mic_port", hx, hy, rot, side, [hx - d / 2, hy - d / 2, hx + d / 2, hy + d / 2], 0, d))
 
     feats += drawings
 
@@ -232,7 +242,7 @@ def main():
         "board_outline = [" + ", ".join(v(p) for p in pts) + "];",
         "",
         "// [ref, role, [x, y], rotation, side, [x0, y0, x1, y1] courtyard, height above its side, extra]",
-        "// extra = drill diameter for holes.",
+        "// extra = drill diameter for holes and the mic port.",
         "board_features = [",
     ]
     out += [f'  ["{r}", "{ro}", [{x:g}, {y:g}], {rt:g}, "{sd}", {v(bb)}, {h:g}, {ex:g}],'

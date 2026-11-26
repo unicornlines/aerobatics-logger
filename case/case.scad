@@ -167,6 +167,7 @@ module front() {
         translate([0, 0, z_split - 0.01]) linear_extrude(1.2 + 0.3) offset(delta = fit / 2) tongue();
         // side openings
         usb_cut(); sd_cut(); flex_relief(); battery_lead_gully(); knockouts();
+        rh_vent(); mic_port_cut();
         // barometer
         if (has("baro")) translate([vent_xy().x, vent_xy().y, 0]) {
             if (baro_mode == "cockpit") translate([0, 0, z_face_in - 1]) linear_extrude(face_t + 2) aresti_loop();
@@ -189,6 +190,8 @@ module front() {
         translate([0, 0, -1]) cylinder(d = screw_d, h = 20);
     }
     if (lcd) carrier_lugs();
+    rh_baffles(rh_gap, z_face_in + 0.01);
+    difference() { mic_tube(); mic_port_cut(); }
     // tongue-and-groove: the front shell's groove is cut below; tray carries the tongue
     if (baro_mode == "static") static_cup();
 }
@@ -305,6 +308,39 @@ module carrier_lugs() translate([0, 0, carrier_lug_z]) linear_extrude(z_face_in 
 function ring_pt(p) = let(o = lcd_bb, c = 1.2, d = [p.x - o[0], o[2] - p.x, p.y - o[1], o[3] - p.y], m = min(d))
     m == d[0] ? [o[0] + c, p.y] : m == d[1] ? [o[2] - c, p.y] : m == d[2] ? [p.x, o[1] + c] : [p.x, o[3] - c];
 
+// ---------------------------------------------------------------- humidity sensor and microphone
+// SHT40 on a tongue cut free by an L-shaped notch: a vent in the left wall right in front of it, and a small
+// chamber (baffles on both sides of the board, stopping short of it) so it reads cockpit air, not the warm case.
+// Nothing touches the tongue: no rib, foam or clamp.
+rh_gap = 0.4;                                 // baffles stop this far from the board
+rh_baffle = 1.2;
+function rh_box() = let(b = fbb(feat("rh"))) [-board_gap, b[1] - 6.0, b[2] + 3.0, b[3] + 4.8];  // [x0, y0, x1, y1] inside the baffles
+module rh_baffles(z0, z1) if (has("rh")) let(r = rh_box(), t = rh_baffle)
+    translate([0, 0, z0]) linear_extrude(z1 - z0) difference() {
+        translate([-board_gap - 0.5, r[1] - t]) square([r[2] + t + board_gap + 0.5, r[3] - r[1] + 2 * t]);
+        translate([-board_gap - 1, r[1]]) square([r[2] + board_gap + 1, r[3] - r[1]]);
+    }
+module rh_vent() if (has("rh")) let(c = fxy(feat("rh")))
+    for (z = [1.1, 3.1]) translate([-board_gap - wall - 1, c.y, z]) rotate([0, 90, 0]) linear_extrude(wall + 1.5)
+        hull() for (dy = [-3.2, 3.2]) translate([0, dy]) circle(d = 1.1, $fn = 16);
+
+// Bottom-port microphone: it hears through a hole in the board. A tube from the face seals onto the board
+// front with a foam ring, so it hears the cockpit, not the case. Outside: a small ring around the hole.
+mic_tube_d = 4.6;
+mic_bore = 1.2;
+mic_seal = [1.6, 4.0, 1.0];                   // foam ring: inner, outer, free thickness (squeezed to 0.7)
+mic_tube_z = 0.4;                             // tube end above the board front; a 0.3 mm recess locates the ring
+module mic_tube() if (has("mic_port")) let(p = fxy(feat("mic_port")))
+    translate([p.x, p.y, mic_tube_z]) difference() {
+        cylinder(d = mic_tube_d, h = z_face_in - mic_tube_z + 0.01, $fn = 32);
+        translate([0, 0, -1]) cylinder(d = mic_bore, h = 20, $fn = 16);
+        translate([0, 0, -0.01]) cylinder(d = mic_seal[1] + 0.2, h = 0.3, $fn = 32);
+    }
+module mic_port_cut() if (has("mic_port")) let(p = fxy(feat("mic_port"))) translate([p.x, p.y, 0]) {
+    cylinder(d = mic_bore, h = 20, $fn = 16);
+    translate([0, 0, z_face - first_colour_t]) linear_extrude(1) difference() { circle(d = 3.4, $fn = 40); circle(d = 2.6, $fn = 40); }
+}
+
 // ---------------------------------------------------------------- key bridge (also the switch plate)
 plate_bot = choc_plate_top - choc_plate_t;
 module keybridge() {
@@ -416,6 +452,7 @@ module tray() {
     translate([0, 0, z_split - 0.01]) linear_extrude(plate_bot - z_split + 0.01 - fit) kb_wall_strip();
     // the cell: a rib frame and four snap fingers over its long edges
     if (cell_on) cell_bay();
+    rh_baffles(z_floor_in - 0.01, z_split - rh_gap);   // the chamber's back half: still air under the tongue
     // the floor is thicker over the latch notch
     difference() {
         translate([latch_x - 5, H / 2 - latch_arm.y / 2 - 3, z_floor_in - 0.01]) cube([10, latch_arm.y + 6, latch_hook + 1.6 - floor_t]);
@@ -618,6 +655,10 @@ for (q = board_parts) if (lcd && q[1] == "F" && q[3] > lcd_back - ring_t - 0.15)
     if (b[2] > o[0] && b[0] < o[2] && b[3] > o[1] && b[1] < o[3]) echo(str("CHECK: ", q[0], " (", q[3], " mm) under the display ring"));
 for (q = board_parts, r = lcd ? carrier_lug_rects() : []) let(b = q[2]) if (q[1] == "F" && q[3] > carrier_lug_z - 0.3 && b[2] > r[0] && b[0] < r[2] && b[3] > r[1] && b[1] < r[3])
     echo(str("CHECK: display carrier lug lands on ", q[0]));
+if (has("rh")) let(r = rh_box()) for (q = board_parts) let(b = q[2]) if (q[0] != feat("rh")[0] && b[2] > r[0] - rh_baffle && b[0] < r[2] + rh_baffle && b[3] > r[1] - rh_baffle && b[1] < r[3] + rh_baffle && !(b[0] >= r[0] && b[2] <= r[2] && b[1] >= r[1] && b[3] <= r[3]))
+    echo(str("CHECK: humidity chamber baffle crosses ", q[0]));
+if (has("mic_port")) let(p = fxy(feat("mic_port"))) for (q = board_parts) let(b = q[2]) if (q[1] == "F" && b[2] > p.x - mic_tube_d / 2 && b[0] < p.x + mic_tube_d / 2 && b[3] > p.y - mic_tube_d / 2 && b[1] < p.y + mic_tube_d / 2)
+    echo(str("CHECK: microphone tube lands on ", q[0]));
 if (lcd && len(lcd_posts) < 4) echo("CHECK: fewer than 4 free spots for display posts");
 for (p = kb_feet()) for (q = board_parts) if (q[1] == "F" && p.x > q[2][0] - 1.2 && p.x < q[2][2] + 1.2 && p.y > q[2][1] - 1.2 && p.y < q[2][3] + 1.2)
     echo(str("CHECK: key bridge foot at ", p, " lands on ", q[0]));

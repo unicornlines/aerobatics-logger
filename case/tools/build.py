@@ -54,6 +54,9 @@ VIEWS = {
     # sections: keep x < cut, look from +x (through the middle key, and through USB-C / microSD)
     "section-key": {"set": "assembled", "dir": [1.0, -0.12, 0.12], "dist": 2.6, "fov": 20, "clip": [-1, 0, 0, 62.2]},
     "section-sd":  {"set": "assembled", "dir": [0.12, -1.0, 0.15], "dist": 2.4, "fov": 20, "clip": [0, 1, 0, -30.5], "shift": [30, 0, 0]},
+    "left":     {"set": "assembled", "dir": [-1.0, -0.45, 0.35], "dist": 3.2, "fov": 20},
+    # through the microphone port (keep y > cut, look from -y) and through the humidity chamber
+    "section-mic": {"set": "assembled", "dir": [-0.25, -1.0, 0.3], "dist": 1.3, "fov": 20, "clip": [0, 1, 0, -21.68], "shift": [-40, 0, 0]},
     "released": {"set": "released", "dir": [-0.45, -1.0, 0.5], "dist": 2.9, "fov": 20},
 }
 

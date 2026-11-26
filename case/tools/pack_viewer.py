@@ -42,9 +42,29 @@ import base64 as _b
 (out / "model.json").write_text(json.dumps(meta))
 print(f"model {len(blob)/1e6:.2f} MB (base64 in model.txt)")
 
+# labels for the main board parts, read from the KiCad layout (refs -> what they are)
+import re
+BOARD_LABELS = {"U5": "MCU · STM32H723", "U12": "Flash 512 MB", "U6": "IMU · ICM-45686", "U9": "Magnetometer · BMM350",
+    "U7": "Barometer · BMP390", "U17": "Humidity · SHT40", "MK1": "Microphone (back)", "U10": "GNSS · NEO-M9N",
+    "U11": "Radio · ESP32-C6", "J50": "GNSS antenna", "J1": "USB-C", "J60": "microSD", "J2": "Battery",
+    "U13": "Charger · BQ24074", "U3": "Buck · TPS62130", "U15": "Cell protection", "J63": "Qwiic", "J62": "Camera / marker",
+    "J20": "SWD", "J61": "Display FPC"}
+pcb = (build.CASE.parent / "hardware" / "kicad" / "logger.kicad_pcb").read_text()
+bt = float(re.search(r"board_t = ([\d.]+);", (build.CASE / "board.scad").read_text()).group(1))
+heights = {m.group(1): float(m.group(2)) for m in re.finditer(r'\["([^"]+)", "[FB]", \[[^\]]*\], ([\d.]+)\]', (build.CASE / "board.scad").read_text())}
+blabels = []
+for f in re.split(r"\n  \(footprint ", pcb)[1:]:
+    ref = re.search(r'(?:fp_text reference|property "Reference") "([^"]+)"', f)
+    if not ref or ref.group(1) not in BOARD_LABELS: continue
+    r = ref.group(1); at = re.search(r"\(at ([\d.\-]+) ([\d.\-]+)", f); side = re.search(r'\(layer "([FB])\.Cu"\)', f).group(1)
+    x, y = float(at.group(1)) - 100, 62 - (float(at.group(2)) - 100); h = heights.get(r, 1.0)
+    blabels.append({"ref": r, "name": BOARD_LABELS[r], "p": [round(x, 2), round(y, 2), round(h if side == "F" else -bt - h, 2)], "side": side})
+order = list(BOARD_LABELS); blabels.sort(key=lambda b: order.index(b["ref"]))
+print(len(blabels), "board labels")
+
 # the page: template + manifest + boot screen
 import base64
 tpl = (build.CASE / "viewer" / "template.html").read_text()
 scr = "data:image/png;base64," + base64.b64encode((build.RENDER / "screen-boot.png").read_bytes()).decode()
-(out / "index.html").write_text(tpl.replace("__META__", json.dumps(meta)).replace("__SCREEN__", scr))
+(out / "index.html").write_text(tpl.replace("__META__", json.dumps(meta)).replace("__SCREEN__", scr).replace("__BLABELS__", json.dumps(blabels)))
 print("index.html written")

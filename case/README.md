@@ -17,7 +17,7 @@ Needs OpenSCAD 2021.01 or newer, the Inter font, and for renders node with Playw
 | ![released](renders/case-released.png) | ![right](renders/case-right.png) |
 | ![section through a key](renders/case-section-key.png) | ![section through the SD card](renders/case-section-sd.png) |
 
-Built from the routed 124 x 62 mm board (commit 719651d). The extractor also reads the display
+Built from the routed 138 x 62 mm board (commit 094aea5). The extractor also reads the display
 outline, active area and flex from Dwgs.User, and adds the hotswap sockets on the back.
 
 ## Files

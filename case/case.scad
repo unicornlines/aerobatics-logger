@@ -3,7 +3,7 @@
 //
 //   openscad -D 'part="front"' -o out/front.stl case.scad
 //
-// Parts: front, keybridge, lcd_frame, tray, plate, knob, cap_up, cap_ok, cap_dn, all (= assembly)
+// Parts: front, keybridge, lcd_frame, tray, plate, cap_up, cap_ok, cap_dn, all (= assembly)
 
 include <params.scad>
 include <board.scad>
@@ -24,6 +24,10 @@ function fh(f) = f[6];
 function in_list(x, l) = len([for (e = l) if (e == x) 1]) > 0;
 
 holes = feats("hole");
+// a column through the cell is impossible: such a hole is not used by the case
+function in_cell(h) = cell[0] > 0 && fxy(h).x > cell_at.x - cell[2] / 2 - 4 && fxy(h).x < cell_at.x + cell[2] / 2 + 4
+                                  && fxy(h).y > cell_at.y - cell[1] / 2 - 4 && fxy(h).y < cell_at.y + cell[1] / 2 + 4;
+used_holes = [for (h = holes) if (!in_cell(h)) h];
 keys  = [for (k = feats("key")) k];           // sorted by ref = left to right
 key_kinds = ["up", "ok", "dn"];               // firmware decides, caps only say it
 
@@ -38,9 +42,12 @@ z_face_in = lcd_top + lcd_gasket;            // underside of the face
 z_face    = z_face_in + face_t;               // the front surface
 z_split   = -board_t;                         // front shell meets tray at the board's back
 back_clear = max(board_max_h_back + 0.8, 2.4);
-z_cell_top = z_split - back_clear;
 cell_on   = cell[0] > 0;
-z_floor_in = cell_on ? z_cell_top - cell[0] - cell_foam - 0.6 : z_cell_top;
+cell_bb   = [cell_at.x - cell[2] / 2 - 0.5, cell_at.y - cell[1] / 2 - 0.5, cell_at.x + cell[2] / 2 + 0.5, cell_at.y + cell[1] / 2 + 0.5];
+// back-side parts over the cell? then it has to clear them, otherwise it sits just under the board
+cell_under_parts = len([for (q = board_parts) if (q[1] == "B" && q[2][2] > cell_bb[0] && q[2][0] < cell_bb[2] && q[2][3] > cell_bb[1] && q[2][1] < cell_bb[3]) 1]) > 0;
+z_cell_top = z_split - (cell_under_parts ? back_clear : cell_gap);
+z_floor_in = cell_on ? z_cell_top - cell[0] - cell_foam - 0.3 : z_split - back_clear;
 rail_zone = rail_h + 1.2;                     // floor is this thick where the dovetails are
 z_bot     = z_floor_in - floor_t;
 
@@ -189,7 +196,7 @@ module face_inlays() {
     zt = z_face - first_colour_t;
     // brand: logo in the free field right of the display, name level with the keys
     translate([(lcd_bb[2] + W + board_gap) / 2, (lcd_bb[1] + lcd_bb[3]) / 2 - 2, zt]) linear_extrude(1) logo(18);
-    translate([(kb1.x + W + board_gap) / 2, fxy(keys[0]).y, zt]) linear_extrude(1) label("UNICORNLINES®", 2.3);
+    translate([(lcd_bb[2] + W + board_gap) / 2, (lcd_bb[1] + lcd_bb[3]) / 2 - 2 - 9 - 2.5, zt]) linear_extrude(1) label("UNICORNLINES®", 2.0);
     // left of the keys: the tagline
     // the tagline runs up the free strip left of the display, clear of the vent and the radio corner
     translate([(lcd_bb[0] - board_gap) / 2 + 4, (kb1.y + (has("radio") ? fbb(feat("radio"))[1] : H)) / 2 + 2, zt]) linear_extrude(1)
@@ -254,11 +261,25 @@ function lcd_post_cands() = let(o = lcd_bb) [for (x = [o[0] + 1.5 : 0.5 : o[2] -
     if (x < o[0] + 9 || x > o[2] - 9 || y < o[1] + 9 || y > o[3] - 9) [x, y]];
 lcd_posts = lcd ? [for (t = lcd_post_targets()) let(p = nearest_free(t, lcd_post_r, lcd_post_cands())) if (p != undef) p] : [];
 
+// Display carrier: boxes the panel on the left, right and top (the key bridge is the fourth side),
+// carries it on a lip under the glass border, stands on posts on the board, and is clamped by the face.
+carrier_wall = 1.0;
+carrier_fit  = 0.15;
 module lcd_frame() {
-    // ring under the glass border (the flex side stays open for the fold)
+    o = lcd_bb; c = carrier_fit; w = carrier_wall;
+    // walls, from the lip up to just under the face
+    translate([0, 0, lcd_back - ring_t]) linear_extrude(z_face_in - 0.1 - (lcd_back - ring_t)) difference() {
+        translate([o[0] - c - w, kb_lcd ? o[1] - c : o[1] - c - w]) offset(r = 0.6) offset(delta = -0.6)
+            square([o[2] - o[0] + 2 * (c + w), o[3] - o[1] + c + w + (kb_lcd ? 0 : c + w)]);
+        translate([o[0] - c, o[1] - c - 2]) square([o[2] - o[0] + 2 * c, o[3] - o[1] + 2 * c + 2]);
+        // the flex leaves the top edge: an opening for its fold
+        if (has("lcd_flex")) let(fb = fbb(feat("lcd_flex"))) translate([fb[0] - 1, o[3] - 1]) square([fb[2] - fb[0] + 2, 4]);
+    }
+    // lip under the glass border (the flex side stays open for the fold)
     translate([0, 0, lcd_back - ring_t]) linear_extrude(ring_t) difference() {
-        bb2d(lcd_bb, -0.2);
-        bb2d(lcd_bb, -2.2);
+        bb2d(lcd_bb, carrier_fit + carrier_wall - 0.01);
+        bb2d(lcd_bb, -2.0);
+        if (kb_lcd) translate([0, lcd_bb[1] - carrier_fit - 10]) square([500, 10]);   // the bridge side
         if (has("lcd_flex")) let(fb = fbb(feat("lcd_flex"))) translate([fb[0] - 1, lcd_bb[3] - 4]) square([fb[2] - fb[0] + 2, 6]);
     }
     // posts from the board to the ring, with a web to the ring where they stand inside it
@@ -360,13 +381,13 @@ module tray() {
         for (y = rail_ys()) translate([0, y, z_bot]) dovetail(len = 400, grow = fit);
         // side openings continue below the split
         tray_openings();
-        // thumbscrew insert, left end
-        translate([-board_gap - wall - 1, thumb_y, z_bot + thumb_z]) rotate([0, 90, 0]) cylinder(d = insert_d, h = insert_l + wall + 1.5);
+        // the notch the plate's snap hook falls into
+        translate([latch_x - 2, H / 2 - latch_arm.y / 2 - 0.4, z_bot - 0.01]) cube([4, latch_arm.y + 0.8, latch_hook + 0.3]);
         // under the board: nothing of the tongue where the openings are
         if (has("usb_c")) translate([W, fxy(feat("usb_c")).y - 7, z_split - 0.5]) cube([10, 14, 3]);
         if (has("microsd")) translate([W, fxy(feat("microsd")).y - 7, z_split - 0.5]) cube([10, 14, 3]);
         if (has("lcd_flex")) translate([0, 0, z_split - 0.5]) linear_extrude(3) bb2d(fbb(feat("lcd_flex")), 0.6);
-        for (h = holes) if (!is_corner(h)) translate([fxy(h).x, fxy(h).y, z_bot]) {
+        for (h = used_holes) if (!is_corner(h)) translate([fxy(h).x, fxy(h).y, z_bot]) {
             translate([0, 0, -1]) cylinder(d = screw_d, h = 30);
             translate([0, 0, -0.01]) cylinder(d1 = screw_head_d + 0.2, d2 = screw_d, h = (screw_head_d + 0.2 - screw_d) / 2);
         }
@@ -374,10 +395,10 @@ module tray() {
         translate([W / 2, 6, z_floor_in - 0.4]) linear_extrude(1) label("PER PERFECTIONEM AD FELICITATEM", 2.6, font_reg);
     }
     // columns: floor to the board's back, brass inserts for the front screws
-    for (h = holes) translate([fxy(h).x, fxy(h).y, z_floor_in - 0.01]) difference() {
+    for (h = used_holes) translate([fxy(h).x, fxy(h).y, z_floor_in - 0.01]) difference() {
         cylinder(d = boss_d, h = z_split - z_floor_in + 0.01);
         nyl = in_list(h[0], nylon_holes);
-        if (is_corner(h)) translate([0, 0, z_split - z_floor_in - (nyl ? 9 : insert_l + 0.3)]) cylinder(d = nyl ? 2.7 : insert_d, h = 20);
+        if (is_corner(h)) translate([0, 0, z_split - z_floor_in - (nyl ? 5.5 : insert_l + 0.3)]) cylinder(d = nyl ? 2.7 : insert_d, h = 20);
         else translate([0, 0, -10]) cylinder(d = screw_d, h = 40);  // inner hole: screw from the back, thin nut on the front
     }
     // (inner holes are countersunk into the bottom, see below)
@@ -385,11 +406,16 @@ module tray() {
     translate([0, 0, z_split - 0.01]) linear_extrude(plate_bot - z_split + 0.01 - fit) kb_wall_strip();
     // the cell: a rib frame and four snap fingers over its long edges
     if (cell_on) cell_bay();
-    // block behind the thumbscrew insert
-    translate([-board_gap - 0.01, thumb_y - 4.5, z_floor_in - 0.01]) cube([insert_l + 1.2, 9, max(0.01, z_bot + thumb_z + 3.5 - z_floor_in)]);
+    // the floor is thicker over the latch notch
+    difference() {
+        translate([latch_x - 5, H / 2 - latch_arm.y / 2 - 3, z_floor_in - 0.01]) cube([10, latch_arm.y + 6, latch_hook + 1.6 - floor_t]);
+        translate([latch_x - 2, H / 2 - latch_arm.y / 2 - 0.4, z_bot - 0.01]) cube([4, latch_arm.y + 0.8, latch_hook + 0.3]);
+    }
 }
-module rail_strips() for (y = rail_ys()) translate([-500, y - (rail_w + 2 * rail_h * tan(rail_angle) + 3.2) / 2]) square([1000, rail_w + 2 * rail_h * tan(rail_angle) + 3.2]);
-thumb_y = H / 2 + ((sma && has("gnss_rf") && sma_wall == "left" && fxy(feat("gnss_rf")).y >= H / 2) ? -thumb_dy : thumb_dy) * ((sma && has("gnss_rf") && abs(fxy(feat("gnss_rf")).y - H / 2) < thumb_dy) ? 1 : 0);
+function rail_strip_w() = rail_w + 2 * rail_h * tan(rail_angle) + 2.4;
+module rail_strips() for (y = rail_ys()) translate([-500, y - rail_strip_w() / 2]) square([1000, rail_strip_w()]);
+// snap latch: a hook on a spring arm in the plate, a notch near the tray's right end
+latch_x = W + board_gap + wall - 7;
 function rail_ys() = [-board_gap - wall + rail_inset, H + board_gap + wall - rail_inset];
 
 module dovetail(len, grow = 0) {
@@ -400,25 +426,23 @@ module dovetail(len, grow = 0) {
 }
 
 module cell_bay() {
+    // The cell is taped down (VHB foam) and boxed in: end ribs in x, the rail strips (or side ribs) in y,
+    // and the board 0.5 mm above it. Nothing presses on the pouch.
     c = cell_at; l = cell[2] + 1.0; w = cell[1] + 1.0; t = cell[0] + cell_foam;
     rib = 1.2;
+    lo = rail_ys()[0] + rail_strip_w() / 2; hi = rail_ys()[1] - rail_strip_w() / 2;
     translate([c.x, c.y, z_floor_in - 0.01]) {
-        difference() {
-            linear_extrude(t * 0.6) difference() { square([l + 2 * rib, w + 2 * rib], center = true); square([l, w], center = true); }
-            for (sx = [-1, 1]) translate([sx * l / 2, 0, -1]) cube([rib * 3, w * 0.4, t + 2], center = true);   // finger notches to lift it out
+        for (sx = [-1, 1]) translate([sx * (l / 2 + rib / 2), 0, 0]) difference() {
+            translate([-rib / 2, -w / 2, 0]) cube([rib, w, t * 0.6]);
+            translate([-rib, -w * 0.2, t * 0.3]) cube([rib * 2, w * 0.4, t]);       // finger notch to lift it out
         }
-        for (sx = [-0.25, 0.25], sy = [-1, 1]) translate([sx * l, sy * (w / 2 + rib / 2), 0]) snap_finger(t, sy);
-        // fuel gauge joke: the cell sizes that fit, drawn on the floor
+        // side ribs only where a rail strip does not already hold that side
+        for (sy = [-1, 1]) if ((sy < 0 && c.y - w / 2 > lo + 1.5) || (sy > 0 && c.y + w / 2 < hi - 1.5))
+            translate([-l / 2, sy * (w / 2 + rib / 2) - rib / 2, 0]) cube([l, rib, t * 0.6]);
+        // the floor names the cell it was built for
         translate([0, 0, -0.4]) linear_extrude(0.41) { label("1S LiPo", 3.2); translate([0, -4.5]) label(str(cell[0], cell[1], cell[2]), 2.4, font_reg); }
     }
 }
-module snap_finger(t, side) {
-    // a cantilever on the frame: the cell pushes it out, it snaps back over the edge
-    translate([-2.5, -0.6, 0]) cube([5, 1.2, t + 0.4]);
-    translate([0, 0, t + 0.2]) rotate([0, 90, 0]) linear_extrude(5, center = true)
-        polygon([[0, 0.6 * -side], [0, (0.6 + 1.0) * -side], [-1.2, 0.6 * -side]]);
-}
-
 module tray_openings() {
     // SMA bulkhead for the external GNSS antenna, low in the wall so its nut is inside the tray
     if (sma && has("gnss_rf")) let(y = fxy(feat("gnss_rf")).y, z = (z_floor_in + z_split) / 2)
@@ -433,58 +457,58 @@ module tray_openings() {
 plate_x0 = -board_gap - wall - stop_t - fit;
 plate_x1 = W + board_gap + wall;
 module plate() {
-    L = plate_x1 - plate_x0 + 2 * wing;
+    L = plate_x1 - plate_x0 + wing + latch_wing;
     x0 = plate_x0 - wing; y0 = -board_gap - wall; y1 = H + board_gap + wall;
+    ax0 = latch_x - latch_arm.x + 4;              // arm root (left), free end runs out past the unit as the tab
+    ax1 = plate_x1 + 8;
     difference() {
         union() {
             translate([0, 0, -plate_t]) linear_extrude(plate_t) rrect([x0, y0], [x0 + L, y1], corner_r);
             // male rails
             for (y = rail_ys()) translate([(plate_x0 + stop_t + plate_x1) / 2, y, 0]) dovetail(len = plate_x1 - plate_x0 - stop_t - 0.01);
-            // the stop at the left end, with the thumbscrew
-            translate([plate_x0, y0, -0.01]) cube([stop_t, y1 - y0, thumb_z + 4]);
+            // the stop at the left end
+            translate([plate_x0, y0, -0.01]) cube([stop_t, y1 - y0, 5]);
         }
-        // strap slots at both wings
-        for (x = [x0 + wing / 2, x0 + L - wing / 2]) translate([x, (y0 + y1) / 2, -plate_t - 1]) linear_extrude(plate_t + 2)
+        // the spring arm: free on three sides, thinner from below
+        translate([0, 0, -plate_t - 1]) linear_extrude(plate_t + 2) difference() {
+            translate([ax0, H / 2 - latch_arm.y / 2 - 1.2]) square([ax1 - ax0 + 1.2, latch_arm.y + 2.4]);
+            translate([ax0 - 1, H / 2 - latch_arm.y / 2]) square([ax1 - ax0 + 1, latch_arm.y]);
+        }
+        translate([ax0 + 2, H / 2 - latch_arm.y / 2 - 1, -plate_t - 0.01]) cube([ax1 - ax0, latch_arm.y + 2, plate_t - latch_arm.z]);
+        // strap slots at both wings (the right one beyond the release tab)
+        for (x = [x0 + wing / 2, x0 + L - wing / 2 + 1.5]) translate([x, (y0 + y1) / 2, -plate_t - 1]) linear_extrude(plate_t + 2)
             offset(r = strap_slot / 2) square([0.01, strap_w - strap_slot], center = true);
         // screw it down: four corner holes inside the wings, countersunk from the top
-        for (x = [x0 + wing / 2, x0 + L - wing / 2], y = [y0 + 6, y1 - 6]) translate([x, y, 0]) csk(plate_screw);
+        for (x = [x0 + wing / 2, x0 + L - wing / 2 + 1.5], y = [y0 + 6, y1 - 6]) translate([x, y, 0]) csk(plate_screw);
         // AMPS pattern + 1/4"-20 nut, centred under the unit
         translate([W / 2, H / 2, 0]) {
             for (sx = [-1, 1], sy = [-1, 1]) translate([sx * amps.y / 2, sy * amps.x / 2, 0]) csk(plate_screw);
             translate([0, 0, -plate_t - 1]) cylinder(d = 6.6, h = plate_t + 2);
-            translate([0, 0, -plate_t + 1.2]) cylinder(d = quarter_inch_nut, h = plate_t, $fn = 6);
+            translate([0, 0, -plate_t + 1.0]) cylinder(d = quarter_inch_nut, h = plate_t, $fn = 6);
         }
-        // thumbscrew through the stop
-        translate([plate_x0 - 1, thumb_y, thumb_z]) rotate([0, 90, 0]) cylinder(d = screw_d, h = stop_t + 2);
-        // lighter: pockets from below between the rails (keeps the rails and the edges solid)
-        // (a grid of pockets, 1.2 mm skin on top, ribs between; the screw bosses stay solid)
+        // lighter: pockets from below between the rails, clear of the arm, the AMPS bosses and the nut
         translate([0, 0, -plate_t - 0.01]) linear_extrude(plate_t - 1.2) difference() {
             intersection() {
-                translate([plate_x0 + stop_t + 3, rail_ys()[0] + rail_w]) square([plate_x1 - plate_x0 - stop_t - 6, rail_ys()[1] - rail_ys()[0] - 2 * rail_w]);
+                translate([plate_x0 + stop_t + 3, rail_ys()[0] + rail_w]) square([ax0 - 3 - plate_x0 - stop_t - 3, rail_ys()[1] - rail_ys()[0] - 2 * rail_w]);
                 union() for (i = [0:7], j = [0:2]) translate([plate_x0 + stop_t + 4 + i * 16.5, rail_ys()[0] + rail_w + 1 + j * 13.5]) offset(r = 1.5) square([12.5, 10]);
             }
             translate([W / 2, H / 2]) { circle(d = 18); for (sx = [-1, 1], sy = [-1, 1]) translate([sx * amps.y / 2, sy * amps.x / 2]) circle(d = 10); }
         }
         // easter egg: hidden where only the unit covers it
         translate([W / 2 - 4, H / 2 + 9, -0.4]) linear_extrude(1) label("YOU FOUND IT. NOW FLY IT.", 2.0, font_reg);
-        translate([W / 2 + 36, H / 2, -0.4]) linear_extrude(1) logo(16);
+        translate([W / 2 - 38, H / 2, -0.4]) linear_extrude(1) logo(16);
     }
+    // the hook: ramp on the right (the unit slides in from the right), square face on the left
+    translate([latch_x - 2 + fit, H / 2, 0]) rotate([90, 0, 0]) linear_extrude(latch_arm.y - 1, center = true)
+        polygon([[0, -0.01], [3.6 - fit, -0.01], [1.8, latch_hook], [0, latch_hook]]);
+    // release tab: ribs to find it with a glove, push down and slide the unit off to the right
+    for (dx = [0 : 1.6 : 4.8]) translate([plate_x1 + 2 + dx, H / 2 - latch_arm.y / 2 + 1, -0.01]) cube([0.8, latch_arm.y - 2, 1.0]);
 }
 module csk(d) {
     translate([0, 0, -plate_t - 1]) cylinder(d = d, h = plate_t + 2);
     translate([0, 0, -d / 2 - 0.2]) cylinder(d1 = d, d2 = 2 * d + 0.4, h = d / 2 + 0.2 + 0.01);
 }
 
-// a knob for the M3 thumbscrew (press an M3 x 12 socket-head screw into it)
-module knob() difference() {
-    union() {
-        cylinder(d = 14, h = 5, $fn = 18);    // 18 flats: gloves grip it
-        cylinder(d = 7.5, h = 7);
-    }
-    translate([0, 0, 2]) cylinder(d = 5.7, h = 10, $fn = 6);   // screw head
-    translate([0, 0, -1]) cylinder(d = screw_d, h = 10);
-    translate([0, 0, 5 - 0.4]) linear_extrude(1) star(3.5);
-}
 
 // ---------------------------------------------------------------- board stand-in (renders)
 // sel picks one material group, so the renderer can colour it; "" = all, with OpenSCAD colours
@@ -527,7 +551,7 @@ module cell_model() if (cell_on) color("#3a6ea5")
 // ---------------------------------------------------------------- colours
 c_body   = "#24262b";   // colour 2 of the shells (graphite PETG)
 c_first  = "#e9e6df";   // colour 1: the face skin (natural PETG, lets the LEDs glow)
-c_accent = "#c2185b";   // key bridge, knob (magenta PETG)
+c_accent = "#c2185b";   // key bridge (magenta PETG)
 c_plate  = "#3b3f46";
 
 module front_split(first) intersection() { front(); translate([-50, -50, first ? z_face - first_colour_t : -50]) cube([500, 500, first ? 10 : 50 + z_face - first_colour_t]); }
@@ -536,7 +560,7 @@ module cap_split(kind, first) intersection() { keycap(kind); translate([-50, -50
 // ---------------------------------------------------------------- assembly
 // Each piece in its place; e > 0 explodes it along z in build order (the plate also slides off its rails).
 pieces = [  // name, colour, alpha
-    ["plate", c_plate, 1], ["knob", c_accent, 1], ["tray", c_body, 1], ["cell", "#3a6ea5", 1],
+    ["plate", c_plate, 1], ["tray", c_body, 1], ["cell", "#3a6ea5", 1],
     ["pcb", "#1d3d2a", 1], ["parts", "#2a2a2a", 1], ["metal", "#b8bcc2", 1], ["white", "#efefea", 1], ["led", "#ffb300", 1],
     ["switch", "#303236", 1], ["stem", "#8b5a2b", 1], ["lcd_frame", "#4a4d55", 1], ["lcd", "#c9ccd0", 1], ["lcd_active", "#a9b5a0", 1],
     ["keybridge", c_accent, 1], ["caps_body", c_accent, 1], ["caps_first", c_first, 1],
@@ -545,7 +569,6 @@ pieces = [  // name, colour, alpha
 module piece(n, e = explode) {
     function dz(k) = k * 13 * e;
     if (n == "plate") translate([-45 * e - 75 * release, 0, z_bot + dz(-2.2)]) plate();
-    if (n == "knob") translate([plate_x0 - 9 - 70 * e - 75 * release - 14 * release, thumb_y, z_bot + thumb_z + dz(-2.2)]) rotate([0, 90, 0]) knob();
     if (n == "tray") tray();
     if (n == "cell") translate([0, 0, dz(1)]) cell_model();
     if (in_list(n, ["pcb", "parts", "metal", "white", "led", "switch", "stem"])) translate([0, 0, dz(2.2)]) board_model(n);
@@ -568,12 +591,15 @@ else if (part == "keybridge") translate([0, 0, -plate_bot]) keybridge();        
 else if (part == "lcd_frame") lcd_frame();
 else if (part == "tray") translate([0, 0, -z_bot]) tray();
 else if (part == "plate") translate([0, 0, plate_t]) plate();
-else if (part == "knob") knob();
 else if (part == "cap_up") translate([0, 0, cap_t]) rotate([0, 180, 0]) keycap("up");    // face down
 else if (part == "cap_ok") translate([0, 0, cap_t]) rotate([0, 180, 0]) keycap("ok");
 else if (part == "cap_dn") translate([0, 0, cap_t]) rotate([0, 180, 0]) keycap("dn");
 
 // ---------------------------------------------------------------- checks (echoed on every run)
+if (cell_on) let(lo = rail_ys()[0] + rail_strip_w() / 2, hi = rail_ys()[1] - rail_strip_w() / 2)
+    if (cell_at.y - cell[1] / 2 - 0.5 < lo || cell_at.y + cell[1] / 2 + 0.5 > hi) echo(str("CHECK: cell (", cell[1], " mm wide) overlaps a rail strip: room is ", lo, " to ", hi));
+for (h = holes) if (in_cell(h)) echo(str("NOTE: hole ", h[0], " is over the cell and is not used by the case"));
+echo(str("CASE: cell ", cell_under_parts ? "below the key sockets" : "right under the board", ", total height with plate ", z_face - z_bot + plate_t, " mm"));
 echo(str("CASE: display posts ", lcd_posts, ", bridge feet ", kb_feet()));
 echo(str("CASE: outer ", W + 2 * (board_gap + wall), " x ", H + 2 * (board_gap + wall), " x ", z_face - z_bot,
          " mm (face ", z_face, ", bottom ", z_bot, "), key bridge ", kb1 - kb0));

@@ -21,12 +21,11 @@ STL = CASE / "stl"
 RENDER = CASE / "tools" / "render"
 SCENE = RENDER / "scene"
 
-PRINT_PARTS = ["front", "keybridge", "tray", "plate", "lcd_frame", "knob", "cap_up", "cap_ok", "cap_dn"]
+PRINT_PARTS = ["front", "keybridge", "tray", "plate", "lcd_frame", "cap_up", "cap_ok", "cap_dn"]
 
 # Assembly pieces and how they look. Names must match piece() in case.scad.
 PIECES = [
     {"name": "plate", "colour": "#3b3f46", "roughness": 0.7},
-    {"name": "knob", "colour": "#c2185b", "roughness": 0.45},
     {"name": "tray", "colour": "#26282d", "roughness": 0.6},
     {"name": "cell", "colour": "#4f7fb5", "roughness": 0.35, "edges": False},
     {"name": "pcb", "colour": "#1f4a32", "roughness": 0.45},

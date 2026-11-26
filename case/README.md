@@ -44,20 +44,18 @@ One colour change per part at most; the change is always at a layer height:
 | `cap_up`, `cap_ok`, `cap_dn` | face down | PETG | first 0.6 mm natural, then accent: the debossed mark shows accent. |
 | `tray` | bottom down, no supports (dovetail flanks are 30° overhangs) | PETG | none |
 | `plate` | bottom down | PETG | none |
-| `lcd_frame` | ring side down | PETG | none |
-| `knob` | flat | PETG | none (accent) |
+| `lcd_frame` | lip side down | PETG | none. The display carrier: boxes the panel on three sides (the key bridge is the fourth), carries it on a lip, stands on posts. |
 
-Mass (PETG, `tools/mass.py`): about 50 g for the unit's plastic, about 38 g for the plate.
+Size: 128.7 x 66.7 x 17.1 mm, 20.1 mm on its plate (with the default 6 mm cell; a 4 mm cell saves 2 mm).
+Mass (PETG, `tools/mass.py`): about 39 g for the unit's plastic, about 36 g for the plate.
 
 ## Hardware
 
 Brass inserts and A4 stainless or titanium screws: the magnetometer is on the board.
 
-- 3 x M3 x 5.7 brass heat-set inserts in the tray columns (corners), 1 more in the tray's left end for the thumbscrew
+- 3 x M3 x 4 brass heat-set inserts in the tray columns (corners)
 - 3 x M3 x 12 countersunk (ISO 10642), A4 or titanium, through the front into the corner inserts
 - 1 x M3 PA66 (nylon) thread-forming screw for the corner next to the radio antenna (H1): no metal near the antenna
-- 1 x M3 x 10 countersunk from the back through the inner hole next to the IMU, with a thin M3 nut (DIN 439) on the board front
-- 1 x M3 x 12 socket head pressed into the knob (thumbscrew)
 - 1 x clear polycarbonate cover, 1.0 mm, laser cut (size printed by OpenSCAD as `cover`), glued into the face pocket
 - foam: 0.3 mm gasket between glass and face; 1 mm VHB foam pad under the cell
 - Qwiic and camera leads to the outside: cut out the 0.6 mm knock-out next to each socket in the top wall
@@ -68,9 +66,14 @@ Brass inserts and A4 stainless or titanium screws: the magnetometer is on the bo
 
 The board is clamped at all five holes between the front bosses and full-height columns in the
 tray, so the case itself is the reference. The unit then slides onto the plate on two dovetails
-(30° flanks, 0.25 mm fit) until it hits the stop, and the thumbscrew pulls it against the stop:
-two dovetails fix roll, pitch, yaw and two axes, the stop fixes the third. Same position every
-time, no wobble, no tools in the aircraft.
+(30° flanks, 0.25 mm fit) until it hits the stop, and a snap hook on a spring arm in the plate
+drops into a notch in the tray: two dovetails fix roll, pitch, yaw and two axes, the stop and the
+hook fix the third. Same position every time, no wobble, no tools. To release, push the ribbed
+tab at the right end down and slide the unit off to the right. The hook face is square, so
+vibration and g cannot walk it out; only the tab releases it.
+
+The board is clamped at the four corner holes. The fifth hole (next to the IMU) sits over the
+battery cell, so the case does not use it when a cell is fitted.
 
 Mounting options from the plate: strap slots at both ends (25 mm webbing, e.g. round a tube or a
 thigh), 4 countersunk M4 holes, the AMPS 30 x 38 pattern used by RAM and most cockpit mounts, and
@@ -86,11 +89,10 @@ the left wall.
 ## Things to check on the first print
 
 - Choc cap stem fit (`choc_peg`): PETG shrinks differently per printer; print one cap first.
-- Dovetail fit (`fit`): should slide by hand with no play when the thumbscrew is tight.
+- Dovetail fit (`fit`) and the snap: should slide by hand with no play once the hook is in.
 - Bridge feet and display posts are placed automatically on free spots of the board (nearest to their
   ideal place); the build prints where they went and echoes `CHECK:` for any clearance problem.
-- The display sits on a 0.4 mm ring 0.2 mm above the tallest part under it (J63, 2.9 mm), carried by
-  eight posts. Glue the glass border to the bezel with thin VHB as well.
+- The display carrier's lip is 0.2 mm above the tallest part under it (J63, 2.9 mm), on eight posts.
 
 <details><summary>Easter eggs (spoilers)</summary>
 
@@ -100,5 +102,5 @@ the left wall.
 - Inside the face and on the tray floor: PER PERFECTIONEM AD FELICITATEM.
 - Under the unit, on the plate: "YOU FOUND IT. NOW FLY IT." and the emblem.
 - The battery bay labels the cell it was built for.
-- The OK key carries a star; the knob too.
+- The OK key carries a star.
 </details>

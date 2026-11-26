@@ -6,8 +6,8 @@ fit        = 0.25;   // clearance between printed parts that slide or nest
 board_gap  = 0.35;   // board edge to inner wall
 wall       = 2.0;    // side walls
 corner_r   = 4.0;    // outer corner radius in plan
-face_t     = 2.0;    // front face thickness
-floor_t    = 1.8;    // tray floor
+face_t     = 1.6;    // front face thickness
+floor_t    = 1.4;    // tray floor
 first_colour_t = 0.6; // first colour of the front face (printed face-down): inlays are this deep
 
 /* [Display: Sharp LS027B7DH01] */
@@ -39,8 +39,9 @@ fence_w       = 1.8;
 // Examples: 402030 = [4, 20, 30] (~200 mAh), 603450 = [6, 34, 50] (~1200 mAh), 805060 = [8, 50, 60] (~2000 mAh).
 // [0, 0, 0] = no battery (USB power only); the tray gets shallower.
 cell          = [6, 34, 50];
-cell_foam     = 1.0;    // foam tape under the cell
-cell_at       = [56, 36];   // cell centre in board coordinates (x, y)
+cell_foam     = 0.6;    // VHB foam tape under the cell (e.g. 3M 4930)
+cell_gap      = 0.5;    // cell top to the board's back, where no part is under the board
+cell_at       = [56, 34.6]; // cell centre in board coordinates: between the key sockets and the upper rail
 
 /* [Barometer] */
 baro_mode     = "cockpit";  // "cockpit": vented to cabin air; "static": sealed cup + 4 mm hose barb (needs approval)
@@ -54,7 +55,7 @@ sma_flat      = 5.9;    // D-flat across
 /* [Fasteners] */
 // Brass heat-set inserts and A4 or titanium screws: the magnetometer is on board.
 insert_d      = 4.0;    // M3 x 5.7 heat-set insert, hole for it
-insert_l      = 5.7;
+insert_l      = 4.0;    // M3 x 4 short insert: the dovetail channel runs under the corner columns
 screw_d       = 3.4;
 screw_head_d  = 6.8;    // ISO 10642 countersunk
 boss_d        = 6.6;    // stays inside the 7 mm keep-out around each board hole
@@ -64,14 +65,15 @@ nylon_holes   = ["H1"]; // next to the radio antenna: PA66 screw, no insert, no 
 rail_w        = 6.0;    // dovetail at the mouth
 rail_h        = 2.8;
 rail_angle    = 30;     // flank angle from vertical
-rail_inset    = 7;      // rail centre from the long outer edge
-plate_t       = 3.6;
+rail_inset    = 5.5;    // rail centre from the long outer edge
+plate_t       = 3.0;
 strap_w       = 26;     // for 25 mm webbing or hook-and-loop
 strap_slot    = 3.6;
 wing          = 13;     // plate overhang at each end for the strap slots
+latch_wing    = 19;     // the right wing also carries the latch's release tab
 stop_t        = 6;      // the stop block at the left end
-thumb_z       = 2.6;    // thumbscrew axis above the tray bottom
-thumb_dy      = 12;     // thumbscrew offset from the middle, away from the SMA
+latch_hook    = 1.2;    // how far the snap hook reaches into the notch in the tray
+latch_arm     = [30, 10, 1.8];  // length, width, thickness of the spring arm in the plate
 plate_screw   = 4.3;    // M4 / #8 countersunk
 amps          = [30, 38];  // AMPS hole pattern (RAM and most cockpit mounts)
 quarter_inch_nut = 11.2;   // 1/4"-20 hex nut across corners (+ fit)

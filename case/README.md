@@ -57,7 +57,7 @@ Brass inserts and A4 stainless or titanium screws: the magnetometer is on the bo
 - 3 x M3 x 12 countersunk (ISO 10642), A4 or titanium, through the front into the corner inserts
 - 1 x M3 PA66 (nylon) thread-forming screw for the corner next to the radio antenna (H1): no metal near the antenna
 - 1 x clear polycarbonate cover, 1.0 mm, laser cut (size printed by OpenSCAD as `cover`), glued into the face pocket
-- foam ring for the barometer hood: closed-cell, 1.0 mm thick (squeezed to 0.7 mm), cut to the recess (6.1 x 6.1 mm outside, 2.9 x 2.9 mm inside)
+- foam ring for the barometer hood: closed-cell, 1.0 mm thick (squeezed to 0.7 mm), cut to the recess (5.7 x 5.7 mm outside, 2.9 x 2.9 mm inside)
 - foam ring for the microphone: 1.6 mm ID, 4.0 mm OD, 1.0 mm thick closed-cell (squeezed to 0.7 mm), sits in the recess at the end of the mic tube
 - foam: 0.5 mm closed-cell gasket between glass and face (compressed to 0.3 mm); 1 mm VHB foam pad under the cell
 - Qwiic and camera leads to the outside: cut out the 0.6 mm knock-out next to each socket in the top wall

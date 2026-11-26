@@ -165,8 +165,7 @@ PREROUTE = []
 PREROUTE_PATH = [("J50", "1", [(GX - 13.05, GY - 1.74), (GX - 13.05, GY + 0.5), (GX - 9.0, GY + 4.55), (GX - 7.65, GY + 5.9)], "U10", "11", "F", 0.25),
                  ("L50", "2", [(GX - 10.28, GY - 1.74), (GX - 13.05, GY - 1.74)], None, None, "F", 0.15)]
 
-HOLES = [(4.0, 4.0), (W - 4.0, 4.0), (4.0, H - 4.0), (W - 4.0, H - 4.0),
-         (50.0, 41.0)]          # fifth, 6 mm from the IMU, under the panel: case boss from the back only
+HOLES = [(4.0, 4.0), (W - 4.0, 4.0), (4.0, H - 4.0), (W - 4.0, H - 4.0)]   # corners only: the cell lies behind the middle
 HOLE_KEEPOUT = 7.0             # mm: hole pad diameter (0.5 mm from the edge at the corners), so parts, tracks and vias stay off it on every layer; the case bosses clamp here
 
 
@@ -245,7 +244,7 @@ LABELS = [
     ("PER PERFECTIONEM AD FELICITATEM", DX, 31.5, 0, 1.1, "B", True),
 ]
 LOGO = ("Unicornlines_Logo", 101.5, 52.4)   # 9.5 mm, bottom-right beside DOWN, outside the panel (tools/mklogo.py)
-IMU_AXES = (35.8, 44.2)   # left of the IMU, clear of the H5 boss; origin of the IMU axis arrows (ICM-45686, pin 1 top-left: +X right, +Y up, +Z out of the top; as TDK fig. 14 and CogniPilot's footprint)
+IMU_AXES = (35.8, 44.2)   # left of the IMU; origin of the IMU axis arrows (ICM-45686, pin 1 top-left: +X right, +Y up, +Z out of the top; as TDK fig. 14 and CogniPilot's footprint)
 
 
 def tidy_refs(f, ref):
@@ -304,7 +303,7 @@ def drawings(board):
     rect(DX - 29.4, y1 - 2.0 - 35.28, DX + 29.4, y1 - 2.0)      # active area 58.8 x 35.28 (2.0 mm from the far edge)
     rect(DX - 4.74, y0 - 3.0, DX + 4.74, y0)                    # FPC root, 9.48 wide (folds under the glass)
     for x in KEYS.values():
-        rect(x - 10.0, KY - 8.0, x + 10.0, KY + 8.0)            # 20 x 16 mm printed caps
+        rect(x - 9.0, KY - 7.6, x + 9.0, KY + 7.6)              # 18 x 15.2 mm printed caps (case design)
 
 
 def passive_gnd_vias(board, taken):

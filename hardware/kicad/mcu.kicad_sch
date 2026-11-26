@@ -4274,9 +4274,20 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (no_connect
-    (at 43.18 116.84)
-    (uuid "c5293538-a3fd-538d-184d-33e5f3ea6de2"))
+  (global_label "ILIM_HI"
+    (shape passive)
+    (at 43.18 116.84 180)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify right))
+    (uuid "c5293538-a3fd-538d-184d-33e5f3ea6de2")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 43.18 116.84 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
   (no_connect
     (at 43.18 119.38)
     (uuid "e50321c9-2ae4-bdb6-5f56-41c3039665eb"))
@@ -4308,13 +4319,35 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (no_connect
-    (at 43.18 127)
-    (uuid "49a2b5dd-5006-c260-9287-dc90b6b4583a"))
-  (no_connect
-    (at 43.18 129.54)
-    (uuid "00903505-bdf4-0f84-5c4c-255d47a8d496"))
-  (global_label "CHG_INT_N"
+  (global_label "PWR_HOLD"
+    (shape passive)
+    (at 43.18 127 180)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify right))
+    (uuid "49a2b5dd-5006-c260-9287-dc90b6b4583a")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 43.18 127 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
+  (global_label "ISET_HI"
+    (shape passive)
+    (at 43.18 129.54 180)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify right))
+    (uuid "00903505-bdf4-0f84-5c4c-255d47a8d496")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 43.18 129.54 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
+  (global_label "CHG_STAT_N"
     (shape passive)
     (at 43.18 132.08 180)
     (fields_autoplaced)
@@ -4328,9 +4361,20 @@
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (no_connect
-    (at 43.18 134.62)
-    (uuid "e35fb53d-418a-278f-f929-9411d785ca76"))
+  (global_label "PWR_BTN"
+    (shape passive)
+    (at 43.18 134.62 180)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify right))
+    (uuid "e35fb53d-418a-278f-f929-9411d785ca76")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 43.18 134.62 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
   (global_label "SWO"
     (shape passive)
     (at 93.98 101.6 0)

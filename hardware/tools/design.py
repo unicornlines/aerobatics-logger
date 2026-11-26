@@ -40,34 +40,52 @@ POWER = dict(file="power.kicad_sch", title="Power: USB-C, Li-ion charger, hold-u
          nets={"1": "VBUS", "2": "GND"}),
     dict(ref="U1", lib="Power_Protection:USBLC6-2SC6", value="USBLC6-2SC6", fp="Package_TO_SOT_SMD:SOT-23-6",
          nets={"1": "USB_DP", "6": "USB_DP", "3": "USB_DM", "4": "USB_DM", "2": "GND", "5": "VBUS"}),
-    # Charger and power path: TI BQ25601 (SLUSCK5A), 1S Li-ion, NVDC. VBUS -> RBFET -> PMID -> buck -> SYS; BATFET
-    # between SYS and BAT. Runs the logger with or without a cell; the RBFET also stops the hold-up feeding USB.
-    dict(ref="U13", lib="Battery_Management:BQ25601", value="BQ25601", mpn="BQ25601RTWR",
-         fp="logger:Texas_RTW_WQFN-24-1EP_4x4mm_P0.5mm_EP2.7x2.7mm_ThermalVias",
-         nets={"1": "VBUS", "24": "VBUS", "23": "CHG_PMID", "19": "CHG_SW", "20": "CHG_SW", "21": "CHG_BTST",
-               "22": "CHG_REGN", "15": "VSYS", "16": "VSYS", "13": "VBAT", "14": "VBAT",
-               "17": "GND", "18": "GND", "25": "GND", "9": "GND",
-               "2": "CHG_PSEL", "3": "NC", "4": "CHG_STAT", "5": "I2C1_SCL", "6": "I2C1_SDA", "7": "CHG_INT_N",
-               "8": "NC", "10": "NC", "11": "CHG_TS", "12": "PWR_BTN_N"}),
-    C("C2", "1u 25V", "VBUS", "GND", fp=C0603),                          # at VBUS pin 24
-    C("C100", "22u 16V", "CHG_PMID", "GND", fp=C0805),                  # TI: 10u, 22u for 3 A; about 10u left at 5 V bias
-    C("C102", "4.7u 10V", "CHG_REGN", "GND", fp=C0603),
-    C("C103", "47n", "CHG_SW", "CHG_BTST"),
-    dict(ref="L2", lib="Device:L", value="1u 3.6A", mpn="SWPA4030S1R0NT", fp="Inductor_SMD:L_Changjiang_FNR4030S",
-         nets={"1": "CHG_SW", "2": "VSYS"}),
+    # Charger and power path: TI BQ24074 (SLUS810N), linear, 1S Li-ion. IN (VBUS) -> OUT (VSYS, regulated to 4.4 V)
+    # with dynamic power-path management; BAT is charged from OUT and feeds OUT through its own FET when IN is gone.
+    # Charge current and input limit are set by resistors, so the hardware default is safe for the smallest cell;
+    # firmware only switches in a second resistor once the owner has entered the cell size.
+    dict(ref="U13", lib="Battery_Management:BQ24074RGT", value="BQ24074", mpn="BQ24074RGTR",
+         fp="Package_DFN_QFN:VQFN-16-1EP_3x3mm_P0.5mm_EP1.68x1.68mm",
+         nets={"13": "VBUS", "10": "VSYS", "11": "VSYS", "2": "VBAT", "3": "VBAT", "1": "CHG_TS",
+               "4": "GND", "6": "GND", "5": "CHG_EN2", "7": "NC", "8": "GND", "17": "GND",
+               "9": "CHG_STAT_N", "12": "CHG_ILIM", "14": "CHG_TMR", "15": "NC", "16": "CHG_ISET"}),
+    C("C2", "1u 25V", "VBUS", "GND", fp=C0603),
     C("C104", "10u 10V", "VSYS", "GND", fp=C0805), C("C105", "10u 10V", "VSYS", "GND", fp=C0805),
     C("C106", "10u 10V", "VBAT", "GND", fp=C0805),
-    # TS: 5.23k/30.1k divider with the pack's own 10k B3380 NTC (J2 pin 2) -> JEITA corners at about 0/10/45/60 C.
-    # No NTC (open TS) reads as below 0 C, so a pack without a thermistor is never charged.
-    R("R100", "5.23k 1%", "CHG_REGN", "CHG_TS"), R("R101", "30.1k 1%", "CHG_TS", "GND"),
-    R("R102", "100k", "CHG_REGN", "CHG_PSEL"),                         # PSEL high: 500 mA input until firmware says otherwise
-    R("R103", "10k", "CHG_INT_N", "+3V3"),
-    R("R104", "1k", "VSYS", "CHG_LED_A"),
+    # EN2 high, EN1 low: input current limit from ILIM (table 7-2). CE low: charging enabled.
+    R("R100", "10k", "VSYS", "CHG_EN2"),
+    # ISET: ICHG = 890 A-ohm / RISET. 3.57k = 0.25 A (any cell from 250 mAh at 1C); with Q5 on, 3.57k || 1.18k = 1.0 A.
+    R("R101", "3.57k 1%", "CHG_ISET", "GND"), R("R102", "1.18k 1%", "CHG_ISET", "ISET_SW"),
+    dict(ref="Q5", lib="Transistor_FET:2N7002", value="2N7002", mpn="2N7002", fp="Package_TO_SOT_SMD:SOT-23",
+         nets={"1": "ISET_HI", "2": "GND", "3": "ISET_SW"}),
+    R("R103", "100k", "ISET_HI", "GND"),
+    # ILIM: IIN = 1525-1610 A-ohm / RILIM. 3.48k = 0.44 A (USB default 500 mA); with Q6 on, 3.48k || 1.74k = 1.39 A
+    # (only when the CC level shows a 1.5 A or 3 A source).
+    R("R114", "3.48k 1%", "CHG_ILIM", "GND"), R("R115", "1.74k 1%", "CHG_ILIM", "ILIM_SW"),
+    dict(ref="Q6", lib="Transistor_FET:2N7002", value="2N7002", mpn="2N7002", fp="Package_TO_SOT_SMD:SOT-23",
+         nets={"1": "ILIM_HI", "2": "GND", "3": "ILIM_SW"}),
+    R("R116", "100k", "ILIM_HI", "GND"),
+    # Safety timer: pre-charge 48 s/k x 71.5k = 57 min, fast charge 10x = 9.5 h. ITERM open: 10 % termination.
+    R("R117", "71.5k 1%", "CHG_TMR", "GND"),
+    # Charge LED from VBUS (so it can never leak from the cell), CHG also read by the MCU (PD6, 5 V tolerant).
+    # The weak pull-up holds the node near 3.3 V when not charging, so the LED sees under 1.7 V and stays dark.
+    R("R104", "1.5k", "VBUS", "CHG_LED_A"),
     dict(ref="D22", lib="Device:LED", value="orange", fp="LED_SMD:LED_0603_1608Metric",
-         nets={"2": "CHG_LED_A", "1": "CHG_STAT"}),
-    # Power button on QON: 1 s press leaves ship mode (on), 8 s press without USB power-cycles the system.
-    dict(ref="SW4", lib="Switch:SW_Push", value="PWR", fp="Button_Switch_SMD:SW_Push_1P1T_NO_CK_KMR2",
-         nets={"1": "PWR_BTN_N", "2": "GND"}),
+         nets={"2": "CHG_LED_A", "1": "CHG_STAT_N"}),
+    R("R118", "100k", "CHG_STAT_N", "+3V3"),
+    # Soft power latch on the 3.3 V buck's EN: any of the power button, the MCU's hold line or USB power turns it on.
+    # 1M / 1u keeps EN up for about 2 s, so a firmware reset never drops power. USB enters through 100k so EN
+    # stays below VSYS (about 4.3 V).
+    dict(ref="SW4", lib="Switch:SW_Push", value="PWR", mpn="SKRTLAE010",
+         fp="logger:SW_Alps_SKRTLAE010_SidePush", nets={"1": "VSYS", "2": "PWR_KEY"}),
+    dict(ref="D23", lib="Diode:BAT54C", value="BAT54C", mpn="BAT54C", fp="Package_TO_SOT_SMD:SOT-23",
+         nets={"1": "PWR_KEY", "2": "PWR_HOLD", "3": "PWR_EN"}),
+    R("R119", "100k", "VBUS", "PWR_VBUS"),
+    dict(ref="D24", lib="Diode:BAT54W", value="BAT54W", mpn="BAT54W", fp="Package_TO_SOT_SMD:SOT-323_SC-70",
+         nets={"1": "PWR_VBUS", "2": "NC", "3": "PWR_EN"}),
+    R("R120", "1M", "PWR_EN", "GND"), C("C110", "1u", "PWR_EN", "GND"),
+    # Button sense for the MCU (PD7): 100k / 470k keeps the pin under 3.7 V at VSYS 4.4 V and above VIH at 3.0 V.
+    R("R121", "100k", "PWR_KEY", "PWR_BTN"), R("R122", "470k", "PWR_BTN", "GND"),
     # Battery: JST PH 3-pin (1 cell -, 2 NTC, 3 cell +), fuse, reverse-polarity PMOS (conducts both ways once its
     # body diode lets the gate see -VBAT).
     dict(ref="J2", lib="Connector_Generic:Conn_01x03", value="BATTERY 1S",
@@ -97,7 +115,7 @@ POWER = dict(file="power.kicad_sch", title="Power: USB-C, Li-ion charger, hold-u
     # One ADC pin for both CC lines: the open one sits at 0 V on its 5.1k, so the node reads about half the active one
     # (0.51 x Vcc). 2 x 100k loads Rd by 2.5 %, inside the USB-C vRd windows for Default, 1.5 A and 3 A.
     R("R108", "100k", "USB_CC1", "CC_SENSE"), R("R109", "100k", "USB_CC2", "CC_SENSE"), C("C108", "100n", "CC_SENSE", "GND"),
-    # Hold-up: 2 x 1 F / 2.7 V in series = 0.5 F, charged through R4, discharged through D2.
+    # Hold-up: 2 x 1 F / 2.7 V in series = 0.5 F (5.4 V across 4.4 V), charged through R4, discharged through D2.
     R("R4", "10R 0.5W", "VSYS", "HOLD_TOP", fp="Resistor_SMD:R_1206_3216Metric"),
     dict(ref="D2", lib="Device:D_Schottky", value="B5819W", mpn="B5819W", fp="Diode_SMD:D_SOD-123",
          nets={"2": "HOLD_TOP", "1": "VSYS"}),
@@ -109,7 +127,7 @@ POWER = dict(file="power.kicad_sch", title="Power: USB-C, Li-ion charger, hold-u
     R("R6", "100k", "HOLD_MID", "GND"),
     # 3.3 V buck, TPS62130 adjustable: Vout = 0.8 V x (1 + R7/R8) = 3.33 V
     dict(ref="U3", lib="Regulator_Switching:TPS62130", value="TPS62130", fp="Package_DFN_QFN:VQFN-16-1EP_3x3mm_P0.5mm_EP1.68x1.68mm",
-         nets={"10": "VSYS", "11": "VSYS", "12": "VSYS", "13": "VSYS",
+         nets={"10": "VSYS", "11": "VSYS", "12": "VSYS", "13": "PWR_EN",
                "1": "BUCK_SW", "2": "BUCK_SW", "3": "BUCK_SW",
                "14": "+3V3", "5": "BUCK_FB", "4": "PG_3V3",
                "7": "GND", "8": "GND", "9": "BUCK_SS",
@@ -140,12 +158,13 @@ POWER = dict(file="power.kicad_sch", title="Power: USB-C, Li-ion charger, hold-u
     FLAG("#FLG01", "VBUS"), FLAG("#FLG02", "VSYS"), FLAG("#FLG03", "+3V3"),
     FLAG("#FLG04", "GND"), FLAG("#FLG05", "+3V3A"), FLAG("#FLG06", "VBAT"), FLAG("#FLG07", "BAT_NEG"),
 ], notes=[
-    "Battery optional: one bare 1S Li-ion/LiPo cell, at least 2000 mAh, with a 10k B3380 NTC on the cell (3-wire JST PH: 1 -, 2 NTC, 3 +).",
-    "Three independent layers: charger (VREG, ICHG, JEITA from the pack NTC, safety timer), BQ29700 + 2 FETs (OV 4.275 V, UV 2.8 V, OC about 2 A, short), 3 A fuse.",
-    "Charger I2C address 0x6B on I2C1 (shared with the BMM350 at 0x14). Firmware: SYS_MIN 3.7 V, ICHG at most 1 A (0.5C), IINDPM from the CC level, watchdog on.",
-    "Hold-up with no cell: VSYS of 3.9 to 4.2 V down to 3.0 V gives the 0.5 F about 1.5 to 2 J, about 1.5 s at 1.2 W with the radio off.",
+    "Battery optional: one 1S Li-ion/LiPo cell from 250 mAh up, with a 10k NTC (103AT type) in the pack (3-wire JST PH: 1 -, 2 NTC, 3 +).",
+    "Three independent layers: charger (4.2 V, resistor-set current, 0-50 C window from the pack NTC, safety timer), BQ29700 + 2 FETs (OV 4.275 V, UV 2.8 V, OC about 2 A, short), 3 A fuse.",
+    "Charge current: 0.25 A by hardware; firmware turns on Q5 (1.0 A) only for a cell of 1000 mAh or more as entered in setup. No NTC: no charging.",
+    "Input limit: 0.44 A by hardware; Q6 raises it to 1.39 A when CC_SENSE shows a 1.5 A or 3 A source.",
+    "Hold-up with no cell: VSYS 4.4 V down to 3.0 V gives the 0.5 F about 2.6 J, about 2 s at 1.2 W with the radio off.",
     "PWR_FAIL_N goes low when VBUS falls below about 4.3 V. With a cell fitted the firmware keeps logging and watches VBAT_SENSE instead.",
-    "Off: firmware sets BATFET_DIS (ship mode). On: PWR held 1 s, or USB plugged in.",
+    "On: press PWR, or plug in USB. The MCU then drives PWR_HOLD high. Off: long press (read on PWR_BTN), firmware releases PWR_HOLD.",
 ])
 
 # ---------------------------------------------------------------- MCU
@@ -160,7 +179,7 @@ MCU_NETS = {
     "28": "IMU_CS", "29": "IMU_SCK", "30": "IMU_MISO", "31": "IMU_MOSI", "32": "IMU_INT2",
     # barometer on SPI2
     "51": "BARO_CS", "52": "BARO_SCK", "53": "BARO_MISO", "54": "BARO_MOSI",
-    # I2C1: magnetometer and battery charger
+    # I2C1: magnetometer
     "92": "I2C1_SCL", "93": "I2C1_SDA", "95": "EXP_SCL", "96": "EXP_SDA", "77": "MARKER",
     # GNSS on USART2 (names from the module's side)
     "24": "GNSS_RXD", "25": "GNSS_TXD", "15": "GNSS_RESET_N",
@@ -174,7 +193,9 @@ MCU_NETS = {
     # radio control and its UART0 (USART3: bootloader, console); names from the module's side
     "45": "RADIO_EN_MCU", "61": "RADIO_BOOT", "55": "RADIO_RXD", "56": "RADIO_TXD",
     # buttons, power fail, camera sync, LED
-    "37": "BTN_1", "38": "BTN_2", "39": "BTN_3", "34": "PWR_FAIL_N", "87": "CHG_INT_N",
+    "37": "BTN_1", "38": "BTN_2", "39": "BTN_3", "34": "PWR_FAIL_N",
+    # power latch and charger: PD4 hold, PD7 button sense, PD6 CHG status, PD5 / PD0 charge and input current steps
+    "85": "PWR_HOLD", "88": "PWR_BTN", "87": "CHG_STAT_N", "86": "ISET_HI", "81": "ILIM_HI",
     # ADC: battery voltage (PC1, ADC1_INP11) and the USB-C CC level (PC5, ADC12_INP8)
     "16": "VBAT_SENSE", "33": "CC_SENSE", "35": "CAM_SYNC", "40": "LED_STATUS",
     # USB and debug
@@ -313,17 +334,23 @@ IO = dict(file="io.kicad_sch", title="IO: log flash, microSD, e-paper display, b
          nets={"2": "EPD_PUMP", "1": "GND"}),
     dict(ref="D62", lib="Device:D_Schottky", value="MBR0530", fp="Diode_SMD:D_SOD-123",
          nets={"2": "EPD_VGL", "1": "EPD_PUMP"}),
-    dict(ref="SW1", lib="Switch:SW_Push", value="BTN_1", fp="Button_Switch_SMD:SW_Push_1P1T_NO_CK_KMR2",
+    dict(ref="SW1", lib="Switch:SW_Push", value="UP", mpn="SKRTLAE010",
+         fp="logger:SW_Alps_SKRTLAE010_SidePush",
          nets={"1": "BTN_1", "2": "GND"}),
-    dict(ref="SW2", lib="Switch:SW_Push", value="BTN_2", fp="Button_Switch_SMD:SW_Push_1P1T_NO_CK_KMR2",
+    dict(ref="SW2", lib="Switch:SW_Push", value="OK", mpn="SKRTLAE010",
+         fp="logger:SW_Alps_SKRTLAE010_SidePush",
          nets={"1": "BTN_2", "2": "GND"}),
-    dict(ref="SW3", lib="Switch:SW_Push", value="BTN_3", fp="Button_Switch_SMD:SW_Push_1P1T_NO_CK_KMR2",
+    dict(ref="SW3", lib="Switch:SW_Push", value="DOWN", mpn="SKRTLAE010",
+         fp="logger:SW_Alps_SKRTLAE010_SidePush",
          nets={"1": "BTN_3", "2": "GND"}),
     R("R66", "100R", "CAM_SYNC", "CAM_SYNC_OUT"),
     # Camera sync out and the pilot's marker button share one header: 1 sync out, 2 GND, 3 marker (button to GND)
     dict(ref="J62", lib="Connector_Generic:Conn_01x03", value="CAM / MARK",
          fp="Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
          nets={"1": "CAM_SYNC_OUT", "2": "GND", "3": "MARKER_IN"}),
+    # On-unit marker button, in parallel with the external one (same 1k / 100n filter)
+    dict(ref="SW5", lib="Switch:SW_Push", value="MARKER", mpn="SKRTLAE010",
+         fp="logger:SW_Alps_SKRTLAE010_SidePush", nets={"1": "MARKER_IN", "2": "GND"}),
     R("R68", "1k", "MARKER_IN", "MARKER"), R("R69", "10k", "MARKER", "+3V3"), C("C72", "100n", "MARKER", "GND"),
     # Expansion: Qwiic / STEMMA QT pin order (1 GND, 2 3V3, 3 SDA, 4 SCL) on I2C4, e.g. for an airspeed sensor
     dict(ref="J63", lib="Connector_Generic:Conn_01x04", value="I2C EXP (Qwiic)",
@@ -339,7 +366,8 @@ IO = dict(file="io.kicad_sch", title="IO: log flash, microSD, e-paper display, b
     "E-paper pin table from the GDEY0213B74 datasheet, section 5 (pin 8 is BS1, tied low for 4-wire SPI; 6/7 TSCL/TSDA and 19 VPP unused, open).",
     "Booster as Good Display's reference: 47 uH, 30 V N-MOSFET, 2.2 ohm sense, MBR0530 diodes, 1 uF 50 V on the gate and source rails.",
     "Panel operating range is 0 to 50 C: firmware skips refreshes outside it (BMP390 temperature).",
-    "Buttons use the MCU's internal pull-ups; debounce in firmware.",
+    "Buttons: five Alps SKRTLAE010 side-push switches on one long edge (UP, OK, DOWN, MARKER, PWR); the case carries the caps and the seal.",
+    "UP / OK / DOWN use the MCU's internal pull-ups; debounce in firmware.",
     "Marker input: 1k series, 10k pull-up, 100 nF (1 ms) against cable noise; EXTI15 on PA15, timestamped from TIM2.",
     "Expansion 3V3 goes through a 100 mA PTC so a shorted cable cannot pull down the logger.",
 ])

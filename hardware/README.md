@@ -21,13 +21,13 @@ kicad-cli sch export pdf ../kicad/logger.kicad_sch -o ../kicad/logger.pdf
 
 ![Board, top](renders/board-hero.png)
 
-- 124 x 62 mm (2:1), 4 layers, 1.6 mm: F.Cu signals and GND pour, In1 solid GND, In2 +3V3 pour with a few signal runs, B.Cu signals and GND pour. Every part is SMD; the only parts on the back are the three key sockets and the microphone with its decoupling cap.
+- 124 x 62 mm (2:1), 4 layers, 1.6 mm: F.Cu signals and GND pour, In1 solid GND, In2 +3V3 pour with a few signal runs, B.Cu signals and GND pour. Every part is SMD; the only parts on the back are the three key sockets, the microphone with its decoupling cap, and the barometer's two decoupling caps.
 - Rules: 0.15 mm track and clearance, 0.5/0.25 mm vias, 0.4 mm for the power path.
 - Front face: the Sharp 2.7-inch memory LCD centred at the top, the three keys (UP, OK / PWR, DOWN) centred under it. Under the panel only parts up to 2.9 mm tall: the MCU with its crystals, the log flash, the 3.3 V buck and the LCD's 5 V boost and FPC socket.
 - Floor plan around the panel: radio (top-left corner, antenna up) and GNSS on the left, sensors below them; USB-C and microSD on the right short edge (the card goes in through the case wall), the charger, USB protection and power latch beside them; the battery socket and its protection in the bottom-right corner, with the logo beside the DOWN key. Passives sit in straight rows and columns next to the pins they serve.
 - Top edge: radio antenna, Qwiic socket (J63), camera/marker socket (J62, JST SUR, for a lead inside the case) and the LCD's FPC fold.
 - The IMU moved from the Bosch BMI563 (still not on sale) to the TDK ICM-45686 on 2026-11-25.
-- The magnetometer sits at the left end, as far as possible from the buck and the battery currents; the barometer sits bottom-left beside the UP key and needs the case's hose chamber over it.
+- The magnetometer sits at the left end, as far as possible from the buck and the battery currents; the barometer sits bottom-left beside the UP key at (22.5, 53.5), with a part-free ring round it where the case seals its hood: open to cockpit air, or with a barb for the static-port hose.
 - Cockpit air temperature and humidity: a Sensirion SHT40 sits on a small tongue at the left edge, cut free by an L-shaped 1 mm milled notch in from the left edge, so heat from the board reaches it only through the neck below it. The case needs a vent in the left wall in front of it.
 - Microphone: an Infineon IM69D130 PDM MEMS mic (130 dB SPL acoustic overload, so engine and wind noise do not clip it) on the back just left of the display, porting through a 0.8 mm hole in the board to the front. Engine RPM and sound events go into the log.
 - Storage: flights are logged to the soldered 512 MB GigaDevice GD5F4GM8UE flash next to the MCU (about 4.5 hours of raw logging; stocked at JLCPCB); the microSD keeps a backup copy and serves firmware updates and export.
@@ -51,6 +51,7 @@ Mechanical data for the case (mm from the board's top-left corner, y down; heigh
 | Camera/marker J62 (JST SUR) | (46.5, 2.9) | 1.75 | plug from the top edge |
 | Qwiic J63 (JST SH) | (35, 3.4) | 2.9 | plug from the top edge |
 | Humidity sensor U17 (SHT40) | (3.2, 45.8) | 0.5 | on a tongue cut free by the L notch (1 mm wide: in from the left edge along y 41.0 to x 6.2, then down to y 50.8). Needs a vent in the left wall right in front of it and free air over it; no foam, glue or seal on the tongue |
+| Barometer U7 (BMP390) | (22.5, 53.5) | 0.8 | the front is free of parts in x 19.45-25.55, y 50.45-56.55 (1.8 mm round the courtyard) for the hood's seal ring; only tented vias and tracks under it. Its caps C42 / C43 are on the back under it |
 | Microphone MK1 (IM69D130) | port hole (26.5, 40.32), 0.8 mm | 1.2 below B.Cu | bottom-port mic on the back, just left of the LCD module (whose edge is at x 30.6); sound comes in from the front through the hole, so the port sits in the bezel beside the display window. Keep a 3 mm circle around the hole on the front free; the case puts a hole or short tube in front of it with a gasket ring sealing onto the board, so the mic hears the cockpit and not the case cavity |
 
 

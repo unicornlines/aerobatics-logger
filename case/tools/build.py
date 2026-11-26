@@ -58,6 +58,8 @@ VIEWS = {
     "left":     {"set": "assembled", "dir": [-1.0, -0.45, 0.35], "dist": 3.2, "fov": 20},
     # through the microphone port (keep y > cut, look from -y) and through the humidity chamber
     "section-mic": {"set": "assembled", "dir": [-0.25, -1.0, 0.3], "dist": 1.3, "fov": 20, "clip": [0, 1, 0, -21.68], "shift": [-40, 0, 0]},
+    # cut just under the face, from above: mic and barometer ducts, humidity chamber (left end of the unit)
+    "section-ducts": {"set": "assembled", "dir": [0.15, -0.35, 1.0], "dist": 1.1, "fov": 20, "clip": [0, 0, -1, 4.6], "shift": [-42, -12, 0]},
     "released": {"set": "released", "dir": [-0.45, -1.0, 0.5], "dist": 2.9, "fov": 20},
 }
 

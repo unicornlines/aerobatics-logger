@@ -60,7 +60,7 @@ Brass inserts and A4 stainless or titanium screws: the magnetometer is on the bo
 - foam ring for the microphone: 1.6 mm ID, 4.0 mm OD, 1.0 mm thick closed-cell (squeezed to 0.7 mm), sits in the recess at the end of the mic tube
 - foam: 0.5 mm closed-cell gasket between glass and face (compressed to 0.3 mm); 1 mm VHB foam pad under the cell
 - Qwiic and camera leads to the outside: cut out the 0.6 mm knock-out next to each socket in the top wall
-- optional: SMA bulkhead to U.FL pigtail (100 mm) for the GNSS antenna; ePTFE vent sticker (6 mm) under the barometer vent
+- optional: SMA bulkhead to U.FL pigtail (100 mm) for the GNSS antenna; ePTFE vent sticker (4 mm) inside the bottom-wall barometer port
 - mount: 4 x M4 countersunk (or the AMPS pattern, or one 1/4"-20 nut), 25 mm webbing / hook-and-loop strap
 
 ## Humidity sensor and microphone
@@ -68,8 +68,12 @@ Brass inserts and A4 stainless or titanium screws: the magnetometer is on the bo
 - The SHT40 sits on a tongue the board cuts free with an L-shaped notch. Two slots in the left wall open
   right in front of it, and baffles on both sides of the board (stopping 0.4 mm short of it) make a small
   chamber, so it reads cockpit air and not the warm case. Nothing touches the tongue: no rib, foam or glue.
-- The microphone hears through a 0.8 mm hole in the board. A tube from the face (1.2 mm bore) seals onto the
-  board front with a foam ring, so it hears the cockpit, not the case cavity. Outside, a small ring marks the port.
+- The microphone hears through a 0.8 mm hole in the board. A short tube seals onto the board front with a foam
+  ring; from its top a 1.2 mm duct inside the face runs sideways into the humidity chamber, so the mic hears the
+  cockpit through the left-wall vent and the face stays clean (no hole on top).
+- The barometer sits under a hood (0.35 mm over the parts round it, not sealed) with a 1.4 mm duct out through
+  the bottom wall, next to the keys. It keeps light, draughts and warm case air off the sensor.
+- `case-section-ducts` shows all three from above.
 - `case-section-mic` shows both.
 
 ## How it holds the IMU still
@@ -92,7 +96,7 @@ off for charging and the SD card stays reachable on the right edge in either cas
 
 ## Barometer
 
-`baro_mode = "cockpit"` (default): the vent is open to cabin air. `"static"` is prepared but needs
+`baro_mode = "cockpit"` (default): a hood over the sensor, ported to cabin air through the bottom wall. `"static"` is prepared but needs
 approval before it is used on an aircraft: a sealed cup over the sensor, fed from a hose barb in
 the left wall.
 
@@ -112,7 +116,7 @@ the left wall.
 
 <details><summary>Easter eggs (spoilers)</summary>
 
-- The barometer vent is the Aresti symbol for a loop: start dot, loop, end bar. Every stroke is an opening.
+- The Aresti symbol for a loop (start dot, loop, end bar) sits on the face over the barometer. It used to be its vent.
 - The charge LED shines through a unicorn horn.
 - The IMU's origin and axes are marked on the case where the sensor sits (when the display does not cover it).
 - Inside the face and on the tray floor: PER PERFECTIONEM AD FELICITATEM.

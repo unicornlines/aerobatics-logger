@@ -167,11 +167,10 @@ module front() {
         translate([0, 0, z_split - 0.01]) linear_extrude(1.2 + 0.3) offset(delta = fit / 2) tongue();
         // side openings
         usb_cut(); sd_cut(); flex_relief(); battery_lead_gully(); knockouts();
-        rh_vent(); mic_port_cut();
+        rh_vent(); baro_cut();
         // barometer
         if (has("baro")) translate([vent_xy().x, vent_xy().y, 0]) {
-            if (baro_mode == "cockpit") translate([0, 0, z_face_in - 1]) linear_extrude(face_t + 2) aresti_loop();
-            else translate([0, 0, z_face - first_colour_t]) linear_extrude(1) aresti_loop();  // the mark stays, as an inlay
+            translate([0, 0, z_face - first_colour_t]) linear_extrude(1) aresti_loop();   // the mark only: the sensor breathes through the bottom wall
         }
         // LEDs: thin first-colour skin glows; the charge LED is a horn
         for (i = [0:len(feats("led")) - 1]) let(l = feats("led")[i], charge = fxy(l).x > W * 0.6)
@@ -190,8 +189,7 @@ module front() {
         translate([0, 0, -1]) cylinder(d = screw_d, h = 20);
     }
     if (lcd) carrier_lugs();
-    rh_baffles(rh_gap, z_face_in + 0.01);
-    difference() { mic_tube(); mic_port_cut(); }
+    difference() { union() { rh_baffles(rh_gap, z_face_in + 0.01); mic_solid(); baro_solid(); } mic_bore_cut(); baro_cut(); }
     // tongue-and-groove: the front shell's groove is cut below; tray carries the tongue
     if (baro_mode == "static") static_cup();
 }
@@ -324,21 +322,39 @@ module rh_vent() if (has("rh")) let(c = fxy(feat("rh")))
     for (z = [1.1, 3.1]) translate([-board_gap - wall - 1, c.y, z]) rotate([0, 90, 0]) linear_extrude(wall + 1.5)
         hull() for (dy = [-3.2, 3.2]) translate([0, dy]) circle(d = 1.1, $fn = 16);
 
-// Bottom-port microphone: it hears through a hole in the board. A tube from the face seals onto the board
-// front with a foam ring, so it hears the cockpit, not the case. Outside: a small ring around the hole.
+// Bottom-port microphone: it hears through a hole in the board. A short tube seals onto the board front with a
+// foam ring; from its top a duct inside the face runs sideways into the humidity chamber, so the mic hears the
+// cockpit through the left-wall vent and the face stays clean.
 mic_tube_d = 4.6;
 mic_bore = 1.2;
 mic_seal = [1.6, 4.0, 1.0];                   // foam ring: inner, outer, free thickness (squeezed to 0.7)
 mic_tube_z = 0.4;                             // tube end above the board front; a 0.3 mm recess locates the ring
-module mic_tube() if (has("mic_port")) let(p = fxy(feat("mic_port")))
-    translate([p.x, p.y, mic_tube_z]) difference() {
-        cylinder(d = mic_tube_d, h = z_face_in - mic_tube_z + 0.01, $fn = 32);
-        translate([0, 0, -1]) cylinder(d = mic_bore, h = 20, $fn = 16);
-        translate([0, 0, -0.01]) cylinder(d = mic_seal[1] + 0.2, h = 0.3, $fn = 32);
-    }
-module mic_port_cut() if (has("mic_port")) let(p = fxy(feat("mic_port"))) translate([p.x, p.y, 0]) {
-    cylinder(d = mic_bore, h = 20, $fn = 16);
-    translate([0, 0, z_face - first_colour_t]) linear_extrude(1) difference() { circle(d = 3.4, $fn = 40); circle(d = 2.6, $fn = 40); }
+mic_duct_z = 2.7;                             // duct underside: clears the parts it crosses (2.4 mm at most)
+mic_duct_d = 2.6;
+function mic_duct_end() = has("rh") ? [rh_box()[2] - 0.6, rh_box()[3] - 1.2] : [-board_gap - wall - 1, fxy(feat("mic_port")).y];
+function mic_bore_z() = (mic_duct_z + z_face_in) / 2;
+module mic_solid() if (has("mic_port")) let(p = fxy(feat("mic_port")), e = mic_duct_end()) {
+    translate([p.x, p.y, mic_tube_z]) cylinder(d = mic_tube_d, h = z_face_in - mic_tube_z + 0.01, $fn = 32);
+    hull() for (q = [p, e]) translate([q.x, q.y, mic_duct_z]) cylinder(d = mic_duct_d, h = z_face_in - mic_duct_z + 0.01, $fn = 20);
+}
+module mic_bore_cut() if (has("mic_port")) let(p = fxy(feat("mic_port")), e = mic_duct_end(), zb = mic_bore_z()) {
+    translate([p.x, p.y, -1]) cylinder(d = mic_bore, h = zb + 1, $fn = 16);
+    hull() for (q = [p, e - [0.8, 0]]) translate([q.x, q.y, zb]) sphere(d = mic_bore, $fn = 16);
+    translate([p.x, p.y, mic_tube_z - 0.01]) cylinder(d = mic_seal[1] + 0.2, h = 0.3, $fn = 32);
+}
+
+// Barometer (cockpit mode): a hood over the sensor, 0.35 mm above the parts round it, with a duct out through
+// the bottom wall. Not sealed: it keeps light, draughts and warm case air off the sensor; pressure is the same.
+baro_hood_gap = 0.35;
+function baro_hood_bb() = let(b = fbb(feat("baro"))) [b[0] - 2.2, b[1] - 1.6, min(b[2] + 1.6, kb0.x - 1.2), b[3] + 1.6];
+function baro_hood_z() = max([for (q = board_parts) let(c = q[2], r = baro_hood_bb()) if (q[1] == "F" && c[2] > r[0] && c[0] < r[2] && c[3] > r[1] && c[1] < r[3]) q[3]]) + baro_hood_gap;
+module baro_solid() if (has("baro") && baro_mode == "cockpit") let(r = baro_hood_bb(), c = fxy(feat("baro")), zh = baro_hood_z()) {
+    translate([r[0] - 0.8, r[1] - 0.8, zh]) cube([r[2] - r[0] + 1.6, r[3] - r[1] + 1.6, z_face_in - zh + 0.01]);
+    hull() for (y = [r[1], -board_gap - 0.5]) translate([c.x, y, mic_duct_z]) cylinder(d = mic_duct_d, h = z_face_in - mic_duct_z + 0.01, $fn = 20);
+}
+module baro_cut() if (has("baro") && baro_mode == "cockpit") let(r = baro_hood_bb(), c = fxy(feat("baro")), zh = baro_hood_z()) {
+    translate([r[0], r[1], zh - 1]) cube([r[2] - r[0], r[3] - r[1], z_face_in - 0.6 - zh + 1]);
+    hull() for (y = [r[1] + 1, -board_gap - wall - 1]) translate([c.x, y, mic_bore_z()]) rotate([90, 0, 0]) cylinder(d = 1.4, h = 0.01, $fn = 16);
 }
 
 // ---------------------------------------------------------------- key bridge (also the switch plate)
@@ -659,6 +675,9 @@ if (has("rh")) let(r = rh_box()) for (q = board_parts) let(b = q[2]) if (q[0] !=
     echo(str("CHECK: humidity chamber baffle crosses ", q[0]));
 if (has("mic_port")) let(p = fxy(feat("mic_port"))) for (q = board_parts) let(b = q[2]) if (q[1] == "F" && b[2] > p.x - mic_tube_d / 2 && b[0] < p.x + mic_tube_d / 2 && b[3] > p.y - mic_tube_d / 2 && b[1] < p.y + mic_tube_d / 2)
     echo(str("CHECK: microphone tube lands on ", q[0]));
+if (has("baro") && baro_mode == "cockpit") let(r = baro_hood_bb()) if (r[2] + 0.8 > kb0.x - 0.2) echo("CHECK: barometer hood touches the key bridge");
+if (has("mic_port")) let(p = fxy(feat("mic_port")), e = mic_duct_end()) for (q = board_parts) let(b = q[2]) if (q[1] == "F" && q[3] > mic_duct_z - 0.25 && b[2] > min(p.x, e.x) - 1.3 && b[0] < max(p.x, e.x) + 1.3 && b[3] > min(p.y, e.y) - 1.3 && b[1] < max(p.y, e.y) + 1.3)
+    echo(str("CHECK: microphone duct passes over ", q[0], " (", q[3], " mm)"));
 if (lcd && len(lcd_posts) < 4) echo("CHECK: fewer than 4 free spots for display posts");
 for (p = kb_feet()) for (q = board_parts) if (q[1] == "F" && p.x > q[2][0] - 1.2 && p.x < q[2][2] + 1.2 && p.y > q[2][1] - 1.2 && p.y < q[2][3] + 1.2)
     echo(str("CHECK: key bridge foot at ", p, " lands on ", q[0]));

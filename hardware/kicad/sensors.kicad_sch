@@ -915,79 +915,50 @@
             (effects
               (font
                 (size 1.27 1.27)))))))
-    (symbol "Sensor_Audio:IM69D130"
-      (pin_names
-        (offset 0.254))
+    (symbol "logger:MP34DT06J"
       (in_bom yes)
       (on_board yes)
       (property "Reference" "MK"
-        (at -7.62 6.35 0)
+        (at -10.16 6.35 0)
         (effects
           (font
             (size 1.27 1.27))
           (justify left)))
-      (property "Value" "IM69D130"
-        (at 1.27 6.35 0)
+      (property "Value" "MP34DT06J"
+        (at 10.16 6.35 0)
         (effects
           (font
             (size 1.27 1.27))
-          (justify left)))
-      (property "Footprint" "Sensor_Audio:Infineon_PG-LLGA-5-1"
-        (at 17.78 -7.62 0)
-        (effects
-          (font
-            (size 1.27 1.27) italic) hide))
-      (property "Datasheet" "https://www.infineon.com/dgdl/Infineon-IM69D130-DS-v01_00-EN.pdf?fileId=5546d462602a9dc801607a0e46511a2e"
+          (justify right)))
+      (property "Footprint" "logger:ST_HCLGA-4_3x4mm_MP34DT06J"
         (at 0 0 0)
         (effects
           (font
             (size 1.27 1.27)) hide))
-      (property "ki_keywords" "mems microphone"
+      (property "Datasheet" ""
         (at 0 0 0)
         (effects
           (font
             (size 1.27 1.27)) hide))
-      (property "ki_description" "High performance digital XENSIV MEMS microphone, -36 dBFS Sensitivity, LLGA-5"
+      (property "Description" "MEMS PDM microphone, top port, AOP 122.5 dB SPL"
         (at 0 0 0)
         (effects
           (font
             (size 1.27 1.27)) hide))
-      (property "ki_fp_filters" "Infineon*PG*LLGA*"
-        (at 0 0 0)
-        (effects
-          (font
-            (size 1.27 1.27)) hide))
-      (symbol "IM69D130_0_1"
+      (symbol "MP34DT06J_0_1"
         (rectangle
-          (start -7.62 5.08)
-          (end 7.62 -5.08)
+          (start -10.16 5.08)
+          (end 10.16 -7.62)
           (stroke
             (width 0.254)
             (type default))
           (fill
-            (type background)))
-        (circle
-          (center -3.81 0)
-          (radius 1.27)
-          (stroke
-            (width 0.254)
-            (type default))
-          (fill
-            (type none)))
-        (polyline
-          (pts
-            (xy -5.08 1.27)
-            (xy -5.08 -1.27))
-          (stroke
-            (width 0.381)
-            (type default))
-          (fill
-            (type none))))
-      (symbol "IM69D130_1_1"
-        (pin output line
-          (at 10.16 -2.54 180)
+            (type background))))
+      (symbol "MP34DT06J_1_1"
+        (pin power_in line
+          (at -12.7 2.54 0)
           (length 2.54)
-          (name "DATA"
+          (name "VDD"
             (effects
               (font
                 (size 1.27 1.27))))
@@ -995,10 +966,10 @@
             (effects
               (font
                 (size 1.27 1.27)))))
-        (pin power_in line
-          (at 0 7.62 270)
+        (pin input line
+          (at -12.7 0 0)
           (length 2.54)
-          (name "VDD"
+          (name "LR"
             (effects
               (font
                 (size 1.27 1.27))))
@@ -1007,9 +978,9 @@
               (font
                 (size 1.27 1.27)))))
         (pin input line
-          (at 10.16 0 180)
+          (at -12.7 -2.54 0)
           (length 2.54)
-          (name "CLOCK"
+          (name "CLK"
             (effects
               (font
                 (size 1.27 1.27))))
@@ -1017,25 +988,58 @@
             (effects
               (font
                 (size 1.27 1.27)))))
-        (pin input line
-          (at 10.16 2.54 180)
-          (length 2.54)
-          (name "SELECT"
-            (effects
-              (font
-                (size 1.27 1.27))))
-          (number "4"
-            (effects
-              (font
-                (size 1.27 1.27)))))
         (pin power_in line
-          (at 0 -7.62 90)
+          (at -12.7 -5.08 0)
           (length 2.54)
           (name "GND"
             (effects
               (font
                 (size 1.27 1.27))))
           (number "5"
+            (effects
+              (font
+                (size 1.27 1.27)))))
+        (pin passive line
+          (at -12.7 -5.08 0)
+          (length 2.54) hide
+          (name "GND"
+            (effects
+              (font
+                (size 1.27 1.27))))
+          (number "6"
+            (effects
+              (font
+                (size 1.27 1.27)))))
+        (pin passive line
+          (at -12.7 -5.08 0)
+          (length 2.54) hide
+          (name "GND"
+            (effects
+              (font
+                (size 1.27 1.27))))
+          (number "7"
+            (effects
+              (font
+                (size 1.27 1.27)))))
+        (pin passive line
+          (at -12.7 -5.08 0)
+          (length 2.54) hide
+          (name "GND"
+            (effects
+              (font
+                (size 1.27 1.27))))
+          (number "8"
+            (effects
+              (font
+                (size 1.27 1.27)))))
+        (pin output line
+          (at 12.7 2.54 180)
+          (length 2.54)
+          (name "DOUT"
+            (effects
+              (font
+                (size 1.27 1.27))))
+          (number "4"
             (effects
               (font
                 (size 1.27 1.27))))))))
@@ -2715,39 +2719,39 @@
         (font
           (size 1.27 1.27)) hide)))
   (symbol
-    (lib_id "Sensor_Audio:IM69D130")
-    (at 73.66 93.98 0)
+    (lib_id "logger:MP34DT06J")
+    (at 96.52 81.28 0)
     (unit 1)
     (in_bom yes)
     (on_board yes)
     (dnp no)
     (uuid "0dedc7e1-9e3a-010d-d054-aff182640266")
     (property "Reference" "MK1"
-      (at 85.32 84.86 0)
+      (at 110.72 77.24 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
-    (property "Value" "IM69D130"
-      (at 85.32 87.36 0)
+    (property "Value" "MP34DT06J"
+      (at 110.72 79.74 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
-    (property "Footprint" "Sensor_Audio:Infineon_PG-LLGA-5-1"
-      (at 73.66 93.98 0)
+    (property "Footprint" "logger:ST_HCLGA-4_3x4mm_MP34DT06J"
+      (at 96.52 81.28 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left) hide))
     (property "Datasheet" ""
-      (at 73.66 93.98 0)
+      (at 96.52 81.28 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left) hide))
-    (property "MPN" "IM69D130V01XTSA1"
-      (at 73.66 93.98 0)
+    (property "MPN" "MP34DT06JTR"
+      (at 96.52 81.28 0)
       (effects
         (font
           (size 1.27 1.27))
@@ -2758,74 +2762,66 @@
       (uuid "4449405d-48d9-021d-6ffa-87fc27a2b209"))
     (pin "3"
       (uuid "0268a173-83e5-5b39-2422-e5783a41a9db"))
-    (pin "4"
-      (uuid "cf760207-0146-a8be-2ad8-fe8c147988ae"))
     (pin "5"
       (uuid "8e935e66-c304-27a8-8a9e-7dfedb6674af"))
+    (pin "6"
+      (uuid "2585d2a7-9943-f2c0-f6b2-1ca00bf78aa6"))
+    (pin "7"
+      (uuid "28b559f4-71e5-7429-a359-38f509f5ceb9"))
+    (pin "8"
+      (uuid "48cf1c25-03d7-aa18-47a7-a2f8d6c03d17"))
+    (pin "4"
+      (uuid "cf760207-0146-a8be-2ad8-fe8c147988ae"))
     (instances
       (project "logger"
         (path "/dc76e9f0-c000-6e8f-919e-0c515c66dbba/5ee828f5-695b-fb23-3ad2-7e3c5ccebf86"
           (reference "MK1")
           (unit 1)))))
-  (global_label "MIC_DATA"
+  (global_label "+3V3"
     (shape passive)
-    (at 83.82 96.52 0)
+    (at 83.82 78.74 180)
     (fields_autoplaced)
     (effects
       (font
         (size 1.27 1.27))
-      (justify left))
+      (justify right))
     (uuid "f5cef976-ddae-dbaa-a7e3-64b9e383ad9c")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 83.82 96.52 0)
+      (at 83.82 78.74 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
-  (global_label "+3V3"
+  (global_label "GND"
     (shape passive)
-    (at 73.66 86.36 90)
+    (at 83.82 81.28 180)
     (fields_autoplaced)
     (effects
       (font
         (size 1.27 1.27))
-      (justify left))
+      (justify right))
     (uuid "c8c70a09-da7c-c0f3-5d5d-a0fb4061e36f")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 73.66 86.36 0)
+      (at 83.82 81.28 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
   (global_label "MIC_CLK"
     (shape passive)
-    (at 83.82 93.98 0)
+    (at 83.82 83.82 180)
     (fields_autoplaced)
     (effects
       (font
         (size 1.27 1.27))
-      (justify left))
+      (justify right))
     (uuid "02a9db25-2d5b-1858-90e7-d4886cc30692")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 83.82 93.98 0)
+      (at 83.82 83.82 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
   (global_label "GND"
     (shape passive)
-    (at 83.82 91.44 0)
-    (fields_autoplaced)
-    (effects
-      (font
-        (size 1.27 1.27))
-      (justify left))
-    (uuid "76a56201-10e2-0be4-5eb2-5247401283f4")
-    (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 83.82 91.44 0)
-      (effects
-        (font
-          (size 1.27 1.27)) hide)))
-  (global_label "GND"
-    (shape passive)
-    (at 73.66 101.6 270)
+    (at 83.82 86.36 180)
     (fields_autoplaced)
     (effects
       (font
@@ -2833,38 +2829,52 @@
       (justify right))
     (uuid "d44c8b6c-fed0-2e48-0c9d-75d6ab694e7e")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 73.66 101.6 0)
+      (at 83.82 86.36 0)
+      (effects
+        (font
+          (size 1.27 1.27)) hide)))
+  (global_label "MIC_DATA"
+    (shape passive)
+    (at 109.22 78.74 0)
+    (fields_autoplaced)
+    (effects
+      (font
+        (size 1.27 1.27))
+      (justify left))
+    (uuid "76a56201-10e2-0be4-5eb2-5247401283f4")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 109.22 78.74 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
   (symbol
     (lib_id "Device:C")
-    (at 106.68 91.44 0)
+    (at 134.62 91.44 0)
     (unit 1)
     (in_bom yes)
     (on_board yes)
     (dnp no)
     (uuid "0be5b924-173d-17d4-c205-70137d25eeb3")
     (property "Reference" "C53"
-      (at 108.18 86.13 0)
+      (at 136.12 86.13 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
     (property "Value" "100n"
-      (at 108.18 88.63 0)
+      (at 136.12 88.63 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
     (property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
-      (at 106.68 91.44 0)
+      (at 134.62 91.44 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left) hide))
     (property "Datasheet" ""
-      (at 106.68 91.44 0)
+      (at 134.62 91.44 0)
       (effects
         (font
           (size 1.27 1.27))
@@ -2880,7 +2890,7 @@
           (unit 1)))))
   (global_label "+3V3"
     (shape passive)
-    (at 106.68 87.63 90)
+    (at 134.62 87.63 90)
     (fields_autoplaced)
     (effects
       (font
@@ -2888,13 +2898,13 @@
       (justify left))
     (uuid "c14e640b-99ea-d12f-4817-7a1715c75624")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 106.68 87.63 0)
+      (at 134.62 87.63 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
   (global_label "GND"
     (shape passive)
-    (at 106.68 95.25 270)
+    (at 134.62 95.25 270)
     (fields_autoplaced)
     (effects
       (font
@@ -2902,38 +2912,38 @@
       (justify right))
     (uuid "3dd24d75-0512-dbe1-71a8-37c205a84323")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 106.68 95.25 0)
+      (at 134.62 95.25 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
   (symbol
     (lib_id "Device:R")
-    (at 119.38 96.52 0)
+    (at 147.32 96.52 0)
     (unit 1)
     (in_bom yes)
     (on_board yes)
     (dnp no)
     (uuid "38ed16ae-2822-2d52-00ea-e249d7adf7ac")
     (property "Reference" "R42"
-      (at 120.88 91.21 0)
+      (at 148.82 91.21 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
     (property "Value" "33R"
-      (at 120.88 93.71 0)
+      (at 148.82 93.71 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left)))
     (property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-      (at 119.38 96.52 0)
+      (at 147.32 96.52 0)
       (effects
         (font
           (size 1.27 1.27))
         (justify left) hide))
     (property "Datasheet" ""
-      (at 119.38 96.52 0)
+      (at 147.32 96.52 0)
       (effects
         (font
           (size 1.27 1.27))
@@ -2949,7 +2959,7 @@
           (unit 1)))))
   (global_label "MIC_CLK_SRC"
     (shape passive)
-    (at 119.38 92.71 90)
+    (at 147.32 92.71 90)
     (fields_autoplaced)
     (effects
       (font
@@ -2957,13 +2967,13 @@
       (justify left))
     (uuid "0fe556d4-f11c-2c3f-9133-a5a8c201b988")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 119.38 92.71 0)
+      (at 147.32 92.71 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
   (global_label "MIC_CLK"
     (shape passive)
-    (at 119.38 100.33 270)
+    (at 147.32 100.33 270)
     (fields_autoplaced)
     (effects
       (font
@@ -2971,7 +2981,7 @@
       (justify right))
     (uuid "a828f24a-aecb-77f3-61a1-8a3a6ffc39da")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 119.38 100.33 0)
+      (at 147.32 100.33 0)
       (effects
         (font
           (size 1.27 1.27)) hide)))
@@ -3003,7 +3013,7 @@
         (size 1.27 1.27))
       (justify left))
     (uuid "fd0f6498-5eb1-177b-9f19-6addf44ff2fa"))
-  (text "IM69D130: PDM, 1.62-3.6 V, clock 0.4-3.3 MHz from DFSDM1_CKOUT (PB0) through 33R; DFSDM1 channel 1 (PB1) samples on the falling edge (SELECT low)."
+  (text "MP34DT06J (ST DS12698 rev 3): PDM, 1.6-3.6 V, clock 1.2-3.25 MHz from DFSDM1_CKOUT (PB0) through 33R into DFSDM1 channel 1 (PB1). LR to GND = left channel: DOUT valid while CLK is low (table 6), so DFSDM samples on the rising edge."
     (at 20 277 0)
     (effects
       (font

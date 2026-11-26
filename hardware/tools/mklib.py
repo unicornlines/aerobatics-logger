@@ -67,6 +67,12 @@ PARTS = {
         ("19", "IO14", "bidirectional", "R"), ("26", "IO20", "bidirectional", "R"), ("27", "IO21", "bidirectional", "R"),
         ("28", "IO22", "bidirectional", "R"), ("29", "IO23", "bidirectional", "R"),
         ("4", "NC", "no_connect", "R")] + [(n, "NC", "no_connect", "R+") for n in ["7", "21", "32", "33", "34", "35"]]),
+    # SOURCE: ST MP34DT06J datasheet DS12698 rev 3 (July 2021), table 1: 1 VDD, 2 LR, 3 CLK, 4 DOUT, ground ring GND.
+    # Land pattern fig. 12; the ring is split into four pads (5-8), all GND. LR has an internal 200k pull-down.
+    "MP34DT06J": dict(ref="MK", fp="logger:ST_HCLGA-4_3x4mm_MP34DT06J", desc="MEMS PDM microphone, top port, AOP 122.5 dB SPL", pins=[
+        ("1", "VDD", "power_in", "L"), ("2", "LR", "input", "L"), ("3", "CLK", "input", "L"),
+        ("5", "GND", "power_in", "L")] + [(n, "GND", "passive", "L+") for n in ["6", "7", "8"]] + [
+        ("4", "DOUT", "output", "R")]),
 }
 
 LOADED = {}

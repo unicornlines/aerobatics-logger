@@ -5129,7 +5129,7 @@
         (font
           (size 1.27 1.27))
         (justify left)))
-    (property "Footprint" "logger:SW_Alps_SKRTLAE010_SidePush"
+    (property "Footprint" "Button_Switch_SMD:SW_Push_1P1T-MP_NO_Horizontal_Alps_SKRTLAE010"
       (at 281.94 109.22 0)
       (effects
         (font
@@ -5204,7 +5204,7 @@
         (font
           (size 1.27 1.27))
         (justify left)))
-    (property "Footprint" "logger:SW_Alps_SKRTLAE010_SidePush"
+    (property "Footprint" "Button_Switch_SMD:SW_Push_1P1T-MP_NO_Horizontal_Alps_SKRTLAE010"
       (at 320.04 109.22 0)
       (effects
         (font
@@ -5279,7 +5279,7 @@
         (font
           (size 1.27 1.27))
         (justify left)))
-    (property "Footprint" "logger:SW_Alps_SKRTLAE010_SidePush"
+    (property "Footprint" "Button_Switch_SMD:SW_Push_1P1T-MP_NO_Horizontal_Alps_SKRTLAE010"
       (at 360.68 109.22 0)
       (effects
         (font
@@ -5508,7 +5508,7 @@
         (font
           (size 1.27 1.27))
         (justify left)))
-    (property "Footprint" "logger:SW_Alps_SKRTLAE010_SidePush"
+    (property "Footprint" "Button_Switch_SMD:SW_Push_1P1T-MP_NO_Horizontal_Alps_SKRTLAE010"
       (at 73.66 160.02 0)
       (effects
         (font

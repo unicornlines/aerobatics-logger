@@ -5741,7 +5741,7 @@
         (font
           (size 1.27 1.27))
         (justify left)))
-    (property "Footprint" "logger:SW_Alps_SKRTLAE010_SidePush"
+    (property "Footprint" "Button_Switch_SMD:SW_Push_1P1T-MP_NO_Horizontal_Alps_SKRTLAE010"
       (at 40.64 104.14 0)
       (effects
         (font

@@ -77,7 +77,7 @@ POWER = dict(file="power.kicad_sch", title="Power: USB-C, Li-ion charger, hold-u
     # 1M / 1u keeps EN up for about 2 s, so a firmware reset never drops power. USB enters through 100k so EN
     # stays below VSYS (about 4.3 V).
     dict(ref="SW4", lib="Switch:SW_Push", value="PWR", mpn="SKRTLAE010",
-         fp="logger:SW_Alps_SKRTLAE010_SidePush", nets={"1": "VSYS", "2": "PWR_KEY"}),
+         fp="Button_Switch_SMD:SW_Push_1P1T-MP_NO_Horizontal_Alps_SKRTLAE010", nets={"1": "VSYS", "2": "PWR_KEY"}),
     dict(ref="D23", lib="Diode:BAT54C", value="BAT54C", mpn="BAT54C", fp="Package_TO_SOT_SMD:SOT-23",
          nets={"1": "PWR_KEY", "2": "PWR_HOLD", "3": "PWR_EN"}),
     R("R119", "100k", "VBUS", "PWR_VBUS"),
@@ -335,13 +335,13 @@ IO = dict(file="io.kicad_sch", title="IO: log flash, microSD, e-paper display, b
     dict(ref="D62", lib="Device:D_Schottky", value="MBR0530", fp="Diode_SMD:D_SOD-123",
          nets={"2": "EPD_VGL", "1": "EPD_PUMP"}),
     dict(ref="SW1", lib="Switch:SW_Push", value="UP", mpn="SKRTLAE010",
-         fp="logger:SW_Alps_SKRTLAE010_SidePush",
+         fp="Button_Switch_SMD:SW_Push_1P1T-MP_NO_Horizontal_Alps_SKRTLAE010",
          nets={"1": "BTN_1", "2": "GND"}),
     dict(ref="SW2", lib="Switch:SW_Push", value="OK", mpn="SKRTLAE010",
-         fp="logger:SW_Alps_SKRTLAE010_SidePush",
+         fp="Button_Switch_SMD:SW_Push_1P1T-MP_NO_Horizontal_Alps_SKRTLAE010",
          nets={"1": "BTN_2", "2": "GND"}),
     dict(ref="SW3", lib="Switch:SW_Push", value="DOWN", mpn="SKRTLAE010",
-         fp="logger:SW_Alps_SKRTLAE010_SidePush",
+         fp="Button_Switch_SMD:SW_Push_1P1T-MP_NO_Horizontal_Alps_SKRTLAE010",
          nets={"1": "BTN_3", "2": "GND"}),
     R("R66", "100R", "CAM_SYNC", "CAM_SYNC_OUT"),
     # Camera sync out and the pilot's marker button share one header: 1 sync out, 2 GND, 3 marker (button to GND)
@@ -350,7 +350,7 @@ IO = dict(file="io.kicad_sch", title="IO: log flash, microSD, e-paper display, b
          nets={"1": "CAM_SYNC_OUT", "2": "GND", "3": "MARKER_IN"}),
     # On-unit marker button, in parallel with the external one (same 1k / 100n filter)
     dict(ref="SW5", lib="Switch:SW_Push", value="MARKER", mpn="SKRTLAE010",
-         fp="logger:SW_Alps_SKRTLAE010_SidePush", nets={"1": "MARKER_IN", "2": "GND"}),
+         fp="Button_Switch_SMD:SW_Push_1P1T-MP_NO_Horizontal_Alps_SKRTLAE010", nets={"1": "MARKER_IN", "2": "GND"}),
     R("R68", "1k", "MARKER_IN", "MARKER"), R("R69", "10k", "MARKER", "+3V3"), C("C72", "100n", "MARKER", "GND"),
     # Expansion: Qwiic / STEMMA QT pin order (1 GND, 2 3V3, 3 SDA, 4 SCL) on I2C4, e.g. for an airspeed sensor
     dict(ref="J63", lib="Connector_Generic:Conn_01x04", value="I2C EXP (Qwiic)",

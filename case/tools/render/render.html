@@ -1,0 +1,78 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#f4f3f0}</style>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+</head><body>
+<script type="module">
+// Case renders: loads scene/<set>/<piece>.stl with the colours in scene.json and frames one view.
+import * as THREE from "three";
+import { STLLoader } from "three/addons/loaders/STLLoader.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+
+const q = new URLSearchParams(location.search);
+const W = +(q.get("w") || 2400), H = +(q.get("h") || 1600);
+const cfg = await (await fetch("scene.json")).json();
+const view = cfg.views[q.get("view") || "hero"];
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H); renderer.setPixelRatio(1);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(view.bg || "#f4f3f0");
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+// z-up world, like OpenSCAD
+const root = new THREE.Group(); scene.add(root);
+const loader = new STLLoader();
+const box = new THREE.Box3();
+for (const p of cfg.pieces) {
+  let geo;
+  try { geo = await loader.loadAsync(`scene/${view.set}/${p.name}.stl`); } catch (e) { continue; }
+  if (!geo.attributes.position || geo.attributes.position.count === 0) continue;
+  geo.computeVertexNormals();
+  const m = new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color(p.colour), roughness: p.roughness ?? 0.55, metalness: p.metal ?? 0,
+    transparent: p.alpha < 1, opacity: p.alpha, transmission: p.glass ? 0.6 : 0, clearcoat: p.clearcoat ?? 0,
+    side: THREE.DoubleSide, flatShading: false,
+  });
+  const mesh = new THREE.Mesh(geo, m);
+  mesh.castShadow = p.alpha >= 1; mesh.receiveShadow = true;
+  root.add(mesh);
+  // print-layer feel: edges where faces meet at an angle
+  if (p.edges !== false) {
+    const eg = new THREE.EdgesGeometry(geo, 35);
+    root.add(new THREE.LineSegments(eg, new THREE.LineBasicMaterial({ color: new THREE.Color(p.colour).multiplyScalar(0.55), transparent: true, opacity: 0.35 })));
+  }
+  box.expandByObject(mesh);
+}
+
+const c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3());
+// ground plane with a soft shadow
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.ShadowMaterial({ opacity: 0.16 }));
+ground.position.set(c.x, c.y, box.min.z - (view.gap ?? 0.5)); ground.receiveShadow = true; scene.add(ground);
+
+const cam = new THREE.PerspectiveCamera(view.fov || 22, W / H, 1, 5000);
+cam.up.set(0, 0, 1);
+const d = Math.max(s.x, s.y, s.z) * (view.dist || 3.2);
+const dir = new THREE.Vector3(...view.dir).normalize();
+const target = c.clone().add(new THREE.Vector3(...(view.shift || [0, 0, 0])));
+cam.position.copy(target).addScaledVector(dir, d);
+cam.lookAt(target);
+
+const key = new THREE.DirectionalLight(0xffffff, 2.2);
+key.position.copy(c).add(new THREE.Vector3(-120, -160, 420)); key.target.position.copy(c);
+key.castShadow = true; key.shadow.mapSize.set(4096, 4096);
+Object.assign(key.shadow.camera, { left: -260, right: 260, top: 260, bottom: -260, near: 10, far: 1500 });
+key.shadow.bias = -0.0004; key.shadow.radius = 6;
+scene.add(key, key.target);
+const rim = new THREE.DirectionalLight(0xfff4e8, 0.8); rim.position.copy(c).add(new THREE.Vector3(200, 260, 120)); scene.add(rim);
+scene.add(new THREE.HemisphereLight(0xffffff, 0xd8d4cc, 0.5));
+if (view.under) { const u = new THREE.DirectionalLight(0xffffff, 2.0); u.position.copy(c).add(new THREE.Vector3(-80, 120, -400)); scene.add(u); ground.visible = false; }
+
+renderer.render(scene, cam);
+window.done = true;
+</script></body></html>

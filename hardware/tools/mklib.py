@@ -73,6 +73,9 @@ PARTS = {
         ("1", "VDD", "power_in", "L"), ("2", "LR", "input", "L"), ("3", "CLK", "input", "L"),
         ("5", "GND", "power_in", "L")] + [(n, "GND", "passive", "L+") for n in ["6", "7", "8"]] + [
         ("4", "DOUT", "output", "R")]),
+    # SOURCE: Taoglas SGGP.18.4.A.08 datasheet (feed pad and ground pads; RHCP, 3.02 dBic on a 50 x 50 mm ground).
+    "SGGP.18.4.A.08": dict(ref="AE", fp="logger:Taoglas_SGGP.18.4.A.08", desc="GNSS ceramic patch antenna, 18 x 18 x 4 mm, L1", pins=[
+        ("1", "FEED", "passive", "R"), ("2", "GND", "passive", "L")]),
 }
 
 LOADED = {}

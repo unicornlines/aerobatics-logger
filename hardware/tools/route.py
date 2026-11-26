@@ -24,6 +24,8 @@ WORK = os.environ.get("ROUTE_WORK", "/tmp/logger-route")
 # can fan out of 0.4-0.5 mm pitch pads.
 POWER_NETS = ["VBUS", "VSYS", "BUCK_SW", "VBAT", "BAT_CONN", "BAT_CELL", "BAT_NEG", "PROT_MID"]
 POWER_WIDTH_UM = 400
+RF_NETS = ["GNSS_RF_IN", "ANT_INT", "ANT_EXT_SW", "GNSS_EXT_RF"]   # same list as kicad/logger.kicad_dru
+RF_CLEARANCE_UM = 450
 PASSES = os.environ.get("PASSES", "25")
 
 
@@ -40,12 +42,24 @@ def export_dsn(board, path):
     m = re.search(r'\(class kicad_default ""(.*?)\n\s*\(circuit', s, re.S)
     names = m.group(1).split()
     power = [n for n in names if n in POWER_NETS]
-    rest = [n for n in names if n not in POWER_NETS]
+    rf = [n for n in names if n in RF_NETS]
+    rest = [n for n in names if n not in POWER_NETS and n not in RF_NETS]
     s = s.replace(m.group(1), " " + " ".join(rest))
     via = re.search(r"\(use_via ([^)]+)\)", s).group(1)
     cls = (f'    (class power {" ".join(power)}\n      (circuit\n        (use_via {via})\n      )\n'
            f'      (rule\n        (width {POWER_WIDTH_UM})\n        (clearance 150)\n      )\n    )\n')
+    # GNSS RF lines are hand-routed and locked; the router keeps its own copper 0.45 mm off them (CPW gap)
+    cls += (f'    (class rf {" ".join(rf)}\n      (circuit\n        (use_via {via})\n      )\n'
+            f'      (rule\n        (width 340)\n        (clearance {RF_CLEARANCE_UM})\n      )\n    )\n')
     s = s.replace("    (class kicad_default", cls + "    (class kicad_default", 1)
+    # Freerouting ignores KiCad rule areas: spell the patch feed keep-out (nothing on In2 or B.Cu, In1 is a plane)
+    # out as Specctra keep-outs. DSN units are um, origin as the page, y up.
+    import pcb as layout
+    x0, y0, x1, y1 = layout.FEED_KEEPOUT
+    ko = "".join(f'    (keepout "" (rect {L} {(layout.OX + x0) * 1000:.0f} {-(layout.OY + y1) * 1000:.0f} '
+                 f'{(layout.OX + x1) * 1000:.0f} {-(layout.OY + y0) * 1000:.0f}))\n' for L in ("In2.3V3", "B.Cu"))
+    i = s.index("\n    (via ", s.index("  (structure")) + 1      # after the layers and the boundary
+    s = s[:i] + ko + s[i:]
     open(path, "w").write(s)
     return strip
 

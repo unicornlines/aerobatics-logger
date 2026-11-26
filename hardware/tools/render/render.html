@@ -123,8 +123,9 @@ console.log("dropped board meshes:", drop.length);
 // cameras
 const cx = S.width / 2, cz = S.height / 2;
 const cam = new THREE.PerspectiveCamera(view === "hero" ? 30 : 18, W / H, 1, 2000);
-if (view === "top" || view === "bottom") { cam.position.set(cx, 290, cz + 0.01); cam.lookAt(cx, 0, cz); }
-else { cam.position.set(cx - 70, 105, cz + 135); cam.lookAt(cx + 2, -4, cz + 2); }
+const k = Math.max(1, S.width / 124) * 1.06;        // framing was tuned on the 124 mm board; keep a margin when it grows
+if (view === "top" || view === "bottom") { cam.position.set(cx, 290 * k, cz + 0.01); cam.lookAt(cx, 0, cz); }
+else { cam.position.set(cx - 70 * k, 105 * k, cz + 135 * k); cam.lookAt(cx + 2, -4, cz + 2); }
 if (view === "bottom") {            // turn the board over about its long-side centre line, like flipping it in hand
   B.position.set(S.width, S.thickness, 0); B.rotation.z = Math.PI;
 }

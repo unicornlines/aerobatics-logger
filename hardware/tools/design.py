@@ -180,8 +180,10 @@ MCU_NETS = {
     "43": "RADIO_MISO", "62": "RADIO_CS", "44": "RADIO_IRQ",
     # log flash on OCTOSPI1 in quad mode: CLK PB2, NCS PE11, IO0 PD11, IO1 PD12, IO2 PE2, IO3 PD13
     "36": "FLASH_CLK", "41": "FLASH_CS", "58": "FLASH_IO0", "59": "FLASH_IO1", "1": "FLASH_IO2", "60": "FLASH_IO3",
-    # radio control and its UART0 (USART3: bootloader, console); names from the module's side
-    "45": "RADIO_EN_MCU", "61": "RADIO_BOOT", "55": "RADIO_RXD", "56": "RADIO_TXD",
+    # radio control and its UART0 (USART3: bootloader, console); names from the module's side.
+    # RADIO_EN_MCU on PC3_C: a static enable line, so it runs as a GPIO through the closed PC3 analog
+    # switch (firmware clears SYSCFG_PMCR.PC3SO); until then the pin floats and the radio's own EN RC holds it.
+    "18": "RADIO_EN_MCU", "61": "RADIO_BOOT", "55": "RADIO_RXD", "56": "RADIO_TXD",
     # buttons, power fail, camera sync, LED
     # keys: UP on PE8 (EXTI8), DOWN on PE9 (EXTI9); OK is the power key and is read on PD7 (PWR_BTN, EXTI7).
     # Every EXTI line has one pin only: PWR_FAIL_N on PA10 (EXTI10), marker PA15 (EXTI15), IMU INT2 PC4 (EXTI4).
@@ -190,6 +192,9 @@ MCU_NETS = {
     "85": "PWR_HOLD", "88": "PWR_BTN", "87": "CHG_STAT_N", "86": "ISET_HI", "81": "ILIM_HI",
     # ADC: battery voltage (PC1, ADC1_INP11) and the USB-C CC level (PC5, ADC12_INP8)
     "16": "VBAT_SENSE", "33": "CC_SENSE", "91": "CAM_SYNC", "40": "LED_STATUS",   # camera sync on PB5 = TIM3_CH2
+    # GNSS antenna: RF switch select on PE1 and feed switch on PE0 (top-left corner, toward Q50; low = on),
+    # feed current on PC2_C (ADC3_INP0)
+    "98": "ANT_SEL", "97": "ANT_PWR_N", "17": "ANT_SENSE",
     # PDM microphone on DFSDM1 channel 1: the DFSDM's own clock out on PB0 (DFSDM1_CKOUT), data in on PB1
     # (DFSDM1_DATIN1). Both sit on the MCU's bottom-left side, toward the mic; clear of the PC2_C/PC3_C analog switch.
     "34": "MIC_CLK_SRC", "35": "MIC_DATA",
@@ -276,32 +281,62 @@ SENSORS = dict(file="sensors.kicad_sch", title="Sensors: IMU, barometer, magneto
 ])
 
 # ---------------------------------------------------------------- GNSS
-GNSS = dict(file="gnss.kicad_sch", title="GNSS: NEO-M9N", parts=[
+# Built-in antenna plus an optional external one (owner, 2026-11-26: no pre-fitted pigtail, no fragile connector).
+# Built-in: Taoglas SGGP.18.4.A.08 18 x 18 mm ceramic patch on the board's left end. External: SMA jack soldered
+# on the left board edge, through the case wall. An RF switch picks one: the internal patch by hardware default; the
+# firmware switches to the jack when an active antenna draws bias current.
+GNSS = dict(file="gnss.kicad_sch", title="GNSS: NEO-M9N, built-in patch and external SMA", paper="A3", parts=[
     dict(ref="U10", lib="logger:NEO-M9N", value="NEO-M9N", fp="RF_GPS:ublox_NEO", mpn="NEO-M9N-00B",
          nets={"23": "+3V3_GNSS", "22": "VBAT_BKP", "21": "GNSS_RXD", "20": "GNSS_TXD", "8": "GNSS_RESET_N",
                "1": "GNSS_SAFEBOOT_N", "4": "NC", "10": "GND", "12": "GND", "13": "GND", "24": "GND",
-               "11": "GNSS_RF_IN", "9": "GNSS_VCC_RF", "14": "NC", "3": "GNSS_PPS", "7": "GND", "2": "NC", "5": "NC", "6": "NC", "18": "NC", "19": "NC"}),
+               "11": "GNSS_RF_IN", "9": "NC", "14": "NC", "3": "GNSS_PPS", "7": "GND", "2": "NC", "5": "NC", "6": "NC", "18": "NC", "19": "NC"}),
     dict(ref="FB2", lib="Device:FerriteBead_Small", value="600R@100MHz", fp="Inductor_SMD:L_0603_1608Metric",
          nets={"1": "+3V3", "2": "+3V3_GNSS"}),
-    C("C50", "10u", "+3V3_GNSS", "GND", fp=C0805), C("C51", "100n", "+3V3_GNSS", "GND"),
-    # Active antenna feed per u-blox NEO-F9P integration manual 4.4.4.3 (fig. 42, table 36): VCC_RF -> 10R current
-    # limit -> ferrite -> 100n filter -> 47 nH bias-T inductor (>500 ohm across 1-1.8 GHz, so L5 too) onto RF_IN.
-    # The DC block is inside the module (u-blox NEO data sheets).
-    R("R50", "10R", "GNSS_VCC_RF", "ANT_BIAS_R"),
+    C("C50", "10u 10V", "+3V3_GNSS", "GND", fp=C0603), C("C51", "100n", "+3V3_GNSS", "GND"),
+    # Antenna switch: Infineon BGS12WN6 (SPDT, 0.19 dB loss / 39 dB isolation at 1.2-2.2 GHz, 1.65-3.6 V, 63 uA).
+    # CTRL high (R53 pull-up, also while the MCU is in reset) = RF2 = built-in patch; CTRL low = RF1 = SMA.
+    # No DC allowed on its RF ports.
+    dict(ref="U18", lib="RF_Switch:BGS12WN6E6327", value="BGS12WN6", mpn="BGS12WN6E6327XTSA1",
+         fp="Package_LGA:Infineon_PG-TSNP-6-10_0.7x1.1mm_0.7x1.1mm_P0.4mm",
+         nets={"5": "GNSS_RF_IN", "1": "ANT_INT", "3": "ANT_EXT_SW", "2": "GND", "4": "+3V3", "6": "ANT_SEL"}),
+    C("C58", "100n", "+3V3", "GND"),
+    R("R53", "100k", "+3V3", "ANT_SEL"),
+    dict(ref="AE1", lib="logger:SGGP.18.4.A.08", value="SGGP.18.4.A.08", mpn="SGGP.18.4.A.08",
+         fp="logger:Taoglas_SGGP.18.4.A.08", nets={"1": "ANT_INT", "2": "GND"}),
+    # External branch: DC block to the switch, then the bias tee and ESD at the jack.
+    C("C55", "47p C0G", "ANT_EXT_SW", "GNSS_EXT_RF", mpn="GRM1555C1H470JA01D"),
+    dict(ref="D50", lib="Device:D_TVS", value="PESD0402-140", mpn="PESD0402-140", fp="Diode_SMD:D_0402_1005Metric",
+         nets={"1": "GNSS_EXT_RF", "2": "GND"}),
+    dict(ref="J50", lib="Connector:Conn_Coaxial", value="SMA edge", mpn="SMA-J-P-H-ST-EM1",
+         fp="Connector_Coaxial:SMA_Samtec_SMA-J-P-X-ST-EM1_EdgeMount", nets={"1": "GNSS_EXT_RF", "2": "GND"}),
+    # Active antenna feed, switched and measured: +3V3 -> Q50 (MCU, off by default) -> 1R sense -> 22R limit ->
+    # ferrite + 100n -> 47 nH bias tee (>500 ohm at 1.2-1.6 GHz) onto the jack. A dead short draws 140 mA
+    # (0.43 W in the 0.75 W 2010 resistor), safe even if the firmware never reacts.
+    dict(ref="Q50", lib="Device:Q_PMOS_GSD", value="AO3401A", mpn="AO3401A", fp="Package_TO_SOT_SMD:SOT-23",
+         nets={"1": "ANT_PWR_N", "2": "+3V3", "3": "ANT_PWR"}),
+    R("R54", "100k", "+3V3", "ANT_PWR_N"),
+    R("R51", "1R 1%", "ANT_PWR", "ANT_BIAS_S"),
+    R("R50", "22R 0.75W", "ANT_BIAS_S", "ANT_BIAS_R", fp="Resistor_SMD:R_2010_5025Metric"),
     dict(ref="FB51", lib="Device:FerriteBead_Small", value="BLM15HB121SH1", fp="Inductor_SMD:L_0402_1005Metric",
          mpn="BLM15HB121SH1D", nets={"1": "ANT_BIAS_R", "2": "ANT_BIAS"}),
-    dict(ref="L50", lib="Device:L", value="47n", fp="Inductor_SMD:L_0402_1005Metric", mpn="LQG15HS47NJ02D",
-         nets={"1": "ANT_BIAS", "2": "GNSS_RF_IN"}),
     C("C52", "100n", "ANT_BIAS", "GND"),
-    dict(ref="J50", lib="Connector:Conn_Coaxial", value="U.FL", fp="Connector_Coaxial:U.FL_Hirose_U.FL-R-SMT-1_Vertical",
-         nets={"1": "GNSS_RF_IN", "2": "GND"}),
+    dict(ref="L50", lib="Device:L", value="47n", fp="Inductor_SMD:L_0402_1005Metric", mpn="LQG15HS47NJ02D",
+         nets={"1": "ANT_BIAS", "2": "GNSS_EXT_RF"}),
+    # Bias current sense: INA180A1 (gain 20) over R51 = 20 mV per mA into the MCU's ADC (PC2_C), RC-filtered.
+    dict(ref="U19", lib="Amplifier_Current:INA180A1", value="INA180A1", mpn="INA180A1IDBVR", fp="Package_TO_SOT_SMD:SOT-23-5",
+         nets={"1": "ANT_SENSE_RAW", "2": "GND", "3": "ANT_PWR", "4": "ANT_BIAS_S", "5": "+3V3"}),
+    C("C56", "100n", "+3V3", "GND"),
+    R("R52", "1k", "ANT_SENSE_RAW", "ANT_SENSE"), C("C57", "10n", "ANT_SENSE", "GND"),
     dict(ref="TP50", lib="Connector:TestPoint", value="SAFEBOOT", fp="TestPoint:TestPoint_Pad_D1.0mm",
          nets={"1": "GNSS_SAFEBOOT_N"}),
-    FLAG("#FLG50", "+3V3_GNSS"), FLAG("#FLG51", "GNSS_VCC_RF"),
+    FLAG("#FLG50", "+3V3_GNSS"),
 ], notes=[
-    "RF_IN trace: 50 ohm coplanar waveguide, as short as possible.",
+    "RF lines (GNSS_RF_IN, ANT_INT, ANT_EXT_SW, GNSS_EXT_RF): 50 ohm grounded coplanar waveguide on F.Cu over the In1 plane, 0.34 mm wide, 0.45 mm gaps, GND via fence.",
+    "Antenna select (firmware): at boot ANT_SEL is high (built-in patch) and the bias is off. The MCU turns Q50 on and reads ANT_SENSE: 3-60 mA = external active antenna, ANT_SEL low (SMA); under 3 mA = none (or passive), stay on the patch; above 80 mA = short, bias off, retry every 5 s.",
+    "External antenna: active, 2.7-5 V, up to 30 mA (about 3.0 V at the jack at 15 mA). A passive antenna works too if chosen in setup.",
+    "VCC_RF (pin 9) unused: the bias comes from Q50 so the firmware can switch and measure it.",
     "VDD_USB (pin 7) to GND: USB unused (u-blox: connect V_USB to ground when USB is not used). D_SEL open = UART1 + I2C.",
-    "Standard NEO footprint: the NEO-F9P (L1/L5 RTK) drops in with the same pins and wiring."
+    "Standard NEO footprint: the NEO-F9P (L1/L5 RTK) drops in with the same pins and wiring (the patch is L1 only; use the SMA for L5).",
 ])
 
 # ---------------------------------------------------------------- IO

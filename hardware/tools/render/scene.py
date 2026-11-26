@@ -34,6 +34,9 @@ STANDINS = {
     "D24": (2.0, 1.25, 0.9, "#1b1b1d", ""),                       # BAT54W, SOT-323
     "U17": (1.5, 1.5, 0.5, "#3a3a3d", ""),                        # SHT40 humidity / temperature, DFN-4 1.5x1.5
     "MK1": (3.0, 4.0, 1.0, "#cfd2d6", ""),                        # MP34DT06J PDM mic, metal lid, top port
+    # Taoglas SGGP.18.4.A.08 GNSS patch: 18 x 18 x 4 ceramic with its silver radiator on top
+    "AE1": [(18.0, 18.0, 3.95, "#e9e4d6", "", 0.0, 0.0, 0.0), (14.0, 14.0, 0.05, "#c8cbcf", "GNSS", 0.0, 0.0, 3.95)],
+    "U18": (0.7, 1.1, 0.37, "#1b1b1d", ""),                       # BGS12WN6 RF switch, TSNP-6
     # radio module: its own 0.8 mm PCB (antenna end bare, over the board edge) with the shield can on it.
     # Several boxes per part: (w, l, h, colour, label, dx, dy, dz) relative to the footprint origin.
     "U11": [(13.2, 16.6, 0.8, "#1b1b1d", "", 0.0, 0.0, 0.0),

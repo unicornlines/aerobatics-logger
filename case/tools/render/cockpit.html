@@ -12,6 +12,7 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { BokehPass } from "three/addons/postprocessing/BokehPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 
 const q = new URLSearchParams(location.search);
 const W = +(q.get("w") || 2160), H = +(q.get("h") || 2700);
@@ -41,15 +42,15 @@ const skyMat = new THREE.ShaderMaterial({
     float fbm(vec2 p){ float a = 0.5, s = 0.0; for (int i = 0; i < 6; i++){ s += a*noise(p); p = p*2.03 + 7.1; a *= 0.5; } return s; }
     void main(){
       vec3 d = normalize(vDir); float h = d.z;
-      vec3 zen = vec3(0.10, 0.27, 0.62), hor = vec3(0.62, 0.74, 0.86);
-      vec3 col = mix(hor, zen, pow(clamp(h, 0.0, 1.0), 0.45));
+      vec3 zen = vec3(0.06, 0.22, 0.60), hor = vec3(0.58, 0.72, 0.88);
+      vec3 col = mix(hor, zen, pow(clamp(h, 0.0, 1.0), 0.3));
       float sd = max(dot(d, sun), 0.0);
       col += vec3(1.0, 0.92, 0.75) * (pow(sd, 900.0) * 30.0 + pow(sd, 12.0) * 0.25);
       if (h > 0.0) {
         // cumulus field on a plane above
-        vec2 p = d.xy / (h + 0.03) * 0.9;
-        float c = fbm(p * 1.3 + vec2(3.0, 1.0));
-        float m = smoothstep(0.52, 0.72, c) * smoothstep(0.0, 0.06, h) * (1.0 - smoothstep(0.35, 0.7, h));
+        vec2 p = d.xy / (h + 0.03) * 0.35;
+        float c = fbm(p * 1.1 + vec2(3.0, 1.0)) + 0.25 * fbm(p * 5.0);
+        float m = smoothstep(0.6, 0.68, c) * smoothstep(0.0, 0.06, h) * (1.0 - smoothstep(0.35, 0.7, h));
         vec3 cl = mix(vec3(0.70, 0.74, 0.80), vec3(1.05, 1.03, 1.0), smoothstep(0.5, 0.85, c));
         col = mix(col, cl, m * 0.95);
       } else {
@@ -113,22 +114,22 @@ const noiseTex = canvasTex(512, (g, w, h) => { const im = g.createImageData(w, h
 noiseTex.wrapS = noiseTex.wrapT = THREE.RepeatWrapping; noiseTex.repeat.set(6, 3); noiseTex.colorSpace = THREE.NoColorSpace;
 
 // panel pod
-const PX0 = -235, PX1 = 180, PY0 = -75, PY1 = 172;
+const PX0 = -235, PX1 = 270, PY0 = -190, PY1 = 172;
 const pshape = new THREE.Shape();
 { const r = 40, rb = 10;
   pshape.moveTo(PX0 + rb, PY0); pshape.lineTo(PX1 - rb, PY0); pshape.quadraticCurveTo(PX1, PY0, PX1, PY0 + rb);
   pshape.lineTo(PX1, PY1 - r); pshape.quadraticCurveTo(PX1, PY1, PX1 - r, PY1); pshape.lineTo(PX0 + r, PY1);
   pshape.quadraticCurveTo(PX0, PY1, PX0, PY1 - r); pshape.lineTo(PX0, PY0 + rb); pshape.quadraticCurveTo(PX0, PY0, PX0 + rb, PY0); }
-const panelMat = new THREE.MeshPhysicalMaterial({ color: "#2b2d31", roughness: 0.78, roughnessMap: noiseTex, bumpMap: noiseTex, bumpScale: 0.25, clearcoat: 0.1 });
+const panelMat = new THREE.MeshPhysicalMaterial({ color: "#343437", roughness: 0.8, roughnessMap: noiseTex, bumpMap: noiseTex, bumpScale: 0.25, clearcoat: 0.1 });
 const pod = new THREE.Mesh(new THREE.ExtrudeGeometry(pshape, { depth: 14, bevelEnabled: true, bevelSize: 2, bevelThickness: 2, bevelSegments: 3 }), panelMat);
 pod.position.z = zP - 16; pod.receiveShadow = true; pod.castShadow = true; panel.add(pod);
 
 // glare shield: a fabric-covered hood over the panel's top edge, towards the pilot
-{ const s = new THREE.Shape(), pts = [[0, PY1 - 4], [0, PY1 + 6], [22, PY1 + 26], [55, PY1 + 36], [92, PY1 + 30], [112, PY1 + 14], [112, PY1 + 8], [94, PY1 + 22], [56, PY1 + 28], [24, PY1 + 18], [8, PY1 + 2]];
+{ const s = new THREE.Shape(), pts = [[0, PY1 - 4], [0, PY1 + 6], [10, PY1 + 16], [24, PY1 + 21], [38, PY1 + 17], [44, PY1 + 8], [44, PY1 + 3], [37, PY1 + 11], [25, PY1 + 16], [12, PY1 + 11], [6, PY1 + 2]];
   s.moveTo(...pts[0]); for (const p of pts.slice(1)) s.lineTo(...p);
   const g = new THREE.ExtrudeGeometry(s, { depth: PX1 - PX0 + 60, bevelEnabled: true, bevelSize: 2, bevelThickness: 2, bevelSegments: 4, curveSegments: 24 });
   g.applyMatrix4(new THREE.Matrix4().set(0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1));
-  const fabric = new THREE.MeshPhysicalMaterial({ color: "#17181b", roughness: 0.97, bumpMap: noiseTex, bumpScale: 0.6, side: THREE.DoubleSide });
+  const fabric = new THREE.MeshPhysicalMaterial({ color: "#3b3c40", roughness: 0.95, bumpMap: noiseTex, bumpScale: 0.6, side: THREE.DoubleSide });
   const hood = new THREE.Mesh(g, fabric); hood.position.set(PX0 - 30, 0, zP - 4); hood.castShadow = true; hood.receiveShadow = true; panel.add(hood); }
 
 // round instruments: bezel, dial, glass
@@ -171,15 +172,15 @@ function dial(kind) {
   });
 }
 const black = new THREE.MeshPhysicalMaterial({ color: "#121214", roughness: 0.45, metalness: 0.2, clearcoat: 0.4 });
-const glassMat = new THREE.MeshPhysicalMaterial({ color: "#ffffff", roughness: 0.03, transparent: true, opacity: 0.1, clearcoat: 1, clearcoatRoughness: 0.02, envMapIntensity: 1.2 });
+const glassMat = new THREE.MeshPhysicalMaterial({ color: "#ffffff", roughness: 0.03, transparent: true, opacity: 0.03, envMapIntensity: 0.6, clearcoat: 1, clearcoatRoughness: 0.02 });
 function instrument(d, kind, x, y) {
   const g = new THREE.Group(); g.position.set(x, y, zP);
   const ro = d / 2 + 4, ri = d / 2 - 1;
   const bez = new THREE.Mesh(new THREE.LatheGeometry([[ri, -1], [ri, 2.6], [ri + 1.5, 3.4], [ro - 1.2, 3.4], [ro, 2.2], [ro, 0]].map(p => new THREE.Vector2(...p)), 64), black);
   bez.rotation.x = Math.PI / 2; bez.castShadow = bez.receiveShadow = true; g.add(bez);
   const face = new THREE.Mesh(new THREE.CircleGeometry(ri, 96), new THREE.MeshStandardMaterial({ map: dial(kind), roughness: 0.6 }));
-  face.position.z = -0.8; face.receiveShadow = true; g.add(face);
-  const gl = new THREE.Mesh(new THREE.CircleGeometry(ri, 64), glassMat); gl.position.z = 2.0; g.add(gl);
+  face.position.z = 0.6; face.receiveShadow = true; g.add(face);
+  const gl = new THREE.Mesh(new THREE.CircleGeometry(ri, 64), glassMat); gl.position.z = 2.4; g.add(gl);
   for (let i = 0; i < 4; i++) { const a = Math.PI / 4 + i * Math.PI / 2, s = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 1, 16), new THREE.MeshStandardMaterial({ color: "#8a8d92", metalness: 0.9, roughness: 0.35 }));
     s.rotation.x = Math.PI / 2; s.position.set(Math.cos(a) * (ro + 3), Math.sin(a) * (ro + 3), 0.5); g.add(s); }
   panel.add(g);
@@ -208,6 +209,16 @@ instrument(57, "alt", 102, 122);
     const lev = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 2.0, 18, 16), new THREE.MeshStandardMaterial({ color: "#d9dce0", metalness: 1, roughness: 0.15 }));
     lev.position.set(x, -40 + 6, zP + 8); lev.rotation.x = -0.65 - Math.PI / 2 + Math.PI / 2; lev.rotation.x = 0.9; lev.castShadow = true; panel.add(lev); } }
 
+// placards
+function placard(lines, w, h, x, y) {
+  const t = canvasTex(0, (c, W2, H2) => { c.fillStyle = "#f4f2ea"; c.fillRect(0, 0, W2, H2); c.fillStyle = "#111"; c.textAlign = "center"; c.textBaseline = "middle";
+    lines.forEach((l, i) => { c.font = `${i ? 500 : 700} ${Math.min(H2 / lines.length * 0.62, W2 / l.length * 1.55)}px Helvetica, Arial`; c.fillText(l, W2 / 2, H2 * (i + 0.5) / lines.length); }); }, w * 16, h * 16);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: t, roughness: 0.5 })); m.position.set(x, y, zP + 0.1); m.receiveShadow = true; panel.add(m);
+}
+placard(["VNE 270 km/h", "MANOEUVRING 180 km/h"], 46, 12, -170, 72);
+placard(["AEROBATIC CATEGORY", "+7 g / -5 g"], 46, 12, 22, 78);
+placard(["OK long press = on / off"], 46, 7, 62, -26);
+
 // fuselage sides: white gelcoat sills with the canopy seal, running back from the panel (aircraft frame)
 { const gel = new THREE.MeshPhysicalMaterial({ color: "#f3f3ef", roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.08 });
   const panelTopW = new THREE.Vector3(0, PY1, zP).applyEuler(panel.rotation);
@@ -218,6 +229,17 @@ instrument(57, "alt", 102, 122);
     const seal = new THREE.Mesh(new THREE.BoxGeometry(10, 900, 5), new THREE.MeshStandardMaterial({ color: "#111", roughness: 0.8 }));
     seal.position.set(uc.x + sx * 300 - 30, panelTopW.y - 420, panelTopW.z + 14); scene.add(seal);
   } }
+
+// cockpit tub (dark, below the sills) so the land does not show through the floor
+{ const t = uc.clone().applyEuler(panel.rotation);
+  const tub = new THREE.Mesh(new THREE.BoxGeometry(660, 1800, 700), new THREE.MeshStandardMaterial({ color: "#1c1d20", roughness: 0.9, side: THREE.BackSide }));
+  tub.position.set(t.x - 30, t.y - 780, t.z + 100 - 350); tub.receiveShadow = true; scene.add(tub);
+  // canopy front bow: an arch over the panel, and the yaw string on the canopy in front of the pilot
+  const ys = []; for (let i = 0; i <= 12; i++) { const u = i / 12; ys.push(new THREE.Vector3(t.x - 10 + Math.sin(u * 7) * 4 * u, t.y + 760 - u * 150, t.z + 205 - u * 18)); }
+  scene.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(ys), 60, 1.1, 6), new THREE.MeshStandardMaterial({ color: "#e8590c", roughness: 0.9 })));
+  const tape = new THREE.Mesh(new THREE.BoxGeometry(14, 10, 1), new THREE.MeshStandardMaterial({ color: "#f8f9fa", roughness: 0.6 })); tape.position.copy(ys[0]); scene.add(tape);
+
+}
 
 // ---------------------------------------------------------------- light
 const sunL = new THREE.DirectionalLight(0xfff3e2, 3.4);
@@ -231,8 +253,8 @@ scene.add(new THREE.HemisphereLight(0xcfe3ff, 0x4a4a3a, 0.35));
 
 // ---------------------------------------------------------------- camera: over the pilot's right shoulder
 const shots = {
-  portrait: { pos: [150, -360, 300], look: [-25, 10, 30], fov: 34 },
-  square:   { pos: [170, -390, 270], look: [-45, 0, 25], fov: 36 },
+  portrait: { pos: [60, -400, 205], look: [5, 0, 92], fov: 40 },
+  square:   { pos: [110, -370, 205], look: [-25, 0, 95], fov: 40 },
 };
 const S = shots[shot];
 const cam = new THREE.PerspectiveCamera(S.fov, W / H, 5, 100000); cam.up.set(0, 0, 1);
@@ -244,8 +266,14 @@ const composer = new EffectComposer(renderer);
 composer.setSize(W, H);
 composer.addPass(new RenderPass(scene, cam));
 const focus = cam.position.distanceTo(target);
-composer.addPass(new BokehPass(scene, cam, { focus, aperture: +(q.get("ap") || 0.00006), maxblur: 0.006 }));
+composer.addPass(new BokehPass(scene, cam, { focus, aperture: +(q.get("ap") || 0.000012), maxblur: 0.004 }));
 composer.addPass(new OutputPass());
+composer.addPass(new ShaderPass({ uniforms: { tDiffuse: { value: null } },
+  vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+  fragmentShader: `uniform sampler2D tDiffuse; varying vec2 vUv;
+    float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+    void main(){ vec4 c = texture2D(tDiffuse, vUv); vec2 d = vUv - 0.5; float v = 1.0 - 0.35 * dot(d, d);
+      c.rgb *= v; c.rgb += (h(vUv * 1000.0) - 0.5) * 0.012; gl_FragColor = c; }` }));
 composer.render();
 window.done = true;
 </script></body></html>

@@ -60,7 +60,6 @@ Brass inserts and A4 stainless or titanium screws: the magnetometer is on the bo
 - foam ring for the barometer hood: closed-cell, 1.0 mm thick (squeezed to 0.7 mm), cut to the recess (5.7 x 5.7 mm outside, 2.9 x 2.9 mm inside)
 - foam: 0.5 mm closed-cell gasket between glass and face (compressed to 0.3 mm); 1 mm VHB foam pad under the cell
 - Qwiic and camera leads to the outside: cut out the 0.6 mm knock-out next to each socket in the top wall
-- SMA(F) bulkhead to U.FL pigtail, 1.13 mm cable, about 100 mm (Taoglas CAB.011 class), with its nut and washer, for the external GNSS antenna; 2 x stainless PT/self-tapping 2.2 x 8 screws for the antenna horn. Measure the jack's rear hex and ferrule and set `sma_hex` / `sma_ferrule` in params.scad before printing
 - optional: ePTFE vent sticker (6 mm) over the bottom-wall barometer outlet; for the static port instead: a 4 mm OD push-in hose barb (nylon)
 - mount: 4 x M4 countersunk (or the AMPS pattern, or one 1/4"-20 nut), 25 mm webbing / hook-and-loop strap
 
@@ -129,12 +128,10 @@ has a 4.2 mm counterbore:
 - The OK key carries a star.
 </details>
 
-## GNSS antenna horn
+## GNSS: patch and SMA
 
-The SMA jack sits in a horn on the left end, at the U.FL connector's height. It sits above the mount plate's stop block, so the antenna plug has finger room all round. The horn is a clamshell split on the connector axis: the upper half belongs to the front shell and the lower half to the tray. The jack's rear hex sits in a hex pocket, so it cannot turn and needs no spanner or nut inside. The panel nut and washer go on the outside. The pigtail runs straight from the ferrule over the board edge into the U.FL plug.
+The board carries an 18 mm ceramic patch (AE1) under the face, left of the display, and an edge-mount SMA jack (J50) on the left end for an external antenna.
 
-Assembly, with the front shell face down:
-1. Lay the jack in the upper half: thread in the half-hole, hex in its pocket, ferrule in the slot through the wall.
-2. Plug the U.FL onto J50 when the board goes in.
-3. Close the tray, then fit the two 2.2 mm screws from below.
-4. Fit the washer and nut outside and tighten them by hand plus a quarter turn with an 8 mm spanner.
+- **Over the patch:** plastic only. There is 1.1 mm of air between the patch and the face. The nearest screw or insert is about 19 mm away, and the build checks that none comes within 10 mm. The Cassiopeia inlay over it is first-colour PETG.
+- **SMA:** the jack's square flange sits in a square pocket. The pocket is split between the front shell and the tray, and a 1 mm boss on the wall puts 1.6 mm of PETG behind the flange, so cable torque and pull go into the case and not into the solder joints. About 6 mm of thread stays outside for the antenna plug, and the jack sits above the mount plate's stop block.
+- **Dust cap:** `sma_cap` is printed in PETG. Its three crush ribs grip the thread crests, and a lanyard eye lets you tie it to the mount. An off-the-shelf tethered SMA dust cap works too.

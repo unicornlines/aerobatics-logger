@@ -41,25 +41,22 @@ fence_w       = 1.8;
 cell          = [6, 34, 50];
 cell_foam     = 0.6;    // VHB foam tape under the cell (e.g. 3M 4930)
 cell_gap      = 0.5;    // cell top to the board's back, where no part is under the board
-cell_at       = [56, 34.6]; // cell centre in board coordinates: between the key sockets and the upper rail
+cell_at       = [70, 34.6]; // cell centre in board coordinates: between the key sockets and the upper rail
 
 /* [Barometer] */
 baro_mode     = "cockpit";  // documentation only: the same sealed hood serves both; "static" = fit the 4 mm barb (needs approval)
 
 /* [Antenna] */
-// SMA(F) bulkhead to U.FL pigtail (1.13 mm cable, ~100 mm, e.g. Taoglas CAB.011 class), held in a "horn" on the
-// left end: a clamshell split on the connector axis, half in the front shell, half in the tray. The jack's hex
-// sits in a hex pocket (no spanner inside, no nut inside), the panel nut and washer go on the outside.
-// The rear dimensions vary between makers: measure the pigtail you buy and set them here.
-sma           = true;
-sma_hole      = 6.6;    // 1/4"-36 thread through the end wall (round: the hex pocket stops it turning)
-sma_panel     = 2.0;    // end wall = panel thickness (most bulkheads take 1-4 mm)
-sma_hex       = [8.0, 2.6];   // hex behind the panel: across flats, length
-sma_ferrule   = [3.8, 6.5];   // crimp ferrule + heat shrink: diameter, length
-sma_z         = 0.85;   // axis above F.Cu: the cable runs straight over the board edge to the U.FL plug
-horn_w        = [16, 13];     // horn width at the wall and at the end
-horn_bot      = 0.4;    // clearance over the mount plate's stop block
-horn_screw    = 2.2;    // two stainless PT/self-tapping 2.2 x 8 screws close the clamshell from below
+// Built-in 18 mm GNSS patch (AE1) plus an edge-mount SMA jack (J50, Samtec SMA-J-P-H-ST-EM1) for an external antenna.
+// Numbers from the KiCad STEP model: square flange 6.35 x 6.35 from the board edge out 1.6 mm, axis 0.5 above F.Cu,
+// 1/4"-36 thread (6.64 over the crests in the model) to 9.5 mm past the edge.
+sma_flange    = [6.35, 1.6];  // square side, length past the board edge
+sma_z         = 0.5;
+sma_thread_d  = 6.64;
+sma_reach     = 9.5;
+sma_boss      = 1.0;    // the wall is this much thicker round the jack: 1.6 mm of PETG behind the flange
+patch_air     = 1.0;    // free air over the patch
+patch_keepout = 10;     // no metal (inserts, screws) this close to the patch
 /* [Fasteners] */
 // Brass heat-set inserts and A4 or titanium screws: the magnetometer is on board.
 insert_d      = 4.0;    // M3 x 5.7 heat-set insert, hole for it

@@ -32,6 +32,8 @@ ROLES = [
     ("key",      r"Choc|PG1350|Kailh|SW_Push", r"^SW"),
     ("radio",    r"ESP32", r"^U"),
     ("gnss_rf",  r"U\.FL", r"^J"),
+    ("sma",      r"SMA", r"^J"),
+    ("patch",    r"Patch|Taoglas|GNSS|GPS|CGGBP|ANT", r"^AE"),
     ("battery",  r"JST_PH", r"^J"),
     ("qwiic",    r"JST_SH", r"^J"),
     ("camera",   r"JST_SUR|SUR_|PinHeader_1x03", r"^J"),
@@ -53,7 +55,7 @@ HEIGHTS = [
     (r"U\.FL", 1.25), (r"LQFP", 1.6), (r"WSON-8", 0.8), (r"Hotswap|hotswap|CPG1350", 1.85),
     (r"Choc|PG1350|Kailh", 5.0), (r"SW_Push", 1.9), (r"L_Changjiang|FNR4020", 2.0),
     (r"L_1210", 2.2), (r"Crystal", 0.8), (r"0805|1206|SOT-23|SOD-123", 1.2),
-    (r"PG-LLGA-5", 1.2), (r"SHT4x|Sensirion_DFN", 0.6),
+    (r"PG-LLGA-5", 1.2), (r"SMA", 3.7), (r"Patch|Taoglas|CGGBP", 4.0), (r"SHT4x|Sensirion_DFN", 0.6),
     (r"MountingHole", 0.0), (r"Logo|TestPoint", 0.0),
 ]
 DEFAULT_H = 1.0

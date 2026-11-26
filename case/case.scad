@@ -159,7 +159,7 @@ module front() {
         translate([0, 0, z_split - 0.01]) linear_extrude(1.2 + 0.3) offset(delta = fit / 2) tongue();
         // side openings
         usb_cut(); sd_cut(); flex_relief(); battery_lead_gully(); battery_plug_pocket(); knockouts();
-        rh_vent(); baro_cut(); if (horn_on) horn_cut();
+        rh_vent(); baro_cut(); sma_cut();
         // LEDs: thin first-colour skin glows; the charge LED is a horn
         for (i = [0:len(feats("led")) - 1]) let(l = feats("led")[i], charge = fxy(l).x > W * 0.6)
             translate([fxy(l).x, fxy(l).y, z_face_in - 1]) {
@@ -178,7 +178,7 @@ module front() {
     }
     if (lcd) carrier_lugs();
     difference() { union() { rh_baffles(rh_gap, z_face_in + 0.01); baro_solid(); } baro_cut(); }
-    horn_front();
+    difference() { sma_boss(z_split, z_face); sma_cut(); }
     // tongue-and-groove: the front shell's groove is cut below; tray carries the tongue
 }
 
@@ -189,8 +189,10 @@ module face_inlays() {
     translate([(lcd_bb[2] + W + board_gap) / 2, (lcd_bb[1] + lcd_bb[3]) / 2 - 2 - 9 - 2.5, zt]) linear_extrude(1) label("UNICORNLINES®", 2.0);
     // left of the keys: the tagline
     // the tagline runs up the free strip left of the display, clear of the vent and the radio corner
-    translate([(lcd_bb[0] - board_gap) / 2 + 4, (kb1.y + (has("radio") ? fbb(feat("radio"))[1] : H)) / 2 + 2, zt]) linear_extrude(1)
+    translate([has("patch") ? patch_bb[0] / 2 : (lcd_bb[0] - board_gap) / 2 + 4, (kb1.y + (has("radio") ? fbb(feat("radio"))[1] : H)) / 2 + 2, zt]) linear_extrude(1)
         rotate(90) label("NEVER STOP DREAMING", 2.2, font_reg);
+    // over the GNSS patch: plastic only, and a constellation
+    if (has("patch")) translate([(patch_bb[0] + patch_bb[2]) / 2, (patch_bb[1] + patch_bb[3]) / 2, zt]) linear_extrude(1) cassiopeia();
     // IMU origin and axes, exactly over the sensor, when the window does not cover it
     if (has("imu")) let(p = fxy(feat("imu"))) if (!(p.x > win_c.x - cover.x/2 - 6 && p.x < win_c.x + cover.x/2 + 6
               && p.y > win_c.y - cover.y/2 - 6 && p.y < win_c.y + cover.y/2 + 6))
@@ -437,7 +439,7 @@ module tray_body() {
         // side openings continue below the split
         tray_openings();
         // no tongue under the antenna ferrule
-        if (horn_on) translate([-board_gap - wall - 1, horn_y - sma_ferrule[0] / 2 - 0.6, z_split - 0.5]) cube([wall + 2, sma_ferrule[0] + 1.2, 3]);
+        sma_cut();
         // the notch the plate's snap hook falls into
         translate([latch_x - 2, H / 2 - latch_arm.y / 2 - 0.4, z_bot - 0.01]) cube([4, latch_arm.y + 0.8, latch_hook + 0.3]);
         // under the board: nothing of the tongue where the openings are
@@ -464,7 +466,7 @@ module tray_body() {
     // the cell: a rib frame and four snap fingers over its long edges
     if (cell_on) cell_bay();
     rh_baffles(z_floor_in - 0.01, z_split - rh_gap);
-    horn_tray();
+    difference() { sma_boss(-50, z_split); sma_cut(); }
     battery_clip();   // the chamber's back half: still air under the tongue
     // the floor is thicker over the latch notch
     difference() {
@@ -508,57 +510,55 @@ module tray_openings() {
     battery_lead_gully();
 }
 
-// ---------------------------------------------------------------- GNSS antenna horn
-// The SMA jack lives in a horn on the left end, above the mount plate's stop block, clear of fingers and spanner.
-// Clamshell split on the connector axis: the upper half is the front shell, the lower half the tray.
-// From the outside in: end wall (the panel, nut + washer outside), hex pocket, ferrule channel, then the cable runs
-// straight over the board edge into the U.FL plug. Two PT screws from below close the halves.
-horn_on = sma && has("gnss_rf");
-horn_y  = horn_on ? fxy(feat("gnss_rf")).y : 0;
-horn_x1 = -board_gap - wall;                                            // the outer wall face
-horn_hex_x = -0.4 - sma_ferrule[1] - sma_hex[1] - 0.3;                  // pocket end nearest the wall: ferrule stops before the board
-horn_x0 = horn_hex_x - sma_panel;                                       // outer face of the end wall
-horn_z0 = z_bot + 5 + horn_bot;                                         // the stop block is 5 mm tall
-horn_screws = [for (sy = [-1, 1]) [(horn_hex_x + sma_hex[1] + 0.3 + horn_x1) / 2, horn_y + sy * 5.3]];
-module horn_body() {
-    r = 2.0;
-    hull() for (e = [[horn_x0, horn_w[1]], [horn_x1 + 0.6, horn_w[0]]], sy = [-1, 1])
-        translate([e[0] + (e[0] < horn_x1 ? r : -r), horn_y + sy * (e[1] / 2 - r), horn_z0]) cylinder(r = r, h = z_face - horn_z0);
+// ---------------------------------------------------------------- GNSS: edge-mount SMA and the patch
+// The jack's square flange sits in a square pocket split between the front shell and the tray, so cable torque
+// and pull go into the case, not the solder joints. The thread passes a hole in a small boss on the left wall.
+sma_on = has("sma");
+sma_y  = sma_on ? let(b = fbb(feat("sma"))) (b[1] + b[3]) / 2 : 0;
+sma_x_wall = -board_gap - wall;
+function sma_boss_z() = [sma_z - 5.5, sma_z + 5.5];
+module sma_cut() if (sma_on) {
+    f = sma_flange.x + 2 * 0.15;
+    translate([-sma_flange.y - 0.15, sma_y - f / 2, sma_z - f / 2]) cube([sma_flange.y + 0.15 + 0.5, f, f]);
+    translate([-sma_reach - 2, sma_y, sma_z]) rotate([0, 90, 0]) cylinder(d = sma_thread_d + 0.2, h = sma_reach + 2);
 }
-module horn_cut() {
-    ax = [0, sma_z];
-    translate([horn_x0 - 1, horn_y, sma_z]) rotate([0, 90, 0]) cylinder(d = sma_hole, h = sma_panel + 1.01);
-    hx = sma_hex[0] + 0.3;
-    translate([horn_hex_x, horn_y, sma_z]) rotate([0, 90, 0]) rotate(30) cylinder(r = hx / 2 / cos(30), h = sma_hex[1] + 0.3, $fn = 6);
-    translate([horn_hex_x + sma_hex[1] + 0.2, horn_y, sma_z]) rotate([0, 90, 0]) cylinder(d = sma_ferrule[0] + 0.4, h = -horn_hex_x - sma_hex[1] + 0.3);
-    // the ferrule drops into the front shell from the split side (assembly is face down)
-    translate([horn_x1 - 0.01, horn_y - (sma_ferrule[0] + 0.4) / 2, z_split - 1]) cube([wall + 0.4, sma_ferrule[0] + 0.4, sma_z - z_split + 1]);
-    for (q = horn_screws) translate([q.x, q.y, 0]) {
-        translate([0, 0, horn_z0 - 1]) cylinder(d = horn_screw + 0.3, h = sma_z - horn_z0 + 1.01);          // clearance in the lower half
-        translate([0, 0, horn_z0 - 0.01]) cylinder(d = 4.4, h = 1.6);                                     // head recess
-        translate([0, 0, sma_z - 0.01]) cylinder(d = horn_screw - 0.5, h = 5);                             // pilot in the upper half
+module sma_boss(lo, hi) if (sma_on) intersection() {
+    translate([sma_x_wall - sma_boss, sma_y, 0]) rotate([0, 90, 0]) linear_extrude(sma_boss + 0.5)
+        offset(r = 1.5) offset(delta = -1.5) translate([-sma_boss_z()[1], -5.5]) square([sma_boss_z()[1] - sma_boss_z()[0], 11]);
+    translate([-50, -50, lo]) cube([100, 200, hi - lo]);
+}
+patch_bb = has("patch") ? fbb(feat("patch")) : undef;
+// Cassiopeia's W over the patch: the antenna looks at the sky, the face says so
+module cassiopeia(s = 1) {
+    st = [[-6, 2.2], [-3, -1.4], [0, 0.6], [3, -2.2], [6, 1.4]] * s;
+    for (q = st) translate(q) star(1.3);
+    for (i = [0:3]) hull() { translate(st[i]) circle(d = 0.35, $fn = 8); translate(st[i + 1]) circle(d = 0.35, $fn = 8); }
+}
+// Dust cap for the SMA when no external antenna is fitted: a PETG thimble with three crush ribs that grip the
+// thread crests, and a lanyard eye so it can be tied to the mount.
+module sma_cap() {
+    id = sma_thread_d + 0.1; od = id + 2.4; h = 6.5;
+    difference() {
+        union() {
+            cylinder(d = od, h = h, $fn = 48);
+            translate([0, 0, 0]) hull() { cylinder(d = od, h = 1.6, $fn = 48); translate([od / 2 + 2.5, 0, 0]) cylinder(d = 5, h = 1.6, $fn = 32); }
+        }
+        translate([0, 0, 1.2]) cylinder(d = id, h = h, $fn = 48);
+        translate([od / 2 + 2.5, 0, -1]) cylinder(d = 2.2, h = 5, $fn = 24);
     }
+    for (a = [0, 120, 240]) rotate(a) translate([id / 2 - 0.25, -0.4, 1.2]) cube([0.5, 0.8, h - 1.2]);
 }
-module horn_front() if (horn_on) difference() {
-    intersection() { horn_body(); translate([-50, -50, sma_z]) cube([100, 200, 50]); }
-    horn_cut();
+if (sma_on) {
+    if (sma_boss_z()[0] < z_bot + 5 + 0.3) echo("CHECK: SMA boss sits on the plate's stop block");
+    if (sma_x_wall - sma_boss < -sma_reach + 4.5) echo("CHECK: less than 4.5 mm of SMA thread outside the case");
+    echo(str("CASE: SMA at y ", sma_y, ", axis z ", sma_z, ", thread outside ", sma_reach + sma_x_wall - sma_boss, " mm"));
 }
-module horn_tray() if (horn_on) difference() {
-    union() {
-        intersection() { horn_body(); translate([-50, -50, -50]) cube([50 + horn_x1 - 0.1, 200, 50 + sma_z]); }
-        intersection() { horn_body(); translate([-50, -50, -50]) cube([100, 200, 50 + z_split]); }
-    }
-    horn_cut();
-}
-let(roof = z_bot + rail_h + fit, deepest = z_split - max(4.6, insert_l + 0.3))
-    if (deepest - roof < 1.0) echo("CHECK: corner screw hole bottoms leave less than 1 mm over the dovetail channel");
-if (horn_on) {
-    if (horn_z0 < z_bot + 5 + 0.3) echo("CHECK: antenna horn sits on the plate's stop block");
-    if (horn_hex_x + sma_hex[1] + 0.3 + sma_ferrule[1] > -0.3) echo("CHECK: SMA ferrule reaches over the board");
-    if (sma_z + (sma_hex[0] + 0.3) / 2 > z_face - 1.2 || sma_z - (sma_hex[0] + 0.3) / 2 < horn_z0 + 1.2) echo("CHECK: hex pocket breaks through the horn");
-    let(bad = [for (p = board_parts) if (p[1] == "F" && p[0] != feat("gnss_rf")[0] && p[2][0] < 1.98 && p[2][3] > horn_y - 2 && p[2][1] < horn_y + 2) p[0]])
-        if (len(bad) > 0) echo("CHECK: parts under the antenna cable", bad);
-    echo(str("CASE: antenna horn x ", horn_x0, " .. ", horn_x1, ", y ", horn_y, ", axis z ", sma_z, ", bottom z ", horn_z0));
+if (has("patch")) {
+    if (z_face_in - feat("patch")[6] < patch_air) echo("CHECK: less than ", patch_air, " mm air over the patch");
+    let(near = [for (h = holes) if (fxy(h).x > patch_bb[0] - patch_keepout && fxy(h).x < patch_bb[2] + patch_keepout
+                                    && fxy(h).y > patch_bb[1] - patch_keepout && fxy(h).y < patch_bb[3] + patch_keepout) h[0]])
+        if (len(near) > 0) echo("CHECK: screw or insert within the patch keep-out", near);
+    echo(str("CASE: patch ", patch_bb, ", air over it ", z_face_in - feat("patch")[6]));
 }
 
 // ---------------------------------------------------------------- mount plate
@@ -626,7 +626,7 @@ module board_model(sel = "") {
         polygon(board_outline);
         for (h = holes) translate(fxy(h)) circle(d = 3.2);
     }
-    g("parts", "#2a2a2a") for (p = board_parts) if (p[3] > 0) translate([0, 0, p[1] == "F" ? 0 : -board_t - p[3]]) linear_extrude(p[3]) bb2d(p[2], -0.2);
+    g("parts", "#2a2a2a") for (p = board_parts) if (p[3] > 0 && !(has("sma") && p[0] == feat("sma")[0])) translate([0, 0, p[1] == "F" ? 0 : -board_t - p[3]]) linear_extrude(p[3]) bb2d(p[2], -0.2);
     for (f = board_features) {
         r = f[1];
         if (r == "usb_c") g("metal", "silver") translate([fxy(f).x - 3.7, fxy(f).y - 4.47, 0]) cube([7.35 + 0.2, 8.94, 3.26]);
@@ -634,6 +634,12 @@ module board_model(sel = "") {
         if (r == "radio") g("metal", "#555") linear_extrude(fh(f)) bb2d(fbb(f), -0.3);
         if (r == "battery" || r == "qwiic" || r == "camera") g("white", "#eee") linear_extrude(fh(f)) bb2d(fbb(f), -0.4);
         if (r == "baro" || r == "imu" || r == "mag") g("metal", "#888") linear_extrude(0.9) bb2d(fbb(f));
+        if (r == "sma") g("metal", "gold") translate([0, sma_y, sma_z]) {
+            translate([-sma_flange.y, -sma_flange.x / 2, -sma_flange.x / 2]) cube([sma_flange.y + 2.0, sma_flange.x, sma_flange.x]);
+            rotate([0, -90, 0]) cylinder(d = sma_thread_d - 0.3, h = sma_reach, $fn = 6 * 6);
+            rotate([0, -90, 0]) translate([0, 0, sma_reach - 0.5]) difference() { cylinder(d = 4.6, h = 0.5); cylinder(d = 3.6, h = 2, center = true); }
+        }
+        if (r == "patch") g("white", "#d9d4c4") linear_extrude(fh(f)) bb2d(fbb(f), 0.2);
         if (r == "led") g("led", fxy(f).x > W * 0.6 ? "orange" : "lime") linear_extrude(0.8) bb2d(fbb(f));
     }
     g("switch", "#333") for (i = [0:len(keys) - 1]) key_at(i) choc_switch(false);
@@ -699,6 +705,7 @@ else if (part == "keybridge") translate([0, 0, -plate_bot]) keybridge();        
 else if (part == "lcd_frame") lcd_frame();
 else if (part == "tray") translate([0, 0, -z_bot]) tray();
 else if (part == "plate") translate([0, 0, plate_t]) plate();
+else if (part == "sma_cap") sma_cap();                                                  // closed end down
 else if (part == "cap_up") translate([0, 0, cap_t]) rotate([0, 180, 0]) keycap("up");    // face down
 else if (part == "cap_ok") translate([0, 0, cap_t]) rotate([0, 180, 0]) keycap("ok");
 else if (part == "cap_dn") translate([0, 0, cap_t]) rotate([0, 180, 0]) keycap("dn");

@@ -47,11 +47,19 @@ cell_at       = [56, 34.6]; // cell centre in board coordinates: between the key
 baro_mode     = "cockpit";  // documentation only: the same sealed hood serves both; "static" = fit the 4 mm barb (needs approval)
 
 /* [Antenna] */
-sma           = true;   // SMA bulkhead for the external GNSS antenna (U.FL pigtail inside)
-sma_wall      = "left"; // which short wall
-sma_d         = 6.5;    // 1/4"-36 panel hole
-sma_flat      = 5.9;    // D-flat across
-
+// SMA(F) bulkhead to U.FL pigtail (1.13 mm cable, ~100 mm, e.g. Taoglas CAB.011 class), held in a "horn" on the
+// left end: a clamshell split on the connector axis, half in the front shell, half in the tray. The jack's hex
+// sits in a hex pocket (no spanner inside, no nut inside), the panel nut and washer go on the outside.
+// The rear dimensions vary between makers: measure the pigtail you buy and set them here.
+sma           = true;
+sma_hole      = 6.6;    // 1/4"-36 thread through the end wall (round: the hex pocket stops it turning)
+sma_panel     = 2.0;    // end wall = panel thickness (most bulkheads take 1-4 mm)
+sma_hex       = [8.0, 2.6];   // hex behind the panel: across flats, length
+sma_ferrule   = [3.8, 6.5];   // crimp ferrule + heat shrink: diameter, length
+sma_z         = 0.85;   // axis above F.Cu: the cable runs straight over the board edge to the U.FL plug
+horn_w        = [16, 13];     // horn width at the wall and at the end
+horn_bot      = 0.4;    // clearance over the mount plate's stop block
+horn_screw    = 2.2;    // two stainless PT/self-tapping 2.2 x 8 screws close the clamshell from below
 /* [Fasteners] */
 // Brass heat-set inserts and A4 or titanium screws: the magnetometer is on board.
 insert_d      = 4.0;    // M3 x 5.7 heat-set insert, hole for it

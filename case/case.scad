@@ -111,14 +111,6 @@ module logo(h) scale(h / logo_size.y) logo_art();   // traced for print, see too
 module label(t, size, font = font_bold, halign = "center", valign = "center", spacing = 1)
     text(t, size = size, font = font, halign = halign, valign = valign, spacing = spacing);
 
-// Aresti notation for a loop: a dot where the figure starts, the loop, a bar where it ends.
-// Here it is the barometer vent: every stroke is an opening.
-module aresti_loop(r = 3.2, w = 0.9) {
-    difference() { circle(r = r + w/2, $fn = 64); circle(r = r - w/2, $fn = 64);
-                   translate([-r * 0.42, -r - 2]) square([r * 0.84, 2.6]); }   // the loop does not close
-    translate([-r * 0.42 - 1.6, -r]) circle(d = 1.5);                             // start: the dot
-    translate([r * 0.42 + 0.9, -r]) square([w, 3.0], center = true);              // end: the bar
-}
 module horn(h = 7) polygon([[-1.1, 0], [1.1, 0], [0.15, h], [-0.15, h]]);       // the charge LED: the horn glows
 module star(r = 1.6) polygon([for (i = [0:9]) let(a = 90 + i * 36, rr = i % 2 ? r * 0.45 : r) [rr * cos(a), rr * sin(a)]]);
 
@@ -167,11 +159,7 @@ module front() {
         translate([0, 0, z_split - 0.01]) linear_extrude(1.2 + 0.3) offset(delta = fit / 2) tongue();
         // side openings
         usb_cut(); sd_cut(); flex_relief(); battery_lead_gully(); battery_plug_pocket(); knockouts();
-        rh_vent(); baro_cut();
-        // barometer
-        if (has("baro")) translate([vent_xy().x, vent_xy().y, 0]) {
-            translate([0, 0, z_face - first_colour_t]) linear_extrude(1) aresti_loop();   // the mark only: the sensor breathes through the bottom wall
-        }
+        rh_vent(); baro_cut(); if (horn_on) horn_cut();
         // LEDs: thin first-colour skin glows; the charge LED is a horn
         for (i = [0:len(feats("led")) - 1]) let(l = feats("led")[i], charge = fxy(l).x > W * 0.6)
             translate([fxy(l).x, fxy(l).y, z_face_in - 1]) {
@@ -190,6 +178,7 @@ module front() {
     }
     if (lcd) carrier_lugs();
     difference() { union() { rh_baffles(rh_gap, z_face_in + 0.01); baro_solid(); } baro_cut(); }
+    horn_front();
     // tongue-and-groove: the front shell's groove is cut below; tray carries the tongue
 }
 
@@ -426,7 +415,12 @@ module keycap(kind) {
 }
 
 // ---------------------------------------------------------------- tray
-module tray() {
+// The dovetail channels are cut from everything the tray carries: columns, ribs and clips must not reach into them.
+module tray() difference() {
+    tray_body();
+    for (y = rail_ys()) translate([0, y, z_bot]) dovetail(len = 400, grow = fit);
+}
+module tray_body() {
     difference() {
         union() {
             translate([0, 0, z_bot]) linear_extrude(z_split - z_bot) plan_outer();
@@ -442,6 +436,8 @@ module tray() {
         for (y = rail_ys()) translate([0, y, z_bot]) dovetail(len = 400, grow = fit);
         // side openings continue below the split
         tray_openings();
+        // no tongue under the antenna ferrule
+        if (horn_on) translate([-board_gap - wall - 1, horn_y - sma_ferrule[0] / 2 - 0.6, z_split - 0.5]) cube([wall + 2, sma_ferrule[0] + 1.2, 3]);
         // the notch the plate's snap hook falls into
         translate([latch_x - 2, H / 2 - latch_arm.y / 2 - 0.4, z_bot - 0.01]) cube([4, latch_arm.y + 0.8, latch_hook + 0.3]);
         // under the board: nothing of the tongue where the openings are
@@ -459,7 +455,7 @@ module tray() {
     for (h = used_holes) translate([fxy(h).x, fxy(h).y, z_floor_in - 0.01]) difference() {
         cylinder(d = boss_d, h = z_split - z_floor_in + 0.01);
         nyl = in_list(h[0], nylon_holes);
-        if (is_corner(h)) translate([0, 0, z_split - z_floor_in - (nyl ? 5.5 : insert_l + 0.3)]) cylinder(d = nyl ? 2.7 : insert_d, h = 20);
+        if (is_corner(h)) translate([0, 0, z_split - z_floor_in - (nyl ? 4.6 : insert_l + 0.3)]) cylinder(d = nyl ? 2.7 : insert_d, h = 20);
         else translate([0, 0, -10]) cylinder(d = screw_d, h = 40);  // inner hole: screw from the back, thin nut on the front
     }
     // (inner holes are countersunk into the bottom, see below)
@@ -468,6 +464,7 @@ module tray() {
     // the cell: a rib frame and four snap fingers over its long edges
     if (cell_on) cell_bay();
     rh_baffles(z_floor_in - 0.01, z_split - rh_gap);
+    horn_tray();
     battery_clip();   // the chamber's back half: still air under the tongue
     // the floor is thicker over the latch notch
     difference() {
@@ -508,11 +505,60 @@ module cell_bay() {
 }
 module tray_openings() {
     battery_lead_gully(z_floor_in, z_split + 1.3);
-    // SMA bulkhead for the external GNSS antenna, low in the wall so its nut is inside the tray
-    if (sma && has("gnss_rf")) let(y = fxy(feat("gnss_rf")).y, z = (z_floor_in + z_split) / 2)
-        translate([sma_wall == "left" ? -board_gap - wall - 1 : W + board_gap - 1, y, z]) rotate([0, 90, 0])
-            intersection() { cylinder(d = sma_d, h = wall + 2); translate([-sma_flat/2 - 5, -5, 0]) cube([sma_flat / 2 + 5 + sma_flat / 2, 10, wall + 2]); }
     battery_lead_gully();
+}
+
+// ---------------------------------------------------------------- GNSS antenna horn
+// The SMA jack lives in a horn on the left end, above the mount plate's stop block, clear of fingers and spanner.
+// Clamshell split on the connector axis: the upper half is the front shell, the lower half the tray.
+// From the outside in: end wall (the panel, nut + washer outside), hex pocket, ferrule channel, then the cable runs
+// straight over the board edge into the U.FL plug. Two PT screws from below close the halves.
+horn_on = sma && has("gnss_rf");
+horn_y  = horn_on ? fxy(feat("gnss_rf")).y : 0;
+horn_x1 = -board_gap - wall;                                            // the outer wall face
+horn_hex_x = -0.4 - sma_ferrule[1] - sma_hex[1] - 0.3;                  // pocket end nearest the wall: ferrule stops before the board
+horn_x0 = horn_hex_x - sma_panel;                                       // outer face of the end wall
+horn_z0 = z_bot + 5 + horn_bot;                                         // the stop block is 5 mm tall
+horn_screws = [for (sy = [-1, 1]) [(horn_hex_x + sma_hex[1] + 0.3 + horn_x1) / 2, horn_y + sy * 5.3]];
+module horn_body() {
+    r = 2.0;
+    hull() for (e = [[horn_x0, horn_w[1]], [horn_x1 + 0.6, horn_w[0]]], sy = [-1, 1])
+        translate([e[0] + (e[0] < horn_x1 ? r : -r), horn_y + sy * (e[1] / 2 - r), horn_z0]) cylinder(r = r, h = z_face - horn_z0);
+}
+module horn_cut() {
+    ax = [0, sma_z];
+    translate([horn_x0 - 1, horn_y, sma_z]) rotate([0, 90, 0]) cylinder(d = sma_hole, h = sma_panel + 1.01);
+    hx = sma_hex[0] + 0.3;
+    translate([horn_hex_x, horn_y, sma_z]) rotate([0, 90, 0]) rotate(30) cylinder(r = hx / 2 / cos(30), h = sma_hex[1] + 0.3, $fn = 6);
+    translate([horn_hex_x + sma_hex[1] + 0.2, horn_y, sma_z]) rotate([0, 90, 0]) cylinder(d = sma_ferrule[0] + 0.4, h = -horn_hex_x - sma_hex[1] + 0.3);
+    // the ferrule drops into the front shell from the split side (assembly is face down)
+    translate([horn_x1 - 0.01, horn_y - (sma_ferrule[0] + 0.4) / 2, z_split - 1]) cube([wall + 0.4, sma_ferrule[0] + 0.4, sma_z - z_split + 1]);
+    for (q = horn_screws) translate([q.x, q.y, 0]) {
+        translate([0, 0, horn_z0 - 1]) cylinder(d = horn_screw + 0.3, h = sma_z - horn_z0 + 1.01);          // clearance in the lower half
+        translate([0, 0, horn_z0 - 0.01]) cylinder(d = 4.4, h = 1.6);                                     // head recess
+        translate([0, 0, sma_z - 0.01]) cylinder(d = horn_screw - 0.5, h = 5);                             // pilot in the upper half
+    }
+}
+module horn_front() if (horn_on) difference() {
+    intersection() { horn_body(); translate([-50, -50, sma_z]) cube([100, 200, 50]); }
+    horn_cut();
+}
+module horn_tray() if (horn_on) difference() {
+    union() {
+        intersection() { horn_body(); translate([-50, -50, -50]) cube([50 + horn_x1 - 0.1, 200, 50 + sma_z]); }
+        intersection() { horn_body(); translate([-50, -50, -50]) cube([100, 200, 50 + z_split]); }
+    }
+    horn_cut();
+}
+let(roof = z_bot + rail_h + fit, deepest = z_split - max(4.6, insert_l + 0.3))
+    if (deepest - roof < 1.0) echo("CHECK: corner screw hole bottoms leave less than 1 mm over the dovetail channel");
+if (horn_on) {
+    if (horn_z0 < z_bot + 5 + 0.3) echo("CHECK: antenna horn sits on the plate's stop block");
+    if (horn_hex_x + sma_hex[1] + 0.3 + sma_ferrule[1] > -0.3) echo("CHECK: SMA ferrule reaches over the board");
+    if (sma_z + (sma_hex[0] + 0.3) / 2 > z_face - 1.2 || sma_z - (sma_hex[0] + 0.3) / 2 < horn_z0 + 1.2) echo("CHECK: hex pocket breaks through the horn");
+    let(bad = [for (p = board_parts) if (p[1] == "F" && p[0] != feat("gnss_rf")[0] && p[2][0] < 1.98 && p[2][3] > horn_y - 2 && p[2][1] < horn_y + 2) p[0]])
+        if (len(bad) > 0) echo("CHECK: parts under the antenna cable", bad);
+    echo(str("CASE: antenna horn x ", horn_x0, " .. ", horn_x1, ", y ", horn_y, ", axis z ", sma_z, ", bottom z ", horn_z0));
 }
 
 // ---------------------------------------------------------------- mount plate

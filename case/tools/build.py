@@ -62,6 +62,9 @@ VIEWS = {
     "section-ducts": {"set": "assembled", "dir": [0.15, -0.35, 1.0], "dist": 1.1, "fov": 20, "clip": [0, 0, -1, 4.6], "shift": [-42, -12, 0]},
     # just under the board, from above, right end: battery lead gully and clip in the tray
     "section-battery": {"set": "assembled", "dir": [-0.2, -0.45, 1.0], "dist": 1.0, "fov": 20, "clip": [0, 0, -1, -1.7], "shift": [45, -10, 0]},
+    # the GNSS antenna horn on the left end: outside, and cut through the connector axis (keep y > cut, look from -y)
+    "horn":         {"set": "assembled", "dir": [-1.0, -0.7, 0.25], "dist": 1.3, "fov": 20, "shift": [-62, 4, 0]},
+    "section-horn": {"set": "assembled", "dir": [-0.1, -1.0, 0.12], "dist": 1.1, "fov": 20, "clip": [0, 1, 0, -35.0], "shift": [-62, 0, 0]},
     "released": {"set": "released", "dir": [-0.45, -1.0, 0.5], "dist": 2.9, "fov": 20},
 }
 

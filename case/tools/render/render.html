@@ -40,6 +40,15 @@ for (const p of cfg.pieces) {
     transparent: p.alpha < 1, opacity: p.alpha, transmission: p.glass ? 0.6 : 0, clearcoat: p.clearcoat ?? 0,
     side: THREE.DoubleSide, flatShading: false,
   });
+  // a screen image on the display's active area (planar UVs over its top face)
+  if (view.screen && p.name === "lcd_active") {
+    geo.computeBoundingBox(); const b = geo.boundingBox, pos = geo.attributes.position, uv = new Float32Array(pos.count * 2);
+    for (let i = 0; i < pos.count; i++) { uv[2*i] = (pos.getX(i) - b.min.x) / (b.max.x - b.min.x); uv[2*i+1] = (pos.getY(i) - b.min.y) / (b.max.y - b.min.y); }
+    geo.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+    const tex = await new THREE.TextureLoader().loadAsync(view.screen);
+    tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
+    m.map = tex; m.color = new THREE.Color("#dfe3da"); m.needsUpdate = true;
+  }
   const mesh = new THREE.Mesh(geo, m);
   mesh.castShadow = p.alpha >= 1; mesh.receiveShadow = true;
   root.add(mesh);

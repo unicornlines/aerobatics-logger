@@ -47,6 +47,7 @@ PIECES = [
 ]
 VIEWS = {
     "hero":     {"set": "assembled", "dir": [-0.55, -1.0, 0.75], "dist": 3.0, "fov": 20},
+    "hero-boot": {"set": "assembled", "dir": [-0.3, -0.5, 1.0], "dist": 2.4, "fov": 20, "screen": "screen-boot.png"},
     "front":    {"set": "assembled", "dir": [0.0, -0.18, 1.0], "dist": 3.1, "fov": 20},
     "exploded": {"set": "exploded", "dir": [-0.75, -1.0, 0.55], "dist": 2.9, "fov": 22, "gap": 4},
     "back":     {"set": "assembled", "dir": [0.35, 0.8, -1.0], "dist": 3.0, "fov": 20, "gap": 60, "under": True},

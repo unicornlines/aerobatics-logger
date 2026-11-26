@@ -13,6 +13,7 @@
 Freerouting is not deterministic, so two runs give different copper. The committed board is one
 run that came out DRC-clean.
 """
+import math
 import os, re, subprocess, sys
 import pcbnew
 
@@ -105,6 +106,20 @@ def read_ses(board, path):
                 m = re.search(r"_(\d+):(\d+)_um", item[1])
                 vias.append((net[1], (nm(item[2]), -nm(item[3])), int(m.group(1)) * 1000, int(m.group(2)) * 1000))
     segs = list(dict.fromkeys((n, L, *sorted((a, b)), w) for n, L, a, b, w in segs))   # drop duplicate wires
+    # Freerouting ignores the edge clearance on inner board cut-outs (the humidity sensor's notch) for the power class.
+    # Pour nets don't need those runs: the pours, the planes and the fanout vias carry them, so drop the offenders.
+    outline = pcbnew.SHAPE_POLY_SET(); board.GetBoardPolygonOutlines(outline)
+    inner = {}
+
+    def in_board(a, b, w):
+        if w not in inner:
+            inner[w] = pcbnew.SHAPE_POLY_SET(outline); inner[w].Deflate(MM(0.5) + w // 2, 16)
+        k = max(1, int(math.hypot(b[0] - a[0], b[1] - a[1]) // MM(0.1)))
+        return all(inner[w].Contains(pcbnew.VECTOR2I(a[0] + (b[0] - a[0]) * i // k, a[1] + (b[1] - a[1]) * i // k)) for i in range(k + 1))
+    n0 = len(segs)
+    segs = [s_ for s_ in segs if s_[0] not in ("GND", "+3V3") or in_board(s_[2], s_[3], s_[4])]
+    if len(segs) < n0:
+        print(f"  dropped {n0 - len(segs)} pour-net segments too close to the board edge")
     pads = [(p.GetNetname(), p) for f in board.GetFootprints() for p in f.Pads()]
 
     def on_pad(net, L, q):

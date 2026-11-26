@@ -90,8 +90,11 @@ at("U17", 3.2, 45.8, 0); at("C49", 3.2, 48.4, 0)
 # PB0/PB1 as the panel allows; the case ports the bezel over it. Clock series resistor at PB0.
 at("MK1", 26.5, 41.0, 90, "B"); at("C53", 26.2, 37.9, 0, "B")
 at("R42", 48.8, 36.8, 90)
-at("U7", 24.5, 53.5, 0)                               # barometer: hose chamber over it, barb out of the bottom wall
-at("C42", 22.0, 53.5, 90); at("C43", 27.0, 53.5, 90)
+# Barometer: the case seals a hood onto the board around it (cockpit air, or a hose to the static port), so the front
+# keeps a part-free ring of 1.8 mm round its courtyard (x 19.45-25.55, y 50.45-56.55) and stays left of the key
+# bridge at x 27.2; its decoupling caps sit on the back, right under it.
+at("U7", 22.5, 53.5, 0)
+at("C42", 21.2, 53.5, 90, "B"); at("C43", 22.5, 53.5, 90, "B")
 
 # --- Top edge, under the panel: Qwiic and camera/marker sockets (cables out of the top) ------
 at("J63", 35.0, 3.4, 180)                              # I2C expansion (Qwiic)
@@ -165,7 +168,11 @@ FANOUT = [("U9", "C3", 0.55, 0.55), ("C30", "GND", 0.0, -0.95), ("C31", "GND", 0
           ("U6", "6", 0.0, 0.9),            # IMU GND, straight down between VDDIO and a reserved pin
           ("U7", "9", 0.75, 0.0),           # baro GND (right side, middle pad), straight out to a via
           ("U11", "51", 0.6, 0.75),
-          ("C53", "2", 0.0, 0.75)]          # mic decoupling (back): its GND via between the cap and the mic, off the 3V3 run
+          ("C53", "2", 0.0, 0.75),
+          # humidity sensor: 3V3 and GND straight out sideways to the planes (its footprint keeps tracks off the body),
+          # so nothing has to find its way round the notch
+          ("U17", "3", 0.85, 0.0), ("U17", "4", 0.85, 0.0), ("C49", "1", 0.0, 0.9),
+          ("C62", "1", 0.7, 0.0), ("U16", "1", 0.0, -0.7)]   # LCD boost input and its cap: straight to the 3V3 plane          # mic decoupling (back): its GND via between the cap and the mic, off the 3V3 run
 # Hand tracks (net, points, side, width) and vias (net, x, y), locked. The humidity sensor's I2C pair leaves its tongue
 # on the back through the neck below the notch and climbs to the pull-ups R40 (SCL) / R41 (SDA), in two parallel
 # lanes (pads exit sideways: the sensor's footprint keeps tracks off its body); the router kept missing this branch. SDA joins the bus at the via under R41.
@@ -179,7 +186,7 @@ TRACKS = [("I2C1_SDA", [(2.5, 45.4), (1.3, 45.4)], "F", 0.2),
 HAND_VIAS = [("I2C1_SDA", 1.3, 45.4), ("I2C1_SDA", *SDA_VIA), ("I2C1_SCL", 2.05, 46.95), ("I2C1_SCL", 18.0, 43.3)]
 FANOUT_INWARD = ["U5"]
 FANOUT_AXIAL = [("U1", "2", +1), ("U10", "24", -1)]
-PREROUTE = []
+PREROUTE = [("U16", "1", "U16", "6", "F", 0.25)]   # LCD boost: VIN and EN tied straight across the package
 PREROUTE_PATH = [("J50", "1", [(GX - 13.05, GY - 1.74), (GX - 13.05, GY + 0.5), (GX - 9.0, GY + 4.55), (GX - 7.65, GY + 5.9)], "U10", "11", "F", 0.25),
                  ("L50", "2", [(GX - 10.28, GY - 1.74), (GX - 13.05, GY - 1.74)], None, None, "F", 0.15)]
 

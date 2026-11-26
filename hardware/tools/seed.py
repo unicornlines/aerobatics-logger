@@ -7,7 +7,8 @@ of every unchanged net avoids that.
     python3 pcb.py && python3 seed.py old.kicad_pcb && python3 route.py /path/to/freerouting.jar
 
 A net's old copper comes across, locked like the hand fanouts, only when
-  - every pad it connected on the old board still belongs to it (it may have gained pads: those get routed), and
+  - every pad it connected on the old board still belongs to it, at the same place and side (it may have gained
+    pads: those get routed), and
   - none of its tracks or vias would touch a pad of another net or come within 0.5 mm of the board edge.
 Otherwise the whole net is left to the router, so no half-net stubs remain. GND is never copied: pcb.py's fanouts,
 the pours and the stitching vias carry it.
@@ -28,7 +29,8 @@ def pad_map(board):
     for f in board.GetFootprints():
         for p in f.Pads():
             if p.GetNetname():
-                m.setdefault(p.GetNetname(), set()).add((f.GetReference(), p.GetNumber()))
+                q = p.GetPosition()
+                m.setdefault(p.GetNetname(), set()).add((f.GetReference(), p.GetNumber(), q.x, q.y, f.GetLayer()))
     return m
 
 
@@ -81,7 +83,7 @@ def main():
         if net in ("", "GND"):
             continue
         if not old_pads.get(net, set()) <= new_pads.get(net, set()):
-            dropped.append((net, "pads changed")); continue
+            dropped.append((net, "pads changed or moved")); continue
         if any(collides(t) for t in items):
             dropped.append((net, "clashes with the new layout")); continue
         kept.append(net)

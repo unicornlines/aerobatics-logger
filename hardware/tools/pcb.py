@@ -251,6 +251,21 @@ HOLES = [(4.0, 4.0), (W - 4.0, 4.0), (4.0, H - 4.0), (W - 4.0, H - 4.0)]   # boa
 HOLE_KEEPOUT = 7.0             # mm: hole pad diameter (0.5 mm from the edge at the corners), so parts, tracks and vias stay off it on every layer; the case bosses clamp here
 
 
+# 3D models that KiCad 7 doesn't ship or ships turned the wrong way, from kicad/3d/: ref -> (file, rotation about z).
+# J50: KiCad 7's SMA-J-P-X footprint has the jack along its +y, but the only model for this part (KiCad 9's renamed
+# SMA-J-P-H, kicad-packages3D) runs along its own +x, so it is turned +90 deg (checked by STEP export: the thread
+# then stands about 9.5 mm past the left edge, axis at y 13, 0.5 mm above the top face).
+MODELS = {"J50": ("SMA_Samtec_SMA-J-P-H-ST-EM1_EdgeMount.step", 90)}
+
+
+def set_model(f, name, rz):
+    m = pcbnew.FP_3DMODEL()
+    m.m_Filename = "${KIPRJMOD}/3d/" + name
+    m.m_Rotation = pcbnew.VECTOR3D(0, 0, rz)
+    f.Models().clear()
+    f.Models().push_back(m)
+
+
 def load(fp):
     lib, name = fp.split(":")
     path = os.path.join(KICAD, "logger.pretty") if lib == "logger" else os.path.join(SYSFP, lib + ".pretty")
@@ -521,6 +536,8 @@ def main():
                 missing.append(ref); continue
             f = load(p["fp"])
             f.SetReference(ref); f.SetValue(p["value"])
+            if ref in MODELS:
+                set_model(f, *MODELS[ref])
             board.Add(f)
             x, y, rot, side = P[ref]
             if side == "B":

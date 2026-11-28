@@ -1,0 +1,292 @@
+<meta charset="utf-8">
+<title>Logger in 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE work: an engineering model viewer for the owner and their partner
+   IDEA the bench: the real unit taken apart on a workbench, every layer lifted on one axis
+   PICTURE the live 3D model, exploded, filling the screen
+   COLOUR warm bench grey ground, graphite ink, Unicornlines magenta accent from the key bridge
+   TYPE Space Grotesk 600 + Inter
+   LAYOUT laptop: model full screen, slim control column on the left, part card bottom right; phone: model on top, controls below */
+:root{color-scheme:light dark;--bg:light-dark(#ecebe7,#141518);--bg2:light-dark(#f7f6f3,#1d1e22);--ink:light-dark(#1c1d20,#ecebe7);--mute:light-dark(#5d5f66,#a3a5ab);--line:light-dark(#d6d4ce,#2e3036);--acc:#c2185b;--acc2:light-dark(#fbe3ec,#3a1424)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif;overflow:hidden}
+#app{position:relative;height:100%}
+#stage{position:absolute;inset:0}
+#stage canvas{display:block;width:100%;height:100%;touch-action:none}
+#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lab{position:absolute;transform:translate(-100%,-50%);font:500 12.5px/1.2 Inter,sans-serif;color:var(--ink);background:color-mix(in srgb,var(--bg2) 88%,transparent);border:1px solid var(--line);padding:3px 7px;border-radius:5px;white-space:nowrap;pointer-events:auto;cursor:pointer}
+.lab.r{transform:translate(0,-50%)}
+#lines{position:absolute;inset:0}
+#lines line{stroke:var(--mute);stroke-width:1;opacity:.7}
+#lines circle{fill:var(--acc)}
+.blab{position:absolute;transform:translate(6px,-50%);font:500 11.5px/1.2 Inter,sans-serif;color:#fff;background:#1f4a32e6;padding:2px 6px;border-radius:4px;white-space:nowrap;pointer-events:none}
+.blab::before{content:"";position:absolute;left:-6px;top:50%;width:5px;height:5px;margin-top:-2.5px;border-radius:50%;background:#7ee2a8;box-shadow:0 0 0 1.5px #1f4a32}
+.lab.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+#panel{position:absolute;top:calc(16px + env(safe-area-inset-top,0px));left:max(16px,env(safe-area-inset-left,0px));width:290px;max-height:calc(100% - 32px);overflow:auto;background:color-mix(in srgb,var(--bg2) 94%,transparent);border:1px solid var(--line);border-radius:12px;padding:18px}
+h1{font:600 26px/1.08 "Space Grotesk",sans-serif;letter-spacing:-.02em;margin:0 0 6px}
+.sub{color:var(--mute);font-size:13.5px;margin:0 0 16px}
+.row{margin:0 0 14px}
+.row label{display:flex;justify-content:space-between;font-weight:500;font-size:13.5px;margin-bottom:4px}
+.row output{color:var(--mute);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--acc);height:28px}
+.btns{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px}
+button{font:500 13.5px Inter,sans-serif;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:7px 11px;min-height:36px;cursor:pointer}
+button:hover{border-color:var(--mute)}
+button[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:#fff}
+ul{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+li{display:flex;align-items:center;gap:9px;padding:7px 2px;border-bottom:1px solid var(--line);font-size:13.5px;cursor:pointer}
+li input{width:18px;height:18px;accent-color:var(--acc);margin:0}
+li .sw{width:12px;height:12px;border-radius:3px;flex:none;border:1px solid #0003}
+li span.n{flex:1}
+li.sel{background:var(--acc2)}
+.chk{display:flex;gap:8px;align-items:center;font-size:13.5px;margin:0 0 14px}
+.chk input{width:18px;height:18px;accent-color:var(--acc);margin:0}
+#card{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));width:320px;background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--acc);border-radius:10px;padding:14px 16px}
+#card h2{font:600 18px/1.2 "Space Grotesk",sans-serif;margin:0 0 4px;letter-spacing:-.01em}
+#card .meta{color:var(--mute);font-size:13px;margin:0 0 6px}
+#card p{margin:0;font-size:14px}
+#hint{position:absolute;right:max(16px,env(safe-area-inset-right,0px));top:calc(16px + env(safe-area-inset-top,0px));color:var(--mute);font-size:12.5px;text-align:right}
+#load{position:absolute;inset:0;display:grid;place-items:center;color:var(--mute);font-size:14px}
+@media(max-width:800px){
+  body{overflow:auto}
+  #app{height:auto}
+  #stage{position:relative;height:58svh}
+  #labels{height:58svh}
+  #panel{position:static;width:auto;max-height:none;border-radius:0;border-inline:0;padding:16px max(16px,env(safe-area-inset-left,0px)) 24px}
+  #card{position:static;width:auto;margin:0 16px 16px;border-radius:10px}
+  #hint{display:none}
+  .lab{font-size:11.5px}
+}
+</style>
+<div id="app">
+  <div id="stage"><div id="load">Loading the model…</div></div>
+  <div id="labels"><svg id="lines" width="100%" height="100%"></svg></div>
+  <div id="hint">Drag to turn · scroll or pinch to zoom · right-drag to pan · tap a part</div>
+  <section id="panel">
+    <h1>Aerobatics logger</h1>
+    <p class="sub">Case rev A on the 124 × 62 mm board, with the display at boot. Built from the KiCad layout.</p>
+    <div class="row"><label for="ex">Explode <output id="exv"></output></label><input id="ex" type="range" min="0" max="1" step="0.01" value="0.6"></div>
+    <div class="row"><label for="cut">Section from the right <output id="cutv"></output></label><input id="cut" type="range" min="0" max="1" step="0.01" value="0"></div>
+    <div class="btns" role="group" aria-label="Views">
+      <button data-v="iso" aria-pressed="true">Angle</button><button data-v="front">Front</button><button data-v="side">Side</button><button data-v="back">Back</button><button id="boardbtn">Just the board</button>
+    </div>
+    <label class="chk"><input type="checkbox" id="showlab" checked> Part labels</label>
+    <label class="chk"><input type="checkbox" id="showblab"> Board labels (chips and connectors)</label>
+    <ul id="parts"></ul>
+  </section>
+  <aside id="card" aria-live="polite"><h2 id="ct"></h2><p class="meta" id="cm"></p><p id="cx"></p></aside>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+{
+const META = __META__;
+const SCREEN = "__SCREEN__";
+const BLABELS = __BLABELS__;
+const GROUPS = [
+  { id: "front", name: "Front shell", pieces: ["front_body", "front_first"], meta: "PETG · first 0.6 mm natural, then graphite · 12.6 g", text: "Printed face down with one colour change. The marks are debossed through the first colour; the LEDs glow through a 0.45 mm skin. No holes on top: the mic, humidity sensor and barometer breathe through the side walls." },
+  { id: "cover", name: "Display cover", pieces: ["cover"], meta: "1.0 mm clear polycarbonate · laser cut", text: "Glued into a pocket in the face, flush with it." },
+  { id: "caps", name: "Keycaps", pieces: ["caps_body", "caps_first"], meta: "PETG · two colours · 0.5 g each", text: "UP, OK and DOWN. Printed face down, symbols debossed. OK long press switches the unit on and off; any key sets a marker while logging." },
+  { id: "keybridge", name: "Key bridge", pieces: ["keybridge"], meta: "PETG, accent colour · 3.8 g", text: "The switch plate for the three Choc keys and the fences between them. It runs out through the bottom wall and closes the fourth side of the display carrier." },
+  { id: "lcd", name: "Display", pieces: ["lcd", "lcd_active"], meta: "Sharp LS027B7DH01 · 2.7 in memory LCD · 400 × 240", text: "Reflective, no backlight, readable in sun. Showing the boot screen and self-test." },
+  { id: "carrier", name: "Display carrier", pieces: ["lcd_frame"], meta: "PETG · 0.6 g", text: "Boxes the panel on three sides and carries it on a lip over eight posts. Six lugs under the face hold it in place; checked to 15 g with margin." },
+  { id: "board", name: "Logic board", pieces: ["pcb", "parts", "metal", "white", "led"], meta: "124 × 62 mm · 4 layers · rev A", text: "STM32H723, ICM-45686 IMU, NEO-M9N GNSS, ESP32-C6 radio, BMP390, SHT40, microphone. Parts are drawn as boxes from their KiCad footprints." },
+  { id: "switches", name: "Key switches", pieces: ["switch", "stem"], meta: "Kailh Choc v1, hot-swap sockets", text: "Low-profile tactile switches; the sockets sit on the back of the board." },
+  { id: "cell", name: "Battery cell", pieces: ["cell"], meta: "LiPo 6 × 34 × 50 mm", text: "Taped to the tray floor with VHB foam right under the board, boxed in by ribs." },
+  { id: "tray", name: "Tray", pieces: ["tray"], meta: "PETG · 21.3 g", text: "Clamps the board at its four corner holes with full-height columns (brass inserts). Carries the cell bay and the two dovetail channels." },
+  { id: "plate", name: "Mount plate", pieces: ["plate"], meta: "PETG · 36.3 g", text: "Slides onto the tray's dovetails and snaps in; press the ribbed tab to release. Strap slots, 4 × M4, AMPS 30 × 38 and a 1/4-20 nut. Look underneath." },
+];
+const byPiece = {}; GROUPS.forEach(g => g.pieces.forEach(p => byPiece[p] = g));
+
+const stage = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.localClippingEnabled = true;
+stage.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const cam = new THREE.PerspectiveCamera(30, 1, 5, 3000); cam.up.set(0, 0, 1);
+const ctl = new THREE.OrbitControls(cam, renderer.domElement); ctl.enableDamping = true; ctl.dampingFactor = 0.08;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8478, 0.9));
+const key = new THREE.DirectionalLight(0xffffff, 1.6); key.position.set(-150, -220, 400); scene.add(key);
+const rim = new THREE.DirectionalLight(0xfff1e0, 0.7); rim.position.set(260, 300, 160); scene.add(rim);
+const low = new THREE.DirectionalLight(0xffffff, 0.5); low.position.set(60, 120, -300); scene.add(low);
+let queued = false, bTimer = null;
+function placeBoardSoon() { clearTimeout(bTimer); bTimer = setTimeout(() => typeof placeBoard === "function" && placeBoard(), 60); }
+function draw() { if (queued) return; queued = true; requestAnimationFrame(() => { queued = false; ctl.update(); renderer.render(scene, cam); placeLabels(); if (typeof moving !== "undefined" && !moving) placeBoardSoon(); }); }
+const clip = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 1e4);
+
+function bg() { const c = getComputedStyle(document.body).backgroundColor; scene.background = new THREE.Color(c); renderer.toneMappingExposure = 1.0; }
+
+const INLAY = ["front_first", "caps_first", "lcd_active", "parts", "metal", "white", "led", "stem", "switch"];
+const meshes = []; const center = new THREE.Vector3(62, 31, 0);
+fetch("model.txt").then(r => { if (!r.ok) throw new Error(r.status); return r.text(); }).then(b64 => {
+  const bin = atob(b64.trim()), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); const buf = u8.buffer;
+  const tl = new THREE.TextureLoader();
+  for (const p of META) {
+    const qi = new Int16Array(buf, p.pos[0], p.pos[1] * 3), pos = new Float32Array(qi.length);
+    for (let i = 0; i < qi.length; i++) pos[i] = qi[i] * 0.01;
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    geo.setIndex(new THREE.BufferAttribute(new Uint32Array(buf, p.idx[0], p.idx[1]), 1));
+    geo.computeVertexNormals(); geo.computeBoundingBox();
+    const m = new THREE.MeshStandardMaterial({ color: new THREE.Color(p.colour).convertSRGBToLinear(), roughness: p.roughness ?? 0.55, metalness: p.metal ?? 0,
+      transparent: p.alpha < 1, opacity: p.alpha ?? 1, flatShading: true, side: THREE.FrontSide, clippingPlanes: [clip] });
+    if (INLAY.includes(p.name)) { m.polygonOffset = true; m.polygonOffsetFactor = -1; m.polygonOffsetUnits = -4; }
+    if (p.name === "cover") { m.opacity = 0.18; m.transparent = true; m.depthWrite = false; }
+    if (p.name === "lcd_active") {
+      const b = geo.boundingBox, uv = new Float32Array(pos.length / 3 * 2);
+      for (let i = 0; i < pos.length / 3; i++) { uv[2 * i] = (pos[3 * i] - b.min.x) / (b.max.x - b.min.x); uv[2 * i + 1] = (pos[3 * i + 1] - b.min.y) / (b.max.y - b.min.y); }
+      geo.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+      const t = tl.load(SCREEN, () => draw()); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8;
+      m.map = t; m.color = new THREE.Color("#d9ddd3"); m.flatShading = false;
+    }
+    const mesh = new THREE.Mesh(geo, m);
+    mesh.userData = { piece: p.name, group: byPiece[p.name], off: new THREE.Vector3(...p.explode) };
+    scene.add(mesh); meshes.push(mesh);
+  }
+  document.getElementById("load").remove();
+  explode(); setView("iso"); select(null);
+}).catch(e => { const l = document.getElementById("load"); if (l) l.textContent = "The model did not load: " + e.message; console.error(e); });
+
+// explode and section
+const ex = document.getElementById("ex"), cut = document.getElementById("cut");
+function explode() {
+  const e = +ex.value; document.getElementById("exv").textContent = Math.round(e * 100) + " %";
+  for (const m of meshes) m.position.copy(m.userData.off).multiplyScalar(e);
+  draw();
+}
+function section() {
+  const c = +cut.value; document.getElementById("cutv").textContent = c ? Math.round(c * 100) + " %" : "off";
+  clip.constant = c ? (-8 + (1 - c) * 150) : 1e4;
+  for (const m of meshes) { const side = c ? THREE.DoubleSide : THREE.FrontSide; if (m.material.side !== side) { m.material.side = side; m.material.needsUpdate = true; } }
+  draw();
+}
+ex.oninput = explode; cut.oninput = section; section();
+
+// views
+const VIEWS = { iso: [-0.55, -1.0, 0.8], front: [0, -0.12, 1], side: [1, -0.25, 0.25], back: [0.3, 0.7, -1] };
+function setView(v) {
+  document.querySelectorAll("[data-v]").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === v));
+  const d = new THREE.Vector3(...VIEWS[v]).normalize(), t = center.clone().add(new THREE.Vector3(0, 0, 40 * +ex.value));
+  const dist = (stage.clientWidth < 500 ? 430 : 360) + 120 * +ex.value;
+  cam.position.copy(t).addScaledVector(d, dist); ctl.target.copy(t); ctl.update(); draw();
+}
+document.querySelectorAll("[data-v]").forEach(b => b.onclick = () => setView(b.dataset.v));
+
+// part list
+const list = document.getElementById("parts");
+list.innerHTML = GROUPS.map(g => { const p = META.find(x => x.name === g.pieces[g.pieces.length - 1]) || META.find(x => g.pieces.includes(x.name));
+  return `<li data-g="${g.id}"><input type="checkbox" checked aria-label="Show ${g.name}"><span class="sw" style="background:${p ? p.colour : "#888"}"></span><span class="n">${g.name}</span></li>`; }).join("");
+list.querySelectorAll("li").forEach(li => {
+  const g = GROUPS.find(x => x.id === li.dataset.g), cb = li.querySelector("input");
+  cb.onclick = ev => { ev.stopPropagation(); meshes.forEach(m => { if (m.userData.group === g) m.visible = cb.checked; }); draw(); };
+  li.onclick = () => select(g);
+});
+
+// selection and card
+let sel = null;
+function select(g) {
+  sel = g;
+  if (g && g.id === "board" && typeof boardLabels === "function" && !showB.checked) boardLabels(true);
+  for (const m of meshes) { const on = m.userData.group === g; m.material.emissive = new THREE.Color(on ? 0xc2185b : 0x000000); m.material.emissiveIntensity = on ? 0.07 : 0; }
+  list.querySelectorAll("li").forEach(li => li.classList.toggle("sel", li.dataset.g === (g && g.id)));
+  document.getElementById("ct").textContent = g ? g.name : "Tap a part";
+  document.getElementById("cm").textContent = g ? g.meta : "";
+  document.getElementById("cx").textContent = g ? g.text : "Pick any part in the model, a label or the list to see what it is, what it is made of and what it does. Untick a part to hide it, or cut the unit open with the section slider.";
+  draw();
+}
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2(); let down = null;
+renderer.domElement.addEventListener("pointerdown", e => down = [e.clientX, e.clientY]);
+renderer.domElement.addEventListener("pointerup", e => {
+  if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;
+  const r = renderer.domElement.getBoundingClientRect();
+  ptr.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
+  ray.setFromCamera(ptr, cam);
+  const hits = ray.intersectObjects(meshes.filter(m => m.visible && m.userData.piece !== "cover"))
+    .filter(h => clip.constant > 1e3 || clip.distanceToPoint(h.point) >= 0);
+  if (hits.length) select(hits[0].object.userData.group);
+});
+
+// labels: one per group at the top of its pieces
+const labBox = document.getElementById("labels"), showLab = document.getElementById("showlab"), lines = document.getElementById("lines");
+labBox.insertAdjacentHTML("beforeend", GROUPS.map(g => `<span class="lab" data-g="${g.id}">${g.name}</span>`).join(""));
+labBox.querySelectorAll(".lab").forEach(el => el.onclick = () => select(GROUPS.find(g => g.id === el.dataset.g)));
+showLab.onchange = () => { labBox.hidden = !showLab.checked; if (showLab.checked && showB.checked) { showB.checked = false; placeBoard(); } draw(); };
+const SIDE = { plate: 0, tray: 0, cell: 0, board: 0, switches: 1, carrier: 0, lcd: 1, keybridge: 1, caps: 1, cover: 1, front: 0 };
+function placeLabels() {
+  if (labBox.hidden) return;
+  const r = renderer.domElement.getBoundingClientRect(), v = new THREE.Vector3(), items = [];
+  labBox.querySelectorAll(".lab").forEach(el => {
+    const g = GROUPS.find(x => x.id === el.dataset.g), ms = meshes.filter(m => m.userData.group === g && m.visible);
+    if (!ms.length) { el.hidden = true; return; }
+    const b = new THREE.Box3(); ms.forEach(m => b.expandByObject(m));
+    b.getCenter(v).project(cam);
+    if (v.z > 1) { el.hidden = true; return; }
+    el.hidden = false; el.classList.toggle("on", g === sel);
+    items.push({ el, side: SIDE[g.id] || 0, ax: (v.x + 1) / 2 * r.width, ay: (1 - v.y) / 2 * r.height, h: el.offsetHeight || 22, w: el.offsetWidth || 80 });
+  });
+  if (!items.length) { lines.innerHTML = ""; return; }
+  const xs = items.map(i => i.ax), narrow = r.width < 560;
+  const colL = Math.max(Math.min(...xs) - (narrow ? 20 : 70), 8), colR = Math.min(Math.max(...xs) + (narrow ? 20 : 70), r.width - 8);
+  let svg = "";
+  for (const side of [0, 1]) {
+    const col = items.filter(i => i.side === side).sort((p, q) => p.ay - q.ay);
+    let y = -1e9; for (const i of col) { i.y = Math.max(i.ay, y + i.h + 6); y = i.y; }
+    const over = y - (r.height - 14); if (over > 0) col.forEach(i => i.y -= over);
+    for (const i of col) {
+      const x = side ? Math.min(colR, r.width - i.w - 8) : Math.max(colL, i.w + 8);
+      i.el.style.left = x + "px"; i.el.style.top = i.y + "px"; i.el.classList.toggle("r", !!side);
+      svg += `<line x1="${x}" y1="${i.y}" x2="${i.ax}" y2="${i.ay}"/><circle cx="${i.ax}" cy="${i.ay}" r="2.5"/>`;
+    }
+  }
+  lines.innerHTML = svg;
+}
+
+ctl.addEventListener("change", draw);
+function size() { const w = stage.clientWidth, h = stage.clientHeight; renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); draw(); }
+
+// board labels: at each chip, moving with the board; hidden while orbiting and when something covers them
+const showB = document.getElementById("showblab");
+const bBox = document.createElement("div"); bBox.style.cssText = "position:absolute;inset:0;pointer-events:none;overflow:hidden"; document.getElementById("stage").after(bBox);
+bBox.innerHTML = BLABELS.map(b => `<span class="blab" title="${b.ref}">${b.name}</span>`).join("");
+const bEls = [...bBox.children];
+let moving = false, still = null;
+ctl.addEventListener("start", () => { moving = true; bBox.hidden = true; });
+ctl.addEventListener("end", () => { moving = false; clearTimeout(still); still = setTimeout(placeBoard, 120); });
+function boardLabels(on) { showB.checked = on; if (on && showLab.checked) { showLab.checked = false; labBox.hidden = true; } placeBoard(); draw(); }
+showB.onchange = () => boardLabels(showB.checked);
+document.getElementById("boardbtn").onclick = () => {
+  const keep = ["board", "switches", "cell", "tray"];
+  list.querySelectorAll("li").forEach(li => { const on = keep.includes(li.dataset.g); li.querySelector("input").checked = on; GROUPS.find(g => g.id === li.dataset.g); });
+  meshes.forEach(m => m.visible = keep.includes(m.userData.group.id));
+  ex.value = 0.3; explode(); setView("front"); select(GROUPS.find(g => g.id === "board")); boardLabels(true);
+};
+function placeBoard() {
+  bBox.hidden = !showB.checked || moving; if (bBox.hidden) return;
+  const pcb = meshes.find(m => m.userData.piece === "pcb"); if (!pcb || !pcb.visible) { bBox.hidden = true; return; }
+  const r = renderer.domElement.getBoundingClientRect(), vis = meshes.filter(m => m.visible && m.userData.piece !== "cover"), rc = new THREE.Raycaster();
+  BLABELS.forEach((b, i) => {
+    const el = bEls[i], p = new THREE.Vector3(...b.p).add(pcb.position), v = p.clone().project(cam);
+    const d = p.distanceTo(cam.position); rc.set(cam.position, p.clone().sub(cam.position).normalize()); rc.far = d - 1.2;
+    const blocked = rc.intersectObjects(vis).some(h => clip.constant > 1e3 || clip.distanceToPoint(h.point) >= 0);
+    el.hidden = blocked || v.z > 1 || Math.abs(v.x) > 1 || Math.abs(v.y) > 1;
+    el.style.left = ((v.x + 1) / 2 * r.width) + "px"; el.style.top = ((1 - v.y) / 2 * r.height) + "px";
+  });
+  // drop labels that would overlap one placed before them (the list is in order of importance)
+  const placed = [];
+  bEls.forEach(el => { if (el.hidden) return; const b = el.getBoundingClientRect();
+    if (placed.some(q => b.left < q.right + 2 && b.right > q.left - 2 && b.top < q.bottom + 1 && b.bottom > q.top - 1)) el.hidden = true; else placed.push(b); });
+}
+const ro = new ResizeObserver(size); ro.observe(stage);
+bg(); matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { bg(); draw(); });
+new MutationObserver(() => { bg(); draw(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+(function tick() { if (ctl.update()) draw(); requestAnimationFrame(tick); })();
+}
+</script>

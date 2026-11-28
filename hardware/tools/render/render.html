@@ -1,0 +1,140 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Board render</title>
+<style>html,body{margin:0;background:#e9eaec;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+</head>
+<body>
+<script type="module">
+// Studio render of the board: KiCad STEP -> GLB for the parts, our own board body textured with the
+// plotted copper/mask/silk layers, simple stand-ins for parts without a model. Units: mm, Y up,
+// world X = board x, world Z = board y (both from the top-left corner).
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+
+const q = new URLSearchParams(location.search);
+const view = q.get("view") || "hero";
+const W = +(q.get("w") || 2400), H = +(q.get("h") || 1600);
+const S = await (await fetch("scene.json")).json();
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H); renderer.setPixelRatio(1);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xe9eaec);
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const key = new THREE.DirectionalLight(0xffffff, 1.6);
+key.position.set(-60, 140, -40); key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+Object.assign(key.shadow.camera, { left: -80, right: 80, top: 80, bottom: -80, near: 1, far: 400 });
+key.shadow.bias = -0.0004; key.shadow.radius = 4;
+key.target.position.set(S.width / 2, 0, S.height / 2);
+scene.add(key, key.target, new THREE.HemisphereLight(0xffffff, 0x8a8f96, 0.5));
+
+// floor that only catches the shadow
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), new THREE.ShadowMaterial({ opacity: 0.18 }));
+floor.rotation.x = -Math.PI / 2; floor.position.set(S.width / 2, -6, S.height / 2);
+floor.receiveShadow = true; scene.add(floor);
+
+// board outline with holes, in board coordinates (x right, y down)
+function outline() {
+  const { width: w, height: h, corner: r } = S;
+  const s = new THREE.Shape();
+  s.moveTo(r, 0); s.lineTo(w - r, 0); s.absarc(w - r, r, r, -Math.PI / 2, 0);
+  s.lineTo(w, h - r); s.absarc(w - r, h - r, r, 0, Math.PI / 2);
+  s.lineTo(r, h); s.absarc(r, h - r, r, Math.PI / 2, Math.PI);
+  s.lineTo(0, r); s.absarc(r, r, r, Math.PI, 1.5 * Math.PI);
+  for (const o of S.holes) { const p = new THREE.Path(); p.absarc(o.x, o.y, o.d / 2, 0, 2 * Math.PI, true); s.holes.push(p); }
+  return s;
+}
+const tl = new THREE.TextureLoader();
+const TEX = {};
+for (const u of ["f_texture.png", "b_texture.png"]) { const t = await tl.loadAsync(u); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 16; TEX[u] = t; }
+function tex(url) { return TEX[url]; }
+function face(url, y, mirror) {
+  const g = new THREE.ShapeGeometry(outline(), 48);
+  g.rotateX(Math.PI / 2);                       // shape (x, y) -> world (x, 0, y)
+  const pos = g.attributes.position, uv = new Float32Array(pos.count * 2);
+  for (let i = 0; i < pos.count; i++) {
+    const u = pos.getX(i) / S.width;
+    uv[2 * i] = mirror ? 1 - u : u; uv[2 * i + 1] = 1 - pos.getZ(i) / S.height;
+  }
+  g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+  const m = new THREE.MeshStandardMaterial({ map: tex(url), roughness: 0.55, metalness: 0.0, side: THREE.DoubleSide });
+  const mesh = new THREE.Mesh(g, m); mesh.position.y = y; mesh.receiveShadow = true;
+  return mesh;
+}
+const core = new THREE.ExtrudeGeometry(outline(), { depth: S.thickness - 0.02, bevelEnabled: false, curveSegments: 48 });
+core.rotateX(Math.PI / 2); core.translate(0, S.thickness - 0.01, 0);
+const coreMesh = new THREE.Mesh(core, new THREE.MeshStandardMaterial({ color: 0x2a2924, roughness: 0.8 }));
+coreMesh.castShadow = true; coreMesh.receiveShadow = true;
+const B = new THREE.Group(); scene.add(B);
+B.add(coreMesh, face("f_texture.png", S.thickness + 0.002, false), face("b_texture.png", -0.002, true));
+
+// stand-ins: a body with a small label, rotated like the footprint
+function label(text, w, l) {
+  const c = document.createElement("canvas"); c.width = 512; c.height = Math.round(512 * l / w);
+  const x = c.getContext("2d"); x.fillStyle = "rgba(0,0,0,0)"; x.fillRect(0, 0, c.width, c.height);
+  x.fillStyle = "rgba(40,40,40,0.75)"; x.font = `600 ${Math.round(c.width / Math.max(8, text.length) * 1.1)}px Helvetica, Arial`;
+  x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(text, c.width / 2, c.height / 2);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+for (const p of S.standins) {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: p.color, roughness: p.color === "#1b1b1d" ? 0.6 : 0.35, metalness: p.color === "#1b1b1d" ? 0 : 0.8 });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(p.w, p.h, p.l), mat);
+  body.position.set(p.dx || 0, (p.dz || 0) + p.h / 2, p.dy || 0); body.castShadow = body.receiveShadow = true; g.add(body);
+  if (p.w > 5 && p.label) {
+    const lab = new THREE.Mesh(new THREE.PlaneGeometry(p.w * 0.8, p.l * 0.8), new THREE.MeshBasicMaterial({ map: label(p.label, p.w, p.l), transparent: true }));
+    lab.rotation.x = -Math.PI / 2; lab.position.set(p.dx || 0, (p.dz || 0) + p.h + 0.01, p.dy || 0); g.add(lab);
+  }
+  g.position.set(p.x, p.bottom ? 0 : S.thickness, p.y);
+  if (p.bottom) g.rotation.x = Math.PI;
+  g.rotation.y = THREE.MathUtils.degToRad(p.rot);
+  B.add(g);
+}
+
+// parts from KiCad (board body removed: we draw our own)
+const gltf = await new GLTFLoader().loadAsync("board.glb");
+const parts = gltf.scene;
+const drop = [];
+parts.traverse(o => {
+  if (o.isMesh) {
+    let n = o, isBoard = false;
+    while (n) { if ((n.name || "").includes("PCB")) { isBoard = true; break; } n = n.parent; }
+    if (isBoard) drop.push(o); else { o.castShadow = true; o.receiveShadow = true; }
+  }
+});
+drop.forEach(o => o.parent.remove(o));
+const wrap = new THREE.Group(); wrap.add(parts);
+wrap.scale.setScalar(1000); wrap.rotation.x = -Math.PI / 2; wrap.position.set(-100, 0, -100);
+B.add(wrap);
+console.log("dropped board meshes:", drop.length);
+
+// cameras
+const cx = S.width / 2, cz = S.height / 2;
+const cam = new THREE.PerspectiveCamera(view === "hero" ? 30 : 18, W / H, 1, 2000);
+const k = Math.max(1, S.width / 124) * 1.06;        // framing was tuned on the 124 mm board; keep a margin when it grows
+if (view === "top" || view === "bottom") { cam.position.set(cx, 290 * k, cz + 0.01); cam.lookAt(cx, 0, cz); }
+else { cam.position.set(cx - 70 * k, 105 * k, cz + 135 * k); cam.lookAt(cx + 2, -4, cz + 2); }
+if (view === "bottom") {            // turn the board over about its long-side centre line, like flipping it in hand
+  B.position.set(S.width, S.thickness, 0); B.rotation.z = Math.PI;
+}
+
+console.log("rendering");
+renderer.render(scene, cam);
+renderer.getContext().finish();
+console.log("rendered");
+window.done = true;
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+(version 1)
+
+# GNSS RF lines: 50 ohm grounded coplanar waveguide on F.Cu over the In1 plane, 0.34 mm wide with 0.45 mm gaps to the
+# ground pour. (Against pads, tracks and vias the default clearance holds: the switch pads sit 0.15 mm apart.
+# route.py gives the router a 0.45 mm class for these nets so it keeps its own tracks clear of them.)
+(rule "rf_cpw_gap"
+  (condition "(A.NetName == 'GNSS_RF_IN' || A.NetName == 'ANT_INT' || A.NetName == 'ANT_EXT_SW' || A.NetName == 'GNSS_EXT_RF') && B.Type == 'Zone'")
+  (constraint clearance (min 0.45mm)))
+
+# The edge-mount SMA's pads run to the board edge by design.
+(rule "sma_at_edge"
+  (condition "A.intersectsCourtyard('J50') || B.intersectsCourtyard('J50')")
+  (constraint edge_clearance (min -0.1mm)))

@@ -46,8 +46,8 @@ One colour change per part at most; the change is always at a layer height:
 | `plate` | bottom down | PETG | none |
 | `lcd_frame` | lip side down | PETG | none. The display carrier: boxes the panel on three sides (the key bridge is the fourth), carries it on a lip, stands on posts. |
 
-Size: 128.7 x 66.7 x 17.1 mm, 20.1 mm on its plate (with the default 6 mm cell; a 4 mm cell saves 2 mm).
-Mass (PETG, `tools/mass.py`): about 39 g for the unit's plastic, about 36 g for the plate.
+Size: 142.7 x 66.7 x 17.1 mm, 20.1 mm on its plate (with the default 6 mm cell; a 4 mm cell saves 2 mm).
+Mass (PETG, `tools/mass.py`): about 44 g for the unit's plastic, about 39 g for the plate.
 
 ## Hardware
 
@@ -77,16 +77,13 @@ Brass inserts and A4 stainless or titanium screws: the magnetometer is on the bo
 
 ## How it holds the IMU still
 
-The board is clamped at all five holes between the front bosses and full-height columns in the
+The board is clamped at its four corner holes between the front bosses and full-height columns in the
 tray, so the case itself is the reference. The unit then slides onto the plate on two dovetails
 (30° flanks, 0.25 mm fit) until it hits the stop, and a snap hook on a spring arm in the plate
 drops into a notch in the tray: two dovetails fix roll, pitch, yaw and two axes, the stop and the
 hook fix the third. Same position every time, no wobble, no tools. To release, push the ribbed
 tab at the right end down and slide the unit off to the right. The hook face is square, so
 vibration and g cannot walk it out; only the tab releases it.
-
-The board is clamped at its four corner holes, the only mounting holes it has (the fifth hole
-over the battery cell was removed from the PCB).
 
 Mounting options from the plate: strap slots at both ends (25 mm webbing, e.g. round a tube or a
 thigh), 4 countersunk M4 holes, the AMPS 30 x 38 pattern used by RAM and most cockpit mounts, and
